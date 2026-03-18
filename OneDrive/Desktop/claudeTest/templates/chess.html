@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess - Game Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Game Hub</a>
+        <div class="nav-links">
+            <a href="/tetris">Tetris</a>
+            <a href="/omok">Omok</a>
+            <a href="/chess">Chess</a>
+        </div>
+    </nav>
+
+    <div class="game-container">
+        <h1>Chess</h1>
+        <div class="chess-status" id="status">White's Turn</div>
+        <div class="chess-wrapper">
+            <canvas id="chess-board" class="game-board" width="560" height="560"></canvas>
+            <div class="chess-side">
+                <h3>Move History</h3>
+                <div class="move-list" id="move-list"></div>
+            </div>
+        </div>
+        <div class="game-controls">
+            <button class="btn" id="restart-btn">New Game</button>
+            <button class="btn" id="undo-btn">Undo</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="game-over-overlay">
+        <div class="overlay-content">
+            <h2 id="game-over-message">Game Over</h2>
+            <button class="btn" id="overlay-restart-btn">Play Again</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/chess.js') }}"></script>
+</body>
+</html>
