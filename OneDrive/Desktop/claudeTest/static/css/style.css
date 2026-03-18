@@ -1,0 +1,289 @@
+/* ===== Reset & Base ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+}
+
+/* ===== Navigation ===== */
+.navbar {
+    background: rgba(15, 15, 30, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbar .logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-decoration: none;
+}
+
+.navbar .nav-links a {
+    color: #aaa;
+    text-decoration: none;
+    margin-left: 1.5rem;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+}
+
+.navbar .nav-links a:hover {
+    color: #fff;
+}
+
+/* ===== Dashboard ===== */
+.dashboard {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.dashboard h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.dashboard .subtitle {
+    color: #888;
+    font-size: 1.1rem;
+    margin-bottom: 3rem;
+}
+
+.cards {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    width: 280px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+
+.card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(102, 126, 234, 0.4);
+    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.15);
+}
+
+.card .icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.card h2 {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+}
+
+.card p {
+    color: #888;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* ===== Game Page Layout ===== */
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    min-height: calc(100vh - 60px);
+}
+
+.game-container h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.game-info {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.game-info span {
+    background: rgba(255, 255, 255, 0.06);
+    padding: 0.5rem 1.2rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.game-board {
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: #1a1a2e;
+}
+
+.game-controls {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    padding: 0.6rem 1.5rem;
+    border: 1px solid rgba(102, 126, 234, 0.5);
+    background: rgba(102, 126, 234, 0.15);
+    color: #b0b8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s, color 0.2s;
+}
+
+.btn:hover {
+    background: rgba(102, 126, 234, 0.3);
+    color: #fff;
+}
+
+/* ===== Tetris Specific ===== */
+.tetris-wrapper {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+.tetris-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.tetris-side .panel {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 1.2rem;
+    text-align: center;
+    min-width: 140px;
+}
+
+.tetris-side .panel h3 {
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tetris-side .panel .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #667eea;
+}
+
+/* ===== Omok Specific ===== */
+.omok-status {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem 1.5rem;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ===== Chess Specific ===== */
+.chess-wrapper {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+.chess-side {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 1.2rem;
+    min-width: 200px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.chess-side h3 {
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.chess-side .move-list {
+    font-size: 0.85rem;
+    line-height: 1.8;
+    color: #bbb;
+}
+
+.chess-status {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem 1.5rem;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ===== Overlay / Modal ===== */
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+}
+
+.overlay.active {
+    display: flex;
+}
+
+.overlay-content {
+    background: #1e1e32;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 3rem;
+    text-align: center;
+}
+
+.overlay-content h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.overlay-content p {
+    color: #aaa;
+    margin-bottom: 1.5rem;
+}

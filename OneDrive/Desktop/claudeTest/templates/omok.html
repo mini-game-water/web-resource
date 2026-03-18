@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omok - Game Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Game Hub</a>
+        <div class="nav-links">
+            <a href="/tetris">Tetris</a>
+            <a href="/omok">Omok</a>
+            <a href="/chess">Chess</a>
+        </div>
+    </nav>
+
+    <div class="game-container">
+        <h1>Omok (Five in a Row)</h1>
+        <div class="omok-status" id="status">Black's Turn</div>
+        <canvas id="omok-board" class="game-board" width="600" height="600"></canvas>
+        <div class="game-controls">
+            <button class="btn" id="restart-btn">New Game</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="win-overlay">
+        <div class="overlay-content">
+            <h2 id="win-message">Winner!</h2>
+            <button class="btn" id="overlay-restart-btn">Play Again</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/omok.js') }}"></script>
+</body>
+</html>
