@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris - Game Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Game Hub</a>
+        <div class="nav-links">
+            <a href="/tetris">Tetris</a>
+            <a href="/omok">Omok</a>
+            <a href="/chess">Chess</a>
+        </div>
+    </nav>
+
+    <div class="game-container">
+        <h1>Tetris</h1>
+        <div class="tetris-wrapper">
+            <div class="tetris-side">
+                <div class="panel">
+                    <h3>Score</h3>
+                    <div class="value" id="score">0</div>
+                </div>
+                <div class="panel">
+                    <h3>Level</h3>
+                    <div class="value" id="level">1</div>
+                </div>
+                <div class="panel">
+                    <h3>Lines</h3>
+                    <div class="value" id="lines">0</div>
+                </div>
+            </div>
+            <canvas id="tetris-board" class="game-board" width="300" height="600"></canvas>
+            <div class="tetris-side">
+                <div class="panel">
+                    <h3>Next</h3>
+                    <canvas id="next-piece" width="100" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="game-controls">
+            <button class="btn" id="start-btn">Start</button>
+            <button class="btn" id="pause-btn">Pause</button>
+        </div>
+        <p style="color:#666; margin-top:1rem; font-size:0.85rem;">Arrow keys: Move/Rotate &nbsp;|&nbsp; Space: Hard Drop</p>
+    </div>
+
+    <div class="overlay" id="game-over-overlay">
+        <div class="overlay-content">
+            <h2>Game Over</h2>
+            <p>Score: <span id="final-score">0</span></p>
+            <button class="btn" id="restart-btn">Play Again</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/tetris.js') }}"></script>
+</body>
+</html>
