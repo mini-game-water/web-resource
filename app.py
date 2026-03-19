@@ -238,8 +238,10 @@ def on_user_status(data):
     uid = data.get('user_id')
     status = data.get('status')
     if uid and status in ('online', 'chilling', 'ingame'):
-        db.update_user_status(uid, status)
         user = db.get_user(uid)
+        if not user or user.get('status') == 'offline':
+            return
+        db.update_user_status(uid, status)
         ip = user.get('public_ip', '') if user else ''
         broadcast_friend_status(uid, status, ip)
 

@@ -159,7 +159,10 @@
         socket.emit('join_lobby', { user_id: MY_USER });
 
         // ── Visibility / focus detection ──
+        let isLoggingOut = false;
+        document.querySelector('a[href="/logout"]').addEventListener('click', () => { isLoggingOut = true; });
         function emitStatus(status) {
+            if (isLoggingOut) return;
             socket.emit('user_status', { user_id: MY_USER, status: status });
         }
         document.addEventListener('visibilitychange', () => {
