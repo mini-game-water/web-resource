@@ -326,8 +326,9 @@ def on_join_game(data):
     sid_info[request.sid] = {'user_id': uid, 'room_id': rid, 'context': 'game'}
     game_conns.setdefault(rid, set()).add(uid)
     room = db.get_room(rid)
-    max_p = room.get('max_players', 2) if room else 2
-    if len(game_conns[rid]) >= max_p:
+    # Use actual player count (not max_players) for force-started games
+    actual_players = len(room.get('players', [])) if room else 2
+    if len(game_conns[rid]) >= actual_players:
         emit('game_ready', {}, room=rid)
 
 
@@ -478,29 +479,32 @@ def on_disconnect():
         leave_room(rid)
         if rid in waiting_conns:
             waiting_conns[rid].discard(uid)
-        # Remove player from DB room
-        updated_room = db.remove_player_from_room(rid, uid)
-        if updated_room:
-            players = updated_room.get('players', [])
-            if len(players) == 0:
-                # Room empty — delete it
-                db.delete_room(rid)
-                waiting_conns.pop(rid, None)
-                broadcast_rooms()
-            else:
-                # If host left, transfer to last joined player
-                if updated_room.get('host') == uid:
-                    new_host = players[-1]
-                    db.update_room_host(rid, new_host)
-                    updated_room['host'] = new_host
-                host = updated_room.get('host', players[0])
-                emit('room_update', {
-                    'players': players,
-                    'count': len(players),
-                    'max_players': updated_room.get('max_players', 2),
-                    'host': host,
-                }, room=rid)
-                broadcast_rooms()
+        # Only remove from DB if room is still waiting
+        # (if room is 'playing', player is navigating to the game page, not leaving)
+        room = db.get_room(rid)
+        if room and room.get('status') == 'waiting':
+            updated_room = db.remove_player_from_room(rid, uid)
+            if updated_room:
+                players = updated_room.get('players', [])
+                if len(players) == 0:
+                    # Room empty — delete it
+                    db.delete_room(rid)
+                    waiting_conns.pop(rid, None)
+                    broadcast_rooms()
+                else:
+                    # If host left, transfer to last joined player
+                    if updated_room.get('host') == uid:
+                        new_host = players[-1]
+                        db.update_room_host(rid, new_host)
+                        updated_room['host'] = new_host
+                    host = updated_room.get('host', players[0])
+                    emit('room_update', {
+                        'players': players,
+                        'count': len(players),
+                        'max_players': updated_room.get('max_players', 2),
+                        'host': host,
+                    }, room=rid)
+                    broadcast_rooms()
     elif info['context'] == 'game':
         leave_room(rid)
         if rid in game_conns:
