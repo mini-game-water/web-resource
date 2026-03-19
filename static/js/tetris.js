@@ -32,8 +32,10 @@
     let gameReady = false;
 
     // Opponent tracking (multi-player)
-    let opponents = {}; // user_id -> { board, score, level, lines, eliminated }
+    let opponents = {}; // user_id -> { board, score, level, lines, eliminated, piece }
     let eliminated = false;
+    let lastBroadcast = 0;
+    const BROADCAST_INTERVAL = 50; // ms throttle
 
     let canvas, ctx, nextCanvas, nextCtx;
     let board, piece, nextPiece, score, level, lines, gameOver, paused, dropInterval, timer;
@@ -92,16 +94,6 @@
             }
         clearLines();
         spawn();
-        if (isMultiplayer && socket) {
-            socket.emit('tetris_state', {
-                room_id: ROOM_ID,
-                user_id: MY_USER,
-                board: board,
-                score: score,
-                level: level,
-                lines: lines
-            });
-        }
     }
 
     function clearLines() {
@@ -201,6 +193,8 @@
                 for (let c = 0; c < piece.shape[r].length; c++)
                     if (piece.shape[r][c])
                         drawBlock(ctx, piece.x + c, piece.y + r, COLORS[piece.type]);
+
+        broadcastState();
     }
 
     function drawNext() {
@@ -218,24 +212,103 @@
                 }
     }
 
+    // ===== Broadcast State (with throttle) =====
+    function broadcastState() {
+        if (!isMultiplayer || !socket || isSpectator || gameOver) return;
+        const now = Date.now();
+        if (now - lastBroadcast < BROADCAST_INTERVAL) return;
+        lastBroadcast = now;
+        const payload = {
+            room_id: ROOM_ID,
+            user_id: MY_USER,
+            board: board,
+            score: score,
+            level: level,
+            lines: lines
+        };
+        if (piece) {
+            payload.piece = { type: piece.type, shape: piece.shape, x: piece.x, y: piece.y };
+        }
+        socket.emit('tetris_state', payload);
+    }
+
     // ===== Opponent / Spectator Board Drawing =====
-    function drawMiniBoard(canvasEl, boardData, isEliminated) {
+    function drawMiniBoard(canvasEl, boardData, isEliminated, pieceData) {
         const miniCtx = canvasEl.getContext('2d');
         const OB = canvasEl.width / COLS;
         miniCtx.fillStyle = isEliminated ? '#ddd' : BG_COLOR;
         miniCtx.fillRect(0, 0, canvasEl.width, canvasEl.height);
         if (!boardData) return;
+
+        // Grid lines
+        miniCtx.strokeStyle = 'rgba(0,0,0,0.04)';
+        for (let r = 0; r <= ROWS; r++) {
+            miniCtx.beginPath(); miniCtx.moveTo(0, r * OB); miniCtx.lineTo(canvasEl.width, r * OB); miniCtx.stroke();
+        }
+        for (let c = 0; c <= COLS; c++) {
+            miniCtx.beginPath(); miniCtx.moveTo(c * OB, 0); miniCtx.lineTo(c * OB, canvasEl.height); miniCtx.stroke();
+        }
+
+        // Locked blocks
         for (let r = 0; r < ROWS; r++)
             for (let c = 0; c < COLS; c++)
                 if (boardData[r] && boardData[r][c]) {
                     miniCtx.fillStyle = isEliminated ? '#bbb' : (COLORS[boardData[r][c]] || '#999');
                     miniCtx.fillRect(c * OB, r * OB, OB - 1, OB - 1);
+                    // Highlight
+                    if (!isEliminated) {
+                        miniCtx.fillStyle = 'rgba(255,255,255,0.2)';
+                        miniCtx.fillRect(c * OB, r * OB, OB - 1, 1);
+                        miniCtx.fillRect(c * OB, r * OB, 1, OB - 1);
+                    }
                 }
+
+        // Active falling piece
+        if (pieceData && !isEliminated) {
+            const shape = pieceData.shape;
+            const px = pieceData.x;
+            const py = pieceData.y;
+            const color = COLORS[pieceData.type] || '#999';
+
+            // Ghost piece (drop shadow)
+            let gy = py;
+            const validMini = (s, sx, sy) => {
+                for (let r = 0; r < s.length; r++)
+                    for (let c = 0; c < s[r].length; c++) {
+                        if (!s[r][c]) continue;
+                        const nx = sx + c, ny = sy + r;
+                        if (nx < 0 || nx >= COLS || ny >= ROWS) return false;
+                        if (ny >= 0 && boardData[ny] && boardData[ny][nx]) return false;
+                    }
+                return true;
+            };
+            while (validMini(shape, px, gy + 1)) gy++;
+            if (gy !== py) {
+                for (let r = 0; r < shape.length; r++)
+                    for (let c = 0; c < shape[r].length; c++)
+                        if (shape[r][c]) {
+                            miniCtx.fillStyle = 'rgba(0,0,0,0.06)';
+                            miniCtx.fillRect((px + c) * OB, (gy + r) * OB, OB - 1, OB - 1);
+                        }
+            }
+
+            // Active piece
+            for (let r = 0; r < shape.length; r++)
+                for (let c = 0; c < shape[r].length; c++)
+                    if (shape[r][c]) {
+                        miniCtx.fillStyle = color;
+                        miniCtx.fillRect((px + c) * OB, (py + r) * OB, OB - 1, OB - 1);
+                        miniCtx.fillStyle = 'rgba(255,255,255,0.2)';
+                        miniCtx.fillRect((px + c) * OB, (py + r) * OB, OB - 1, 1);
+                        miniCtx.fillRect((px + c) * OB, (py + r) * OB, 1, OB - 1);
+                    }
+        }
+
         if (isEliminated) {
             miniCtx.fillStyle = 'rgba(0,0,0,0.4)';
             miniCtx.fillRect(0, 0, canvasEl.width, canvasEl.height);
             miniCtx.fillStyle = '#fff';
-            miniCtx.font = 'bold 14px sans-serif';
+            miniCtx.font = `bold ${Math.max(10, Math.floor(OB * 2))}px sans-serif`;
             miniCtx.textAlign = 'center';
             miniCtx.textBaseline = 'middle';
             miniCtx.fillText('탈락', canvasEl.width / 2, canvasEl.height / 2);
@@ -247,17 +320,78 @@
         if (!panel) return;
         const players = isSpectator ? ROOM_PLAYERS : ROOM_PLAYERS.filter(p => p !== MY_USER);
         players.forEach(p => {
-            const div = document.createElement('div');
-            div.className = 'opponent-panel';
-            div.id = 'opp-' + p;
-            div.innerHTML = `
-                <h4>${p}</h4>
-                <canvas class="opponent-canvas" width="150" height="300"></canvas>
-                <div class="opponent-score-label">점수: <span class="opponent-score">0</span></div>
-            `;
-            panel.appendChild(div);
-            opponents[p] = { board: null, score: 0, level: 1, lines: 0, eliminated: false };
+            createSinglePanel(panel, p);
+            opponents[p] = { board: null, score: 0, level: 1, lines: 0, eliminated: false, piece: null };
         });
+        sortOpponentPanels();
+    }
+
+    function createSinglePanel(container, userId) {
+        const div = document.createElement('div');
+        div.className = 'opponent-panel';
+        div.id = 'opp-' + userId;
+        div.setAttribute('data-user', userId);
+        div.innerHTML = `
+            <div class="opponent-rank-badge"></div>
+            <h4>${userId}</h4>
+            <canvas class="opponent-canvas" width="150" height="300"></canvas>
+            <div class="opponent-score-label">점수: <span class="opponent-score">0</span></div>
+        `;
+        container.appendChild(div);
+    }
+
+    function sortOpponentPanels() {
+        const panel = document.getElementById('opponents-panel');
+        if (!panel) return;
+        // Build sorted list by score (descending), eliminated last
+        const sorted = Object.entries(opponents).sort((a, b) => {
+            if (a[1].eliminated !== b[1].eliminated) return a[1].eliminated ? 1 : -1;
+            return b[1].score - a[1].score;
+        });
+        // Reorder DOM + apply rank classes
+        sorted.forEach(([uid, data], idx) => {
+            const el = document.getElementById('opp-' + uid);
+            if (!el) return;
+            panel.appendChild(el); // moves element to end in DOM order
+            const rank = idx + 1;
+            el.classList.remove('rank-top', 'rank-lower');
+            if (rank <= 3) {
+                el.classList.add('rank-top');
+            } else {
+                el.classList.add('rank-lower');
+            }
+            // Resize canvas based on rank
+            const canvas = el.querySelector('.opponent-canvas');
+            if (canvas) {
+                if (rank <= 3) {
+                    canvas.width = 150; canvas.height = 300;
+                } else {
+                    canvas.width = 80; canvas.height = 160;
+                }
+            }
+            // Update rank badge
+            const badge = el.querySelector('.opponent-rank-badge');
+            if (badge) {
+                badge.textContent = data.eliminated ? '탈락' : '#' + rank;
+                badge.className = 'opponent-rank-badge' + (data.eliminated ? ' badge-eliminated' : rank <= 3 ? ' badge-top' : '');
+            }
+            // Redraw with current data
+            if (canvas) drawMiniBoard(canvas, data.board, data.eliminated, data.piece);
+        });
+    }
+
+    let lastSortOrder = '';
+    function sortIfChanged() {
+        // Build a string key from current scores to detect rank changes
+        const sorted = Object.entries(opponents).sort((a, b) => {
+            if (a[1].eliminated !== b[1].eliminated) return a[1].eliminated ? 1 : -1;
+            return b[1].score - a[1].score;
+        });
+        const key = sorted.map(([uid, d]) => uid + ':' + d.score + ':' + d.eliminated).join(',');
+        if (key !== lastSortOrder) {
+            lastSortOrder = key;
+            sortOpponentPanels();
+        }
     }
 
     function updateOpponent(userId, data) {
@@ -266,12 +400,16 @@
         opponents[userId].score = data.score;
         opponents[userId].level = data.level || 1;
         opponents[userId].lines = data.lines || 0;
+        if (data.piece) opponents[userId].piece = data.piece;
+        else opponents[userId].piece = null;
+
         const panel = document.getElementById('opp-' + userId);
         if (panel) {
-            drawMiniBoard(panel.querySelector('.opponent-canvas'), data.board, opponents[userId].eliminated);
+            drawMiniBoard(panel.querySelector('.opponent-canvas'), data.board, opponents[userId].eliminated, opponents[userId].piece);
             const scoreEl = panel.querySelector('.opponent-score');
             if (scoreEl) scoreEl.textContent = data.score;
         }
+        sortIfChanged();
     }
 
     // ===== Game Loop =====
@@ -382,18 +520,16 @@
                     for (const uid of data.eliminated) {
                         if (opponents[uid]) {
                             opponents[uid].eliminated = true;
-                            const panel = document.getElementById('opp-' + uid);
-                            if (panel) drawMiniBoard(panel.querySelector('.opponent-canvas'), opponents[uid].board, true);
                         }
                     }
                 }
+                sortIfChanged();
             });
 
             socket.on('player_eliminated', (data) => {
                 if (opponents[data.user_id]) {
                     opponents[data.user_id].eliminated = true;
-                    const panel = document.getElementById('opp-' + data.user_id);
-                    if (panel) drawMiniBoard(panel.querySelector('.opponent-canvas'), opponents[data.user_id].board, true);
+                    sortIfChanged();
                 }
             });
 
@@ -471,13 +607,13 @@
             socket.on('player_eliminated', (data) => {
                 if (opponents[data.user_id]) {
                     opponents[data.user_id].eliminated = true;
-                    const panel = document.getElementById('opp-' + data.user_id);
-                    if (panel) drawMiniBoard(panel.querySelector('.opponent-canvas'), opponents[data.user_id].board, true);
+                    opponents[data.user_id].piece = null;
+                    sortIfChanged();
                 }
             });
 
             socket.on('game_winner', (data) => {
-                if (gameOver && !eliminated) return; // already showing win
+                if (gameOver && !eliminated) return;
                 gameOver = true;
                 clearInterval(timer);
                 const scoreEl = document.getElementById("final-score");
@@ -505,8 +641,8 @@
                 const uid = data.user_id;
                 if (opponents[uid]) {
                     opponents[uid].eliminated = true;
-                    const panel = document.getElementById('opp-' + uid);
-                    if (panel) drawMiniBoard(panel.querySelector('.opponent-canvas'), opponents[uid].board, true);
+                    opponents[uid].piece = null;
+                    sortIfChanged();
                 }
                 // For 2-player
                 if (typeof ROOM_PLAYERS !== 'undefined' && ROOM_PLAYERS.length <= 2) {

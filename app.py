@@ -370,7 +370,8 @@ def on_tetris_state(data):
         'board': data['board'],
         'score': data['score'],
         'level': data.get('level', 1),
-        'lines': data.get('lines', 0)
+        'lines': data.get('lines', 0),
+        'piece': data.get('piece'),
     }
     emit('opponent_state', data, room=rid, include_self=False)
 

@@ -1041,6 +1041,8 @@ body {
     gap: 1rem;
     justify-content: center;
     margin-top: 1.5rem;
+    align-items: flex-start;
+    transition: all 0.3s ease;
 }
 
 .opponent-panel {
@@ -1049,6 +1051,26 @@ body {
     border-radius: 10px;
     padding: 0.8rem;
     text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.opponent-panel.rank-top {
+    border-color: #c4aa82;
+}
+
+.opponent-panel.rank-lower {
+    padding: 0.5rem;
+}
+
+.opponent-panel.rank-lower h4 {
+    font-size: 0.7rem;
+    max-width: 80px;
+    margin-bottom: 0.2rem;
+}
+
+.opponent-panel.rank-lower .opponent-score-label {
+    font-size: 0.65rem;
 }
 
 .opponent-panel h4 {
@@ -1071,6 +1093,27 @@ body {
     font-size: 0.8rem;
     color: #9a8b78;
     margin-top: 0.3rem;
+}
+
+.opponent-rank-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #a38b6d;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    line-height: 1.2;
+}
+
+.opponent-rank-badge.badge-top {
+    background: #c4aa82;
+}
+
+.opponent-rank-badge.badge-eliminated {
+    background: #999;
 }
 
 /* ===== Modal Options ===== */
