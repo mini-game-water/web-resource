@@ -308,6 +308,14 @@
         socket = io();
         socket.emit('join_game', { room_id: ROOM_ID, user_id: MY_USER });
 
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && !gameOver && gameReady) {
+                gameOver = true;
+                socket.emit('game_over_event', { room_id: ROOM_ID, loser: MY_USER });
+                window.location.href = '/';
+            }
+        });
+
         socket.on('game_ready', () => {
             gameReady = true;
             const el = document.getElementById('mp-status');

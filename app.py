@@ -44,9 +44,9 @@ def broadcast_rooms():
     socketio.emit('rooms_updated', {'rooms': room_list}, room='lobby')
 
 
-def broadcast_friend_status(user_id, logged_in):
+def broadcast_friend_status(user_id, status):
     socketio.emit('friend_status_changed', {
-        'id': user_id, 'logged_in': logged_in
+        'id': user_id, 'status': status
     }, room='lobby')
 
 
@@ -64,7 +64,7 @@ def login():
         if user and user['pw'] == pw:
             session['user_id'] = uid
             db.update_user_login(uid, client_ip())
-            broadcast_friend_status(uid, True)
+            broadcast_friend_status(uid, 'online')
             return redirect(url_for('index'))
         error = '아이디 또는 비밀번호가 올바르지 않습니다.'
     return render_template('login.html', error=error)
@@ -87,7 +87,7 @@ def logout():
     uid = session.pop('user_id', None)
     if uid:
         db.update_user_logout(uid)
-        broadcast_friend_status(uid, False)
+        broadcast_friend_status(uid, 'offline')
     return redirect(url_for('login'))
 
 
@@ -109,7 +109,7 @@ def index():
             friends.append({
                 'id': fid,
                 'score': f.get('score', 0),
-                'logged_in': f.get('logged_in', False),
+                'status': f.get('status', 'offline'),
                 'nearby': bool(my_ip and f.get('public_ip') == my_ip)
             })
 
@@ -133,7 +133,7 @@ def room_page(room_id):
         if f:
             friends.append({
                 'id': fid,
-                'logged_in': f.get('logged_in', False)
+                'status': f.get('status', 'offline')
             })
     return render_template('room.html', room=room, user_id=uid, friends=friends)
 
@@ -225,6 +225,15 @@ def on_join_lobby(data):
     join_room('lobby')
     lobby_sids[uid] = request.sid
     sid_info[request.sid] = {'user_id': uid, 'room_id': 'lobby', 'context': 'lobby'}
+
+
+@socketio.on('user_status')
+def on_user_status(data):
+    uid = data.get('user_id')
+    status = data.get('status')
+    if uid and status in ('online', 'chilling', 'ingame'):
+        db.update_user_status(uid, status)
+        broadcast_friend_status(uid, status)
 
 
 @socketio.on('join_waiting')

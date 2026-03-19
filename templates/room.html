@@ -40,11 +40,11 @@
             <h3>친구 초대</h3>
             <div class="friend-list">
                 {% for f in friends %}
-                <div class="friend-invite-item {{ 'online' if f.logged_in else 'offline' }}" id="invite-{{ f.id }}">
+                <div class="friend-invite-item status-{{ f.status }}" id="invite-{{ f.id }}">
                     <div class="friend-status-dot"></div>
                     <span class="friend-name">{{ f.id }}</span>
                     <button class="btn btn-invite"
-                            {% if not f.logged_in %}disabled{% endif %}
+                            {% if f.status not in ['online', 'chilling'] %}disabled{% endif %}
                             onclick="inviteFriend('{{ f.id }}')">
                         초대
                     </button>

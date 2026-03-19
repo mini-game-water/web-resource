@@ -12,14 +12,22 @@
     let gameReady = !isMultiplayer;
 
     let board, currentPlayer, gameOver;
+    let lastMoves = { 1: null, 2: null };
+
+    const TURN_TIME = 45;
+    let turnTimeLeft = TURN_TIME;
+    let turnTimerInterval = null;
 
     function init() {
         board = Array.from({ length: SIZE }, () => new Array(SIZE).fill(0));
         currentPlayer = 1;
         gameOver = false;
+        lastMoves = { 1: null, 2: null };
+        stopTurnTimer();
         updateStatus();
         draw();
         document.getElementById("win-overlay").classList.remove("active");
+        if (!isMultiplayer || gameReady) startTurnTimer();
     }
 
     function updateStatus() {
@@ -28,7 +36,44 @@
             const isMyTurn = currentPlayer === myPlayer;
             text += isMyTurn ? " — 내 차례" : " — 상대 차례";
         }
+        text += ` — ${turnTimeLeft}초`;
         document.getElementById("status").textContent = text;
+    }
+
+    function startTurnTimer() {
+        stopTurnTimer();
+        turnTimeLeft = TURN_TIME;
+        updateStatus();
+        turnTimerInterval = setInterval(() => {
+            turnTimeLeft--;
+            updateStatus();
+            if (turnTimeLeft <= 0) {
+                stopTurnTimer();
+                placeRandomStone();
+            }
+        }, 1000);
+    }
+
+    function stopTurnTimer() {
+        if (turnTimerInterval) {
+            clearInterval(turnTimerInterval);
+            turnTimerInterval = null;
+        }
+    }
+
+    function placeRandomStone() {
+        if (gameOver) return;
+        const emptyCells = [];
+        for (let r = 0; r < SIZE; r++)
+            for (let c = 0; c < SIZE; c++)
+                if (board[r][c] === 0) emptyCells.push({ r, c });
+        if (emptyCells.length === 0) return;
+        const pick = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        const placedPlayer = currentPlayer;
+        placeStone(pick.r, pick.c, placedPlayer);
+        if (isMultiplayer && socket) {
+            socket.emit('game_move', { room_id: ROOM_ID, row: pick.r, col: pick.c, player: placedPlayer });
+        }
     }
 
     // ===== Drawing =====
@@ -75,6 +120,18 @@
                 ctx.lineWidth = 1;
                 ctx.stroke();
             }
+
+        // Draw red dots on last moves
+        for (const p of [1, 2]) {
+            if (lastMoves[p]) {
+                const lx = PADDING + lastMoves[p].col * CELL;
+                const ly = PADDING + lastMoves[p].row * CELL;
+                ctx.beginPath();
+                ctx.arc(lx, ly, CELL * 0.12, 0, Math.PI * 2);
+                ctx.fillStyle = "#ff0000";
+                ctx.fill();
+            }
+        }
     }
 
     // ===== Win Check =====
@@ -108,13 +165,16 @@
     // ===== Place Stone =====
     function placeStone(row, col, player) {
         board[row][col] = player;
+        lastMoves[player] = { row, col };
         draw();
         if (checkWin(row, col, player)) {
             handleWin(player);
+            stopTurnTimer();
             return;
         }
         currentPlayer = currentPlayer === 1 ? 2 : 1;
         updateStatus();
+        startTurnTimer();
     }
 
     // ===== Input =====
@@ -150,12 +210,22 @@
         socket = io();
         socket.emit('join_game', { room_id: ROOM_ID, user_id: MY_USER });
 
+        // Tab focus forfeit
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && !gameOver && gameReady) {
+                gameOver = true;
+                socket.emit('game_over_event', { room_id: ROOM_ID, loser: MY_USER });
+                window.location.href = '/';
+            }
+        });
+
         socket.on('game_ready', () => {
             gameReady = true;
             const el = document.getElementById('mp-status');
             if (el) el.textContent = '게임 시작!';
             setTimeout(() => { if (el) el.style.display = 'none'; }, 1000);
             updateStatus();
+            startTurnTimer();
         });
 
         socket.on('opponent_move', (data) => {
@@ -165,6 +235,7 @@
         socket.on('opponent_disconnected', () => {
             if (!gameOver) {
                 gameOver = true;
+                stopTurnTimer();
                 document.getElementById("status").textContent = "승리!";
                 document.getElementById("win-message").innerHTML = '승리!<br><span class="disconnect-sub">상대방이 나갔습니다!</span>';
                 document.getElementById("win-overlay").classList.add("active");

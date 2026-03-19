@@ -40,7 +40,7 @@ def create_user(user_id, pw):
                 'user_id': user_id,
                 'pw': pw,
                 'score': 0,
-                'logged_in': False,
+                'status': 'offline',
                 'public_ip': '',
                 'friends': [],
             },
@@ -56,16 +56,27 @@ def create_user(user_id, pw):
 def update_user_login(user_id, public_ip):
     _users_table.update_item(
         Key={'user_id': user_id},
-        UpdateExpression='SET logged_in = :t, public_ip = :ip',
-        ExpressionAttributeValues={':t': True, ':ip': public_ip},
+        UpdateExpression='SET #s = :status, public_ip = :ip',
+        ExpressionAttributeNames={'#s': 'status'},
+        ExpressionAttributeValues={':status': 'online', ':ip': public_ip},
     )
 
 
 def update_user_logout(user_id):
     _users_table.update_item(
         Key={'user_id': user_id},
-        UpdateExpression='SET logged_in = :f, public_ip = :empty',
-        ExpressionAttributeValues={':f': False, ':empty': ''},
+        UpdateExpression='SET #s = :status, public_ip = :empty',
+        ExpressionAttributeNames={'#s': 'status'},
+        ExpressionAttributeValues={':status': 'offline', ':empty': ''},
+    )
+
+
+def update_user_status(user_id, status):
+    _users_table.update_item(
+        Key={'user_id': user_id},
+        UpdateExpression='SET #s = :status',
+        ExpressionAttributeNames={'#s': 'status'},
+        ExpressionAttributeValues={':status': status},
     )
 
 
@@ -100,7 +111,8 @@ def batch_get_users(user_ids):
             RequestItems={
                 _users_table.name: {
                     'Keys': batch,
-                    'ProjectionExpression': 'user_id, score, logged_in, public_ip',
+                    'ProjectionExpression': 'user_id, score, #s, public_ip',
+                    'ExpressionAttributeNames': {'#s': 'status'},
                 }
             }
         )

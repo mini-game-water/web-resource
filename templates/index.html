@@ -42,6 +42,12 @@
                     <h2>대전 방 목록</h2>
                     <button class="btn btn-primary" id="create-room-btn">방 만들기</button>
                 </div>
+                <div class="room-filter-tabs">
+                    <button class="filter-tab active" data-game="all">전체</button>
+                    <button class="filter-tab" data-game="tetris">Tetris</button>
+                    <button class="filter-tab" data-game="omok">Omok</button>
+                    <button class="filter-tab" data-game="chess">Chess</button>
+                </div>
                 <div class="room-list" id="room-list">
                     {% if rooms %}
                     {% for room in rooms %}
@@ -67,13 +73,23 @@
 
         <aside class="friends-sidebar">
             <h3>친구 목록</h3>
-            <div class="friend-add">
-                <input type="text" id="friend-id-input" placeholder="친구 ID">
-                <button class="btn" onclick="addFriend()">추가</button>
+            <div class="friend-controls">
+                <select id="friend-filter" class="friend-filter-select">
+                    <option value="all">전체</option>
+                    <option value="online">온라인</option>
+                    <option value="chilling">쉬는 중</option>
+                    <option value="ingame">게임중</option>
+                    <option value="offline">오프라인</option>
+                    <option value="nearby">근처</option>
+                </select>
+                <div class="friend-add">
+                    <input type="text" id="friend-id-input" placeholder="친구 ID">
+                    <button class="btn" onclick="addFriend()">추가</button>
+                </div>
             </div>
             <div class="friend-list" id="friend-list">
                 {% for f in friends %}
-                <div class="friend-item {{ 'online' if f.logged_in else 'offline' }}" data-uid="{{ f.id }}">
+                <div class="friend-item status-{{ f.status }}" data-uid="{{ f.id }}" data-status="{{ f.status }}" data-nearby="{{ 'true' if f.nearby else 'false' }}">
                     <div class="friend-status-dot"></div>
                     <div class="friend-info">
                         <span class="friend-name">{{ f.id }}</span>
@@ -82,7 +98,9 @@
                         <span class="friend-nearby">바로 옆에 있는 친구</span>
                         {% endif %}
                     </div>
-                    <span class="friend-status-text">{{ '온라인' if f.logged_in else '오프라인' }}</span>
+                    <span class="friend-status-text">
+                        {% if f.status == 'online' %}온라인{% elif f.status == 'chilling' %}쉬는 중{% elif f.status == 'ingame' %}게임중{% else %}오프라인{% endif %}
+                    </span>
                 </div>
                 {% endfor %}
                 {% if not friends %}
@@ -149,18 +167,43 @@
         const socket = io();
         socket.emit('join_lobby', { user_id: MY_USER });
 
+        // ── Visibility / focus detection ──
+        function emitStatus(status) {
+            socket.emit('user_status', { user_id: MY_USER, status: status });
+        }
+        document.addEventListener('visibilitychange', () => {
+            emitStatus(document.hidden ? 'chilling' : 'online');
+        });
+        window.addEventListener('focus', () => emitStatus('online'));
+        window.addEventListener('blur', () => emitStatus('chilling'));
+
         let pendingJoinRoomId = null;
         let currentInviteRoomId = null;
         let inviteTimerId = null;
 
-        // ── Real-time room list ──
-        socket.on('rooms_updated', (data) => {
+        let allRooms = [];
+        let activeGameFilter = 'all';
+
+        // ── Room filter tabs ──
+        document.querySelectorAll('.filter-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeGameFilter = btn.dataset.game;
+                renderRooms();
+            });
+        });
+
+        function renderRooms() {
+            const filtered = activeGameFilter === 'all'
+                ? allRooms
+                : allRooms.filter(r => r.game === activeGameFilter);
             const list = document.getElementById('room-list');
-            if (data.rooms.length === 0) {
+            if (filtered.length === 0) {
                 list.innerHTML = '<p class="empty-msg">생성된 방이 없습니다.</p>';
                 return;
             }
-            list.innerHTML = data.rooms.map(r => `
+            list.innerHTML = filtered.map(r => `
                 <div class="room-item">
                     <div class="room-info-row">
                         <span class="room-game-badge">${r.game.toUpperCase()}</span>
@@ -174,14 +217,39 @@
                     <button class="btn btn-join" onclick="joinRoom('${r.id}', ${r.password})">참가</button>
                 </div>
             `).join('');
+        }
+
+        // ── Real-time room list ──
+        socket.on('rooms_updated', (data) => {
+            allRooms = data.rooms;
+            renderRooms();
         });
+
+        // ── Friend filter ──
+        document.getElementById('friend-filter').addEventListener('change', applyFriendFilter);
+
+        function applyFriendFilter() {
+            const filter = document.getElementById('friend-filter').value;
+            document.querySelectorAll('.friend-item').forEach(el => {
+                const status = el.dataset.status;
+                const nearby = el.dataset.nearby === 'true';
+                let show = false;
+                if (filter === 'all') show = true;
+                else if (filter === 'nearby') show = nearby;
+                else show = (status === filter);
+                el.style.display = show ? '' : 'none';
+            });
+        }
 
         // ── Real-time friend status ──
         socket.on('friend_status_changed', (data) => {
             const el = document.querySelector(`.friend-item[data-uid="${data.id}"]`);
             if (!el) return;
-            el.className = 'friend-item ' + (data.logged_in ? 'online' : 'offline');
-            el.querySelector('.friend-status-text').textContent = data.logged_in ? '온라인' : '오프라인';
+            el.className = 'friend-item status-' + data.status;
+            el.dataset.status = data.status;
+            const labels = {online: '온라인', chilling: '쉬는 중', ingame: '게임중', offline: '오프라인'};
+            el.querySelector('.friend-status-text').textContent = labels[data.status] || '오프라인';
+            applyFriendFilter();
         });
 
         // ── Invite received ──
