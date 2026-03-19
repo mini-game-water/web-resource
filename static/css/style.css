@@ -163,10 +163,11 @@ body {
 /* ===== Index Layout ===== */
 .index-layout {
     display: flex;
-    max-width: 1300px;
     margin: 0 auto;
     gap: 2rem;
     padding: 0 2rem;
+    height: calc(100vh - 60px);
+    overflow: hidden;
 }
 
 .index-layout .dashboard {
@@ -176,68 +177,93 @@ body {
 
 /* ===== Dashboard ===== */
 .dashboard {
-    max-width: 1000px;
     margin: 0 auto;
-    padding: 4rem 0;
+    padding: 2rem 0;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .dashboard h1 {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
+    font-size: 2rem;
+    margin-bottom: 0.8rem;
     color: #a38b6d;
+    flex-shrink: 0;
 }
 
-.cards {
+/* ===== Game List (compact) ===== */
+.game-list {
     display: flex;
-    gap: 2rem;
-    justify-content: center;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-shrink: 0;
+    overflow-x: auto;
 }
 
-.card {
+.game-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
     background: rgba(255, 255, 255, 0.6);
     border: 1px solid #e6ddd3;
-    border-radius: 16px;
-    padding: 2.5rem 2rem;
-    width: 280px;
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
     text-decoration: none;
     color: inherit;
-    transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.card:hover {
-    transform: translateY(-6px);
+.game-list-item:hover {
     border-color: #c4aa82;
-    box-shadow: 0 12px 40px rgba(163, 139, 109, 0.15);
+    box-shadow: 0 4px 12px rgba(163, 139, 109, 0.12);
 }
 
-.card .icon {
-    width: 96px;
-    height: 96px;
-    margin: 0 auto 1rem;
-    border: 2px dashed #d4c8b8;
-    border-radius: 12px;
-    background: #f5ede3;
+.game-list-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #a38b6d;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
-.card h2 {
-    font-size: 1.3rem;
-    margin-bottom: 0.5rem;
+.game-list-info {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    min-width: 0;
+}
+
+.game-list-name {
+    font-weight: 600;
+    font-size: 0.95rem;
     color: #5a4e42;
 }
 
-.card p {
+.game-list-desc {
+    font-size: 0.8rem;
     color: #9a8b78;
-    font-size: 0.9rem;
-    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ===== Friends Sidebar ===== */
 .friends-sidebar {
     width: 280px;
     flex-shrink: 0;
-    padding-top: 4rem;
+    padding-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .friends-sidebar h3 {
@@ -271,6 +297,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    overflow-y: auto;
+    max-height: calc(20 * 52px);
 }
 
 .friend-item {
@@ -332,8 +360,12 @@ body {
 
 /* ===== Room Section ===== */
 .room-section {
-    margin-top: 3rem;
+    margin-top: 1rem;
     text-align: left;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .room-header {
@@ -352,6 +384,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .room-item {
@@ -369,6 +404,8 @@ body {
     align-items: center;
     gap: 0.5rem;
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .room-game-badge {
@@ -385,6 +422,10 @@ body {
 .room-name {
     font-weight: 600;
     color: #5a4e42;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .room-lock {
@@ -396,6 +437,8 @@ body {
     gap: 1rem;
     font-size: 0.85rem;
     color: #9a8b78;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .btn-join {
@@ -408,6 +451,16 @@ body {
     text-align: center;
     padding: 2rem;
     font-size: 0.9rem;
+}
+
+.room-load-more {
+    text-align: center;
+    padding: 0.8rem 0;
+    flex-shrink: 0;
+}
+
+.room-load-more .btn {
+    width: 100%;
 }
 
 /* ===== Create Room Modal ===== */

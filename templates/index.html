@@ -18,22 +18,28 @@
     <div class="index-layout">
         <main class="dashboard">
             <h1>Game Hub</h1>
-            <br><br>
-            <div class="cards">
-                <a href="/tetris" class="card">
-                    <div class="icon"></div>
-                    <h2>Tetris</h2>
-                    <p>클래식 블록 쌓기 게임. 줄을 완성하여 점수를 획득하세요!</p>
+
+            <div class="game-list">
+                <a href="/tetris" class="game-list-item">
+                    <div class="game-list-icon">T</div>
+                    <div class="game-list-info">
+                        <span class="game-list-name">Tetris</span>
+                        <span class="game-list-desc">클래식 블록 쌓기 게임. 줄을 완성하여 점수를 획득하세요!</span>
+                    </div>
                 </a>
-                <a href="/omok" class="card">
-                    <div class="icon"></div>
-                    <h2>Omok</h2>
-                    <p>15×15 보드에서 2인 대전. 먼저 5개를 연속으로 놓으면 승리!</p>
+                <a href="/omok" class="game-list-item">
+                    <div class="game-list-icon">O</div>
+                    <div class="game-list-info">
+                        <span class="game-list-name">Omok</span>
+                        <span class="game-list-desc">15x15 보드에서 2인 대전. 먼저 5개를 연속으로 놓으면 승리!</span>
+                    </div>
                 </a>
-                <a href="/chess" class="card">
-                    <div class="icon"></div>
-                    <h2>Chess</h2>
-                    <p>전략의 정수, 체스. 상대의 킹을 체크메이트 하세요!</p>
+                <a href="/chess" class="game-list-item">
+                    <div class="game-list-icon">C</div>
+                    <div class="game-list-info">
+                        <span class="game-list-name">Chess</span>
+                        <span class="game-list-desc">전략의 정수, 체스. 상대의 킹을 체크메이트 하세요!</span>
+                    </div>
                 </a>
             </div>
 
@@ -48,25 +54,9 @@
                     <button class="filter-tab" data-game="omok">Omok</button>
                     <button class="filter-tab" data-game="chess">Chess</button>
                 </div>
-                <div class="room-list" id="room-list">
-                    {% if rooms %}
-                    {% for room in rooms %}
-                    <div class="room-item">
-                        <div class="room-info-row">
-                            <span class="room-game-badge">{{ room.game | upper }}</span>
-                            <span class="room-name">{{ room.name }}</span>
-                            {% if room.password %}<span class="room-lock">🔒</span>{% endif %}
-                        </div>
-                        <div class="room-meta">
-                            <span>호스트: {{ room.host }}</span>
-                            <span>{{ room.players | length }}/{{ room.max_players }}명</span>
-                        </div>
-                        <button class="btn btn-join" onclick="joinRoom('{{ room.room_id }}', {{ 'true' if room.password else 'false' }})">참가</button>
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <p class="empty-msg">생성된 방이 없습니다.</p>
-                    {% endif %}
+                <div class="room-list" id="room-list"></div>
+                <div class="room-load-more" id="room-load-more" style="display:none;">
+                    <button class="btn" id="load-more-btn">더 보기</button>
                 </div>
             </section>
         </main>
@@ -164,6 +154,7 @@
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <script>
         const MY_USER = "{{ user_id }}";
+        const MY_IP = "{{ user.get('public_ip', '') }}";
         const socket = io();
         socket.emit('join_lobby', { user_id: MY_USER });
 
@@ -181,8 +172,11 @@
         let currentInviteRoomId = null;
         let inviteTimerId = null;
 
-        let allRooms = [];
+        // ── Room data ──
+        const ROOMS_PER_PAGE = 10;
+        let allRooms = {{ rooms | tojson }};
         let activeGameFilter = 'all';
+        let roomPage = 0;
 
         // ── Room filter tabs ──
         document.querySelectorAll('.filter-tab').forEach(btn => {
@@ -190,6 +184,7 @@
                 document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 activeGameFilter = btn.dataset.game;
+                roomPage = 0;
                 renderRooms();
             });
         });
@@ -199,11 +194,15 @@
                 ? allRooms
                 : allRooms.filter(r => r.game === activeGameFilter);
             const list = document.getElementById('room-list');
-            if (filtered.length === 0) {
+            const loadMore = document.getElementById('room-load-more');
+            const end = (roomPage + 1) * ROOMS_PER_PAGE;
+            const visible = filtered.slice(0, end);
+            if (visible.length === 0) {
                 list.innerHTML = '<p class="empty-msg">생성된 방이 없습니다.</p>';
+                loadMore.style.display = 'none';
                 return;
             }
-            list.innerHTML = filtered.map(r => `
+            list.innerHTML = visible.map(r => `
                 <div class="room-item">
                     <div class="room-info-row">
                         <span class="room-game-badge">${r.game.toUpperCase()}</span>
@@ -217,7 +216,16 @@
                     <button class="btn btn-join" onclick="joinRoom('${r.id}', ${r.password})">참가</button>
                 </div>
             `).join('');
+            loadMore.style.display = (end < filtered.length) ? '' : 'none';
         }
+
+        document.getElementById('load-more-btn').addEventListener('click', () => {
+            roomPage++;
+            renderRooms();
+        });
+
+        // Initial render
+        renderRooms();
 
         // ── Real-time room list ──
         socket.on('rooms_updated', (data) => {
@@ -241,12 +249,29 @@
             });
         }
 
-        // ── Real-time friend status ──
+        // ── Real-time friend status (with nearby update) ──
         socket.on('friend_status_changed', (data) => {
             const el = document.querySelector(`.friend-item[data-uid="${data.id}"]`);
             if (!el) return;
             el.className = 'friend-item status-' + data.status;
             el.dataset.status = data.status;
+
+            // Update nearby status
+            const isNearby = !!(MY_IP && data.public_ip && data.public_ip === MY_IP);
+            el.dataset.nearby = isNearby ? 'true' : 'false';
+            const infoDiv = el.querySelector('.friend-info');
+            let nearbyBadge = infoDiv.querySelector('.friend-nearby');
+            if (isNearby) {
+                if (!nearbyBadge) {
+                    nearbyBadge = document.createElement('span');
+                    nearbyBadge.className = 'friend-nearby';
+                    nearbyBadge.textContent = '바로 옆에 있는 친구';
+                    infoDiv.appendChild(nearbyBadge);
+                }
+            } else {
+                if (nearbyBadge) nearbyBadge.remove();
+            }
+
             const labels = {online: '온라인', chilling: '쉬는 중', ingame: '게임중', offline: '오프라인'};
             el.querySelector('.friend-status-text').textContent = labels[data.status] || '오프라인';
             applyFriendFilter();

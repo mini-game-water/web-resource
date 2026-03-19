@@ -44,9 +44,9 @@ def broadcast_rooms():
     socketio.emit('rooms_updated', {'rooms': room_list}, room='lobby')
 
 
-def broadcast_friend_status(user_id, status):
+def broadcast_friend_status(user_id, status, public_ip=''):
     socketio.emit('friend_status_changed', {
-        'id': user_id, 'status': status
+        'id': user_id, 'status': status, 'public_ip': public_ip
     }, room='lobby')
 
 
@@ -63,8 +63,9 @@ def login():
         user = db.get_user(uid)
         if user and user['pw'] == pw:
             session['user_id'] = uid
-            db.update_user_login(uid, client_ip())
-            broadcast_friend_status(uid, 'online')
+            ip = client_ip()
+            db.update_user_login(uid, ip)
+            broadcast_friend_status(uid, 'online', ip)
             return redirect(url_for('index'))
         error = '아이디 또는 비밀번호가 올바르지 않습니다.'
     return render_template('login.html', error=error)
@@ -113,7 +114,12 @@ def index():
                 'nearby': bool(my_ip and f.get('public_ip') == my_ip)
             })
 
-    room_list = db.list_waiting_rooms()
+    waiting = db.list_waiting_rooms()
+    room_list = [{
+        'id': r['room_id'], 'name': r['name'], 'game': r['game'],
+        'password': bool(r.get('password')), 'host': r['host'],
+        'player_count': len(r.get('players', [])), 'max_players': r.get('max_players', 2)
+    } for r in waiting]
     return render_template('index.html', user_id=uid, user=user, friends=friends, rooms=room_list)
 
 
@@ -233,7 +239,9 @@ def on_user_status(data):
     status = data.get('status')
     if uid and status in ('online', 'chilling', 'ingame'):
         db.update_user_status(uid, status)
-        broadcast_friend_status(uid, status)
+        user = db.get_user(uid)
+        ip = user.get('public_ip', '') if user else ''
+        broadcast_friend_status(uid, status, ip)
 
 
 @socketio.on('join_waiting')
