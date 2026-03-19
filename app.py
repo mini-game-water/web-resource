@@ -15,7 +15,9 @@ socketio = SocketIO(app, async_mode='gevent')
 sid_info = {}
 waiting_conns = {}
 game_conns = {}
-lobby_sids = {}  # user_id -> sid (index page connections)
+lobby_sids = {}  # user_id -> sid (index page + spectator connections)
+spectator_conns = {}  # room_id -> set of user_ids
+game_states = {}  # room_id -> cached game state for spectators
 
 
 def login_required(f):
@@ -39,8 +41,17 @@ def broadcast_rooms():
     room_list = [{
         'id': r['room_id'], 'name': r['name'], 'game': r['game'],
         'password': bool(r.get('password')), 'host': r['host'],
-        'player_count': len(r.get('players', [])), 'max_players': r.get('max_players', 2)
+        'player_count': len(r.get('players', [])), 'max_players': r.get('max_players', 2),
+        'mode': 'waiting'
     } for r in waiting]
+    spectatable = db.list_spectatable_rooms()
+    room_list += [{
+        'id': r['room_id'], 'name': r['name'], 'game': r['game'],
+        'password': False, 'host': r['host'],
+        'player_count': len(r.get('players', [])), 'max_players': r.get('max_players', 2),
+        'mode': 'spectate',
+        'spectator_count': len(spectator_conns.get(r['room_id'], set()))
+    } for r in spectatable]
     socketio.emit('rooms_updated', {'rooms': room_list}, room='lobby')
 
 
@@ -118,8 +129,17 @@ def index():
     room_list = [{
         'id': r['room_id'], 'name': r['name'], 'game': r['game'],
         'password': bool(r.get('password')), 'host': r['host'],
-        'player_count': len(r.get('players', [])), 'max_players': r.get('max_players', 2)
+        'player_count': len(r.get('players', [])), 'max_players': r.get('max_players', 2),
+        'mode': 'waiting'
     } for r in waiting]
+    spectatable = db.list_spectatable_rooms()
+    room_list += [{
+        'id': r['room_id'], 'name': r['name'], 'game': r['game'],
+        'password': False, 'host': r['host'],
+        'player_count': len(r.get('players', [])), 'max_players': r.get('max_players', 2),
+        'mode': 'spectate',
+        'spectator_count': len(spectator_conns.get(r['room_id'], set()))
+    } for r in spectatable]
     return render_template('index.html', user_id=uid, user=user, friends=friends, rooms=room_list)
 
 
@@ -147,11 +167,15 @@ def room_page(room_id):
 def _game_route(template):
     room_id = request.args.get('room_id', '')
     room = db.get_room(room_id) if room_id else None
+    is_spectator = request.args.get('spectate') == '1'
     my_player = None
-    if room and session['user_id'] in room.get('players', []):
+    if room and not is_spectator and session['user_id'] in room.get('players', []):
         my_player = room['players'].index(session['user_id']) + 1
+    elif room and is_spectator and not room.get('allow_spectate'):
+        return redirect(url_for('index'))
     return render_template(template, room_id=room_id, room=room,
-                           my_player=my_player, user_id=session['user_id'])
+                           my_player=my_player, user_id=session['user_id'],
+                           is_spectator=is_spectator)
 
 
 @app.route('/tetris')
@@ -179,12 +203,21 @@ def chess():
 def create_room():
     data = request.get_json()
     rid = uuid.uuid4().hex[:8]
+    game = data.get('game', 'tetris')
+    max_players = int(data.get('max_players', 2))
+    if game == 'tetris':
+        max_players = max(2, min(8, max_players))
+    else:
+        max_players = 2
     db.create_room(
         room_id=rid,
         name=data.get('name', 'Untitled'),
-        game=data.get('game', 'tetris'),
+        game=game,
         password=data.get('password', ''),
         host=session['user_id'],
+        max_players=max_players,
+        allow_spectate=bool(data.get('allow_spectate')),
+        allow_coaching=bool(data.get('allow_coaching')),
     )
     broadcast_rooms()
     return jsonify({'room_id': rid})
@@ -237,7 +270,7 @@ def on_join_lobby(data):
 def on_user_status(data):
     uid = data.get('user_id')
     status = data.get('status')
-    if uid and status in ('online', 'chilling', 'ingame'):
+    if uid and status in ('online', 'chilling', 'ingame', 'spectating'):
         user = db.get_user(uid)
         if not user or user.get('status') == 'offline':
             return
@@ -254,9 +287,10 @@ def on_join_waiting(data):
     sid_info[request.sid] = {'user_id': uid, 'room_id': rid, 'context': 'waiting'}
     waiting_conns.setdefault(rid, set()).add(uid)
     players = list(waiting_conns[rid])
-    emit('room_update', {'players': players, 'count': len(players)}, room=rid)
-    if len(waiting_conns[rid]) >= 2:
-        room = db.get_room(rid)
+    room = db.get_room(rid)
+    max_p = room.get('max_players', 2) if room else 2
+    emit('room_update', {'players': players, 'count': len(players), 'max_players': max_p}, room=rid)
+    if len(waiting_conns[rid]) >= max_p:
         if room and room['status'] == 'waiting':
             db.set_room_status(rid, 'playing')
             url = f"/{room['game']}?room_id={rid}"
@@ -271,23 +305,86 @@ def on_join_game(data):
     join_room(rid)
     sid_info[request.sid] = {'user_id': uid, 'room_id': rid, 'context': 'game'}
     game_conns.setdefault(rid, set()).add(uid)
-    if len(game_conns[rid]) >= 2:
+    room = db.get_room(rid)
+    max_p = room.get('max_players', 2) if room else 2
+    if len(game_conns[rid]) >= max_p:
         emit('game_ready', {}, room=rid)
+
+
+@socketio.on('join_spectate')
+def on_join_spectate(data):
+    rid = data['room_id']
+    uid = data['user_id']
+    join_room(rid)
+    sid_info[request.sid] = {'user_id': uid, 'room_id': rid, 'context': 'spectate'}
+    spectator_conns.setdefault(rid, set()).add(uid)
+    lobby_sids[uid] = request.sid  # Allow receiving invites while spectating
+    # Send cached game state
+    if rid in game_states:
+        sync_data = dict(game_states[rid])
+        if 'eliminated' in sync_data and isinstance(sync_data['eliminated'], set):
+            sync_data['eliminated'] = list(sync_data['eliminated'])
+        emit('game_state_sync', sync_data)
 
 
 @socketio.on('game_move')
 def on_game_move(data):
-    emit('opponent_move', data, room=data['room_id'], include_self=False)
+    rid = data['room_id']
+    # Cache moves for spectators (omok/chess)
+    game_states.setdefault(rid, {'moves': []})
+    if 'moves' not in game_states[rid]:
+        game_states[rid]['moves'] = []
+    game_states[rid]['moves'].append(data)
+    emit('opponent_move', data, room=rid, include_self=False)
 
 
 @socketio.on('tetris_state')
 def on_tetris_state(data):
-    emit('opponent_state', data, room=data['room_id'], include_self=False)
+    rid = data['room_id']
+    uid = data.get('user_id', '')
+    # Cache for spectators
+    gs = game_states.setdefault(rid, {'players': {}, 'eliminated': set()})
+    if 'players' not in gs:
+        gs['players'] = {}
+    gs['players'][uid] = {
+        'board': data['board'],
+        'score': data['score'],
+        'level': data.get('level', 1),
+        'lines': data.get('lines', 0)
+    }
+    emit('opponent_state', data, room=rid, include_self=False)
 
 
 @socketio.on('game_over_event')
 def on_game_over(data):
-    emit('opponent_game_over', data, room=data['room_id'], include_self=False)
+    rid = data.get('room_id')
+    loser = data.get('loser') or data.get('user_id')
+    room = db.get_room(rid) if rid else None
+
+    if room and room['game'] == 'tetris' and room.get('max_players', 2) > 2:
+        # Multi-player tetris: elimination mode
+        gs = game_states.setdefault(rid, {'players': {}, 'eliminated': set()})
+        if 'eliminated' not in gs:
+            gs['eliminated'] = set()
+        gs['eliminated'].add(loser)
+        emit('player_eliminated', {'user_id': loser}, room=rid)
+
+        all_players = set(room.get('players', []))
+        alive = all_players - gs['eliminated']
+        if len(alive) <= 1 and alive:
+            winner = alive.pop()
+            emit('game_winner', {'winner': winner}, room=rid)
+    else:
+        emit('opponent_game_over', data, room=rid, include_self=False)
+
+
+@socketio.on('coaching_suggest')
+def on_coaching_suggest(data):
+    rid = data.get('room_id')
+    if rid:
+        room = db.get_room(rid)
+        if room and room.get('allow_coaching'):
+            emit('coaching_update', data, room=rid, include_self=False)
 
 
 # ──────────────────── Invite System ────────────────────
@@ -366,6 +463,12 @@ def on_disconnect():
         if rid in game_conns:
             game_conns[rid].discard(uid)
             emit('opponent_disconnected', {'user_id': uid}, room=rid)
+    elif info['context'] == 'spectate':
+        leave_room(rid)
+        if rid in spectator_conns:
+            spectator_conns[rid].discard(uid)
+        if uid in lobby_sids and lobby_sids[uid] == request.sid:
+            del lobby_sids[uid]
 
 
 # ──────────────────── Main ────────────────────

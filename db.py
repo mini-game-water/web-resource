@@ -140,7 +140,8 @@ def get_room(room_id):
     return _convert_decimals(item) if item else None
 
 
-def create_room(room_id, name, game, password, host):
+def create_room(room_id, name, game, password, host, max_players=2,
+                allow_spectate=False, allow_coaching=False):
     now = int(time.time())
     _rooms_table.put_item(
         Item={
@@ -150,12 +151,31 @@ def create_room(room_id, name, game, password, host):
             'password': password,
             'host': host,
             'players': [host],
-            'max_players': 2,
+            'max_players': max_players,
             'status': 'waiting',
+            'allow_spectate': allow_spectate,
+            'allow_coaching': allow_coaching,
             'created_at': now,
             'ttl': now + ROOM_TTL_SECONDS,
         }
     )
+
+
+def list_spectatable_rooms():
+    items = []
+    resp = _rooms_table.query(
+        IndexName='status-index',
+        KeyConditionExpression=Key('status').eq('playing'),
+    )
+    items.extend(resp.get('Items', []))
+    while 'LastEvaluatedKey' in resp:
+        resp = _rooms_table.query(
+            IndexName='status-index',
+            KeyConditionExpression=Key('status').eq('playing'),
+            ExclusiveStartKey=resp['LastEvaluatedKey'],
+        )
+        items.extend(resp.get('Items', []))
+    return [_convert_decimals(item) for item in items if item.get('allow_spectate')]
 
 
 def join_room(room_id, user_id):

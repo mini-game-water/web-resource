@@ -44,7 +44,7 @@
                     <div class="friend-status-dot"></div>
                     <span class="friend-name">{{ f.id }}</span>
                     <button class="btn btn-invite"
-                            {% if f.status not in ['online', 'chilling'] %}disabled{% endif %}
+                            {% if f.status not in ['online', 'chilling', 'spectating'] %}disabled{% endif %}
                             onclick="inviteFriend('{{ f.id }}')">
                         초대
                     </button>
@@ -77,13 +77,14 @@
                 div.textContent = p;
                 list.appendChild(div);
             });
-            for (let i = data.count; i < 2; i++) {
+            const maxP = data.max_players || {{ room.max_players }};
+            for (let i = data.count; i < maxP; i++) {
                 const div = document.createElement('div');
                 div.className = 'player-slot empty';
                 div.textContent = '대기 중...';
                 list.appendChild(div);
             }
-            if (data.count >= 2) {
+            if (data.count >= maxP) {
                 document.getElementById('waiting-status').textContent = '게임을 시작합니다!';
             }
         });

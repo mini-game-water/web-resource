@@ -7,7 +7,8 @@
 
     // Multiplayer
     const isMultiplayer = typeof ROOM_ID !== 'undefined' && ROOM_ID;
-    const myPlayer = isMultiplayer ? MY_PLAYER : null; // 1=black, 2=white
+    const isSpectator = typeof IS_SPECTATOR !== 'undefined' && IS_SPECTATOR;
+    const myPlayer = isMultiplayer && !isSpectator ? MY_PLAYER : null; // 1=black, 2=white
     let socket = null;
     let gameReady = !isMultiplayer;
 
@@ -18,11 +19,15 @@
     let turnTimeLeft = TURN_TIME;
     let turnTimerInterval = null;
 
+    // Coaching dots from spectators
+    let coachingDots = {}; // user_id -> { row, col }
+
     function init() {
         board = Array.from({ length: SIZE }, () => new Array(SIZE).fill(0));
         currentPlayer = 1;
         gameOver = false;
         lastMoves = { 1: null, 2: null };
+        coachingDots = {};
         stopTurnTimer();
         updateStatus();
         draw();
@@ -32,15 +37,18 @@
 
     function updateStatus() {
         let text = currentPlayer === 1 ? "Black's Turn (●)" : "White's Turn (○)";
-        if (isMultiplayer && gameReady) {
+        if (isSpectator) {
+            text += " — 관전 중";
+        } else if (isMultiplayer && gameReady) {
             const isMyTurn = currentPlayer === myPlayer;
             text += isMyTurn ? " — 내 차례" : " — 상대 차례";
         }
-        text += ` — ${turnTimeLeft}초`;
+        if (!isSpectator) text += ` — ${turnTimeLeft}초`;
         document.getElementById("status").textContent = text;
     }
 
     function startTurnTimer() {
+        if (isSpectator) return;
         stopTurnTimer();
         turnTimeLeft = TURN_TIME;
         updateStatus();
@@ -132,6 +140,19 @@
                 ctx.fill();
             }
         }
+
+        // Draw coaching dots
+        for (const [uid, dot] of Object.entries(coachingDots)) {
+            const x = PADDING + dot.col * CELL;
+            const y = PADDING + dot.row * CELL;
+            ctx.beginPath();
+            ctx.arc(x, y, CELL * 0.2, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 150, 255, 0.45)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(0, 100, 200, 0.7)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
     }
 
     // ===== Win Check =====
@@ -166,6 +187,7 @@
     function placeStone(row, col, player) {
         board[row][col] = player;
         lastMoves[player] = { row, col };
+        coachingDots = {}; // Clear coaching on turn change
         draw();
         if (checkWin(row, col, player)) {
             handleWin(player);
@@ -174,22 +196,36 @@
         }
         currentPlayer = currentPlayer === 1 ? 2 : 1;
         updateStatus();
-        startTurnTimer();
+        if (!isSpectator) startTurnTimer();
     }
 
     // ===== Input =====
     canvas.addEventListener("click", (e) => {
         if (gameOver) return;
         if (!gameReady) return;
-        if (isMultiplayer && currentPlayer !== myPlayer) return;
 
         const rect = canvas.getBoundingClientRect();
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
         const col = Math.round((mx - PADDING) / CELL);
         const row = Math.round((my - PADDING) / CELL);
-
         if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) return;
+
+        // Spectator coaching
+        if (isSpectator && isMultiplayer && typeof ALLOW_COACHING !== 'undefined' && ALLOW_COACHING) {
+            if (board[row][col] !== 0) return;
+            socket.emit('coaching_suggest', {
+                room_id: ROOM_ID,
+                user_id: MY_USER,
+                type: 'dot',
+                data: { row, col }
+            });
+            return;
+        }
+
+        // Player move
+        if (isSpectator) return;
+        if (isMultiplayer && currentPlayer !== myPlayer) return;
         if (board[row][col] !== 0) return;
 
         const placedPlayer = currentPlayer;
@@ -208,37 +244,101 @@
     // ===== Multiplayer =====
     if (isMultiplayer) {
         socket = io();
-        socket.emit('join_game', { room_id: ROOM_ID, user_id: MY_USER });
 
-        // Tab focus forfeit
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden && !gameOver && gameReady) {
-                gameOver = true;
-                socket.emit('game_over_event', { room_id: ROOM_ID, loser: MY_USER });
-                window.location.href = '/';
-            }
-        });
+        if (isSpectator) {
+            socket.emit('join_spectate', { room_id: ROOM_ID, user_id: MY_USER });
+            socket.emit('user_status', { user_id: MY_USER, status: 'spectating' });
 
-        socket.on('game_ready', () => {
-            gameReady = true;
-            const el = document.getElementById('mp-status');
-            if (el) el.textContent = '게임 시작!';
-            setTimeout(() => { if (el) el.style.display = 'none'; }, 1000);
-            updateStatus();
-            startTurnTimer();
-        });
+            socket.on('game_state_sync', (data) => {
+                if (data.moves) {
+                    data.moves.forEach(m => {
+                        if (m.row !== undefined && m.col !== undefined && m.player !== undefined) {
+                            placeStone(m.row, m.col, m.player);
+                        }
+                    });
+                }
+            });
 
+            // Spectator invite handling
+            let currentInviteRoomId = null;
+            let inviteTimerId = null;
+            socket.on('invite_received', (data) => {
+                currentInviteRoomId = data.room_id;
+                document.getElementById('invite-inviter').textContent = data.inviter;
+                document.getElementById('invite-room-name').textContent = data.room_name;
+                document.getElementById('invite-game').textContent = data.game.toUpperCase();
+                document.getElementById('invite-overlay').classList.add('active');
+                const wrap = document.querySelector('.invite-popup-wrap');
+                const timerText = document.getElementById('invite-timer-text');
+                const start = Date.now();
+                const duration = 10000;
+                function tick() {
+                    const remaining = Math.max(0, duration - (Date.now() - start));
+                    wrap.style.setProperty('--progress', (remaining / duration) * 360);
+                    timerText.textContent = Math.ceil(remaining / 1000);
+                    if (remaining > 0) inviteTimerId = requestAnimationFrame(tick);
+                    else window.declineInvite();
+                }
+                tick();
+            });
+            window.acceptInvite = () => {
+                cancelAnimationFrame(inviteTimerId);
+                document.getElementById('invite-overlay').classList.remove('active');
+                socket.emit('invite_response', { room_id: currentInviteRoomId, user_id: MY_USER, accepted: true });
+            };
+            window.declineInvite = () => {
+                cancelAnimationFrame(inviteTimerId);
+                document.getElementById('invite-overlay').classList.remove('active');
+                socket.emit('invite_response', { room_id: currentInviteRoomId, user_id: MY_USER, accepted: false });
+            };
+            socket.on('invite_accepted', (data) => {
+                if (data && data.room_id) window.location.href = '/room/' + data.room_id;
+                else if (data && data.error) alert(data.error);
+            });
+
+        } else {
+            socket.emit('join_game', { room_id: ROOM_ID, user_id: MY_USER });
+
+            // Tab focus forfeit
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden && !gameOver && gameReady) {
+                    gameOver = true;
+                    socket.emit('game_over_event', { room_id: ROOM_ID, loser: MY_USER });
+                    window.location.href = '/';
+                }
+            });
+
+            socket.on('game_ready', () => {
+                gameReady = true;
+                const el = document.getElementById('mp-status');
+                if (el) el.textContent = '게임 시작!';
+                setTimeout(() => { if (el) el.style.display = 'none'; }, 1000);
+                updateStatus();
+                startTurnTimer();
+            });
+        }
+
+        // Both player and spectator receive moves
         socket.on('opponent_move', (data) => {
-            placeStone(data.row, data.col, currentPlayer);
+            coachingDots = {};
+            placeStone(data.row, data.col, data.player !== undefined ? data.player : currentPlayer);
         });
 
         socket.on('opponent_disconnected', () => {
-            if (!gameOver) {
+            if (!gameOver && !isSpectator) {
                 gameOver = true;
                 stopTurnTimer();
                 document.getElementById("status").textContent = "승리!";
                 document.getElementById("win-message").innerHTML = '승리!<br><span class="disconnect-sub">상대방이 나갔습니다!</span>';
                 document.getElementById("win-overlay").classList.add("active");
+            }
+        });
+
+        // Coaching updates
+        socket.on('coaching_update', (data) => {
+            if (data.type === 'dot' && data.data) {
+                coachingDots[data.user_id] = data.data;
+                draw();
             }
         });
     }

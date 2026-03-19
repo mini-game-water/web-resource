@@ -995,3 +995,105 @@ body {
     font-size: 0.85rem;
     margin-bottom: 0.5rem;
 }
+
+/* ===== Spectating Status ===== */
+.friend-item.status-spectating .friend-status-dot { background: #5bc0de; }
+
+/* ===== Room Live Badge ===== */
+.room-live-badge {
+    background: #d9534f !important;
+    animation: pulse-live 1.5s infinite;
+}
+
+@keyframes pulse-live {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.btn-spectate {
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+    background: rgba(91, 192, 222, 0.15);
+    border-color: #5bc0de;
+    color: #31708f;
+}
+
+.btn-spectate:hover {
+    background: rgba(91, 192, 222, 0.35);
+}
+
+/* ===== Opponents Grid (Tetris multi-player) ===== */
+.opponents-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.opponent-panel {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid #e6ddd3;
+    border-radius: 10px;
+    padding: 0.8rem;
+    text-align: center;
+}
+
+.opponent-panel h4 {
+    font-size: 0.85rem;
+    color: #5a4e42;
+    margin-bottom: 0.4rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.opponent-canvas {
+    border: 1px solid #d4c8b8;
+    border-radius: 4px;
+    display: block;
+}
+
+.opponent-score-label {
+    font-size: 0.8rem;
+    color: #9a8b78;
+    margin-top: 0.3rem;
+}
+
+/* ===== Modal Options ===== */
+.modal-options {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.option-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #5a4e42;
+    cursor: pointer;
+    font-weight: 400 !important;
+    margin-top: 0 !important;
+}
+
+.option-label input[type="checkbox"] {
+    accent-color: #a38b6d;
+}
+
+#max-players-row {
+    margin-top: 0.5rem;
+}
+
+#max-players-row select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e6ddd3;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: #faf6f0;
+    color: #5a4e42;
+}

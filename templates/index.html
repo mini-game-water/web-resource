@@ -69,6 +69,7 @@
                     <option value="online">온라인</option>
                     <option value="chilling">쉬는 중</option>
                     <option value="ingame">게임중</option>
+                    <option value="spectating">관전중</option>
                     <option value="offline">오프라인</option>
                     <option value="nearby">근처</option>
                 </select>
@@ -89,7 +90,7 @@
                         {% endif %}
                     </div>
                     <span class="friend-status-text">
-                        {% if f.status == 'online' %}온라인{% elif f.status == 'chilling' %}쉬는 중{% elif f.status == 'ingame' %}게임중{% else %}오프라인{% endif %}
+                        {% if f.status == 'online' %}온라인{% elif f.status == 'chilling' %}쉬는 중{% elif f.status == 'ingame' %}게임중{% elif f.status == 'spectating' %}관전중{% else %}오프라인{% endif %}
                     </span>
                 </div>
                 {% endfor %}
@@ -111,10 +112,26 @@
                     <label><input type="radio" name="game" value="omok"> Omok</label>
                     <label><input type="radio" name="game" value="chess"> Chess</label>
                 </div>
+                <div id="max-players-row">
+                    <label>최대 인원 (Tetris)</label>
+                    <select id="max-players">
+                        <option value="2">2명</option>
+                        <option value="3">3명</option>
+                        <option value="4">4명</option>
+                        <option value="5">5명</option>
+                        <option value="6">6명</option>
+                        <option value="7">7명</option>
+                        <option value="8">8명</option>
+                    </select>
+                </div>
                 <label>방 이름</label>
                 <input type="text" id="room-name" placeholder="방 이름을 입력하세요" required>
                 <label>비밀번호 (선택)</label>
                 <input type="password" id="room-password" placeholder="없으면 비워두세요">
+                <div class="modal-options">
+                    <label class="option-label"><input type="checkbox" id="allow-spectate"> 관전 허용</label>
+                    <label class="option-label" id="coaching-option" style="display:none;"><input type="checkbox" id="allow-coaching"> 훈수 허용</label>
+                </div>
                 <div class="modal-buttons">
                     <button type="button" class="btn" onclick="closeModal('create-room-overlay')">취소</button>
                     <button type="submit" class="btn btn-primary">만들기</button>
@@ -192,6 +209,18 @@
             });
         });
 
+        // ── Create room modal: show/hide options ──
+        document.querySelectorAll('input[name="game"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                document.getElementById('max-players-row').style.display =
+                    radio.value === 'tetris' && radio.checked ? '' : 'none';
+            });
+        });
+        document.getElementById('allow-spectate').addEventListener('change', (e) => {
+            document.getElementById('coaching-option').style.display = e.target.checked ? '' : 'none';
+            if (!e.target.checked) document.getElementById('allow-coaching').checked = false;
+        });
+
         function renderRooms() {
             const filtered = activeGameFilter === 'all'
                 ? allRooms
@@ -205,21 +234,33 @@
                 loadMore.style.display = 'none';
                 return;
             }
-            list.innerHTML = visible.map(r => `
+            list.innerHTML = visible.map(r => {
+                const isSpectate = r.mode === 'spectate';
+                const actionBtn = isSpectate
+                    ? `<button class="btn btn-spectate" onclick="spectateRoom('${r.id}', '${r.game}')">관전</button>`
+                    : `<button class="btn btn-join" onclick="joinRoom('${r.id}', ${r.password})">참가</button>`;
+                const meta = isSpectate
+                    ? `<span>관전: ${r.spectator_count || 0}명</span><span>${r.player_count}/${r.max_players}명</span>`
+                    : `<span>호스트: ${r.host}</span><span>${r.player_count}/${r.max_players}명</span>`;
+                const badge = isSpectate ? 'LIVE' : r.game.toUpperCase();
+                const badgeClass = isSpectate ? 'room-game-badge room-live-badge' : 'room-game-badge';
+                return `
                 <div class="room-item">
                     <div class="room-info-row">
+                        <span class="${badgeClass}">${badge}</span>
                         <span class="room-game-badge">${r.game.toUpperCase()}</span>
                         <span class="room-name">${r.name}</span>
                         ${r.password ? '<span class="room-lock">🔒</span>' : ''}
                     </div>
-                    <div class="room-meta">
-                        <span>호스트: ${r.host}</span>
-                        <span>${r.player_count}/${r.max_players}명</span>
-                    </div>
-                    <button class="btn btn-join" onclick="joinRoom('${r.id}', ${r.password})">참가</button>
-                </div>
-            `).join('');
+                    <div class="room-meta">${meta}</div>
+                    ${actionBtn}
+                </div>`;
+            }).join('');
             loadMore.style.display = (end < filtered.length) ? '' : 'none';
+        }
+
+        function spectateRoom(roomId, game) {
+            window.location.href = '/' + game + '?room_id=' + roomId + '&spectate=1';
         }
 
         document.getElementById('load-more-btn').addEventListener('click', () => {
@@ -275,7 +316,7 @@
                 if (nearbyBadge) nearbyBadge.remove();
             }
 
-            const labels = {online: '온라인', chilling: '쉬는 중', ingame: '게임중', offline: '오프라인'};
+            const labels = {online: '온라인', chilling: '쉬는 중', ingame: '게임중', spectating: '관전중', offline: '오프라인'};
             el.querySelector('.friend-status-text').textContent = labels[data.status] || '오프라인';
             applyFriendFilter();
         });
@@ -340,10 +381,13 @@
             const game = document.querySelector('input[name="game"]:checked').value;
             const name = document.getElementById('room-name').value;
             const password = document.getElementById('room-password').value;
+            const max_players = game === 'tetris' ? parseInt(document.getElementById('max-players').value) : 2;
+            const allow_spectate = document.getElementById('allow-spectate').checked;
+            const allow_coaching = document.getElementById('allow-coaching').checked;
             const res = await fetch('/api/rooms', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ game, name, password })
+                body: JSON.stringify({ game, name, password, max_players, allow_spectate, allow_coaching })
             });
             const data = await res.json();
             if (data.room_id) window.location.href = '/room/' + data.room_id;

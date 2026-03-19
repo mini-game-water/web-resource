@@ -19,7 +19,7 @@
     <div class="game-container">
         <h1>Omok (Five in a Row)</h1>
         {% if room_id %}
-        <div class="mp-status" id="mp-status">상대방 연결 대기 중...</div>
+        <div class="mp-status" id="mp-status">{% if is_spectator %}관전 모드{% else %}상대방 연결 대기 중...{% endif %}</div>
         {% endif %}
         <div class="omok-status" id="status">Black's Turn</div>
         <canvas id="omok-board" class="game-board" width="600" height="600"></canvas>
@@ -45,12 +45,31 @@
         </div>
     </div>
 
+    {% if room_id and is_spectator %}
+    <div class="overlay" id="invite-overlay">
+        <div class="invite-popup-wrap" style="--progress:360">
+            <div class="overlay-content invite-popup">
+                <div class="invite-timer-num" id="invite-timer-text">10</div>
+                <h2>게임 초대</h2>
+                <p><strong id="invite-inviter"></strong>님이 초대했습니다</p>
+                <p>방: <strong id="invite-room-name"></strong> (<span id="invite-game"></span>)</p>
+                <div class="modal-buttons">
+                    <button class="btn" onclick="declineInvite()">거부</button>
+                    <button class="btn btn-primary" onclick="acceptInvite()">수락</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     {% if room_id %}
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <script>
         const ROOM_ID = "{{ room_id }}";
         const MY_USER = "{{ user_id }}";
-        const MY_PLAYER = {{ my_player or 1 }};
+        const MY_PLAYER = {{ my_player or 0 }};
+        const IS_SPECTATOR = {{ 'true' if is_spectator else 'false' }};
+        const ALLOW_COACHING = {{ 'true' if room and room.allow_coaching else 'false' }};
     </script>
     {% endif %}
     <script src="{{ url_for('static', filename='js/omok.js') }}"></script>
