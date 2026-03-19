@@ -1,13 +1,10 @@
-##ingnore files##
+## Ignore files ##
 
-#local Test Files
-
+# Local test data
 data/*.json
-.gitignore
 
-#Claude Code
+# Claude Code
 .claude/*.local.json
-
 
 # Terraform
 terraform/.terraform/
