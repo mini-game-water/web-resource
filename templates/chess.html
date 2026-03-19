@@ -18,6 +18,9 @@
 
     <div class="game-container">
         <h1>Chess</h1>
+        {% if room_id %}
+        <div class="mp-status" id="mp-status">상대방 연결 대기 중...</div>
+        {% endif %}
         <div class="chess-status" id="status">White's Turn</div>
         <div class="chess-wrapper">
             <canvas id="chess-board" class="game-board" width="560" height="560"></canvas>
@@ -27,18 +30,34 @@
             </div>
         </div>
         <div class="game-controls">
+            {% if room_id %}
+            <a href="/" class="btn">로비로 돌아가기</a>
+            {% else %}
             <button class="btn" id="restart-btn">New Game</button>
             <button class="btn" id="undo-btn">Undo</button>
+            {% endif %}
         </div>
     </div>
 
     <div class="overlay" id="game-over-overlay">
         <div class="overlay-content">
             <h2 id="game-over-message">Game Over</h2>
+            {% if room_id %}
+            <a href="/" class="btn">로비로 돌아가기</a>
+            {% else %}
             <button class="btn" id="overlay-restart-btn">Play Again</button>
+            {% endif %}
         </div>
     </div>
 
+    {% if room_id %}
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        const ROOM_ID = "{{ room_id }}";
+        const MY_USER = "{{ user_id }}";
+        const MY_PLAYER = {{ my_player or 1 }};
+    </script>
+    {% endif %}
     <script src="{{ url_for('static', filename='js/chess.js') }}"></script>
 </body>
 </html>

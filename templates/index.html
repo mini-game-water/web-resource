@@ -9,31 +9,292 @@
 <body>
     <nav class="navbar">
         <a href="/" class="logo">Game Hub</a>
+        <div class="nav-links">
+            <span class="nav-user">{{ user_id }}</span>
+            <a href="/logout">로그아웃</a>
+        </div>
     </nav>
 
-    <main class="dashboard">
-        <h1>Game Hub</h1>
-        <p class="subtitle">플레이할 게임을 선택하세요</p>
+    <div class="index-layout">
+        <main class="dashboard">
+            <h1>Game Hub</h1>
+            <br><br>
+            <div class="cards">
+                <a href="/tetris" class="card">
+                    <div class="icon"></div>
+                    <h2>Tetris</h2>
+                    <p>클래식 블록 쌓기 게임. 줄을 완성하여 점수를 획득하세요!</p>
+                </a>
+                <a href="/omok" class="card">
+                    <div class="icon"></div>
+                    <h2>Omok</h2>
+                    <p>15×15 보드에서 2인 대전. 먼저 5개를 연속으로 놓으면 승리!</p>
+                </a>
+                <a href="/chess" class="card">
+                    <div class="icon"></div>
+                    <h2>Chess</h2>
+                    <p>전략의 정수, 체스. 상대의 킹을 체크메이트 하세요!</p>
+                </a>
+            </div>
 
-        <div class="cards">
-            <a href="/tetris" class="card">
-                <div class="icon">🧱</div>
-                <h2>Tetris</h2>
-                <p>클래식 블록 쌓기 게임. 줄을 완성하여 점수를 획득하세요!</p>
-            </a>
+            <section class="room-section">
+                <div class="room-header">
+                    <h2>대전 방 목록</h2>
+                    <button class="btn btn-primary" id="create-room-btn">방 만들기</button>
+                </div>
+                <div class="room-list" id="room-list">
+                    {% if rooms %}
+                    {% for room in rooms %}
+                    <div class="room-item">
+                        <div class="room-info-row">
+                            <span class="room-game-badge">{{ room.game | upper }}</span>
+                            <span class="room-name">{{ room.name }}</span>
+                            {% if room.password %}<span class="room-lock">🔒</span>{% endif %}
+                        </div>
+                        <div class="room-meta">
+                            <span>호스트: {{ room.host }}</span>
+                            <span>{{ room.players | length }}/{{ room.max_players }}명</span>
+                        </div>
+                        <button class="btn btn-join" onclick="joinRoom('{{ room.room_id }}', {{ 'true' if room.password else 'false' }})">참가</button>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="empty-msg">생성된 방이 없습니다.</p>
+                    {% endif %}
+                </div>
+            </section>
+        </main>
 
-            <a href="/omok" class="card">
-                <div class="icon">⚫</div>
-                <h2>Omok</h2>
-                <p>15×15 보드에서 2인 대전. 먼저 5개를 연속으로 놓으면 승리!</p>
-            </a>
+        <aside class="friends-sidebar">
+            <h3>친구 목록</h3>
+            <div class="friend-add">
+                <input type="text" id="friend-id-input" placeholder="친구 ID">
+                <button class="btn" onclick="addFriend()">추가</button>
+            </div>
+            <div class="friend-list" id="friend-list">
+                {% for f in friends %}
+                <div class="friend-item {{ 'online' if f.logged_in else 'offline' }}" data-uid="{{ f.id }}">
+                    <div class="friend-status-dot"></div>
+                    <div class="friend-info">
+                        <span class="friend-name">{{ f.id }}</span>
+                        <span class="friend-score">점수: {{ f.score }}</span>
+                        {% if f.nearby %}
+                        <span class="friend-nearby">바로 옆에 있는 친구</span>
+                        {% endif %}
+                    </div>
+                    <span class="friend-status-text">{{ '온라인' if f.logged_in else '오프라인' }}</span>
+                </div>
+                {% endfor %}
+                {% if not friends %}
+                <p class="empty-msg">친구가 없습니다.</p>
+                {% endif %}
+            </div>
+        </aside>
+    </div>
 
-            <a href="/chess" class="card">
-                <div class="icon">♟️</div>
-                <h2>Chess</h2>
-                <p>전략의 정수, 체스. 상대의 킹을 체크메이트 하세요!</p>
-            </a>
+    <!-- Create Room Modal -->
+    <div class="overlay" id="create-room-overlay">
+        <div class="overlay-content create-room-modal">
+            <h2>방 만들기</h2>
+            <form id="create-room-form">
+                <label>게임 선택</label>
+                <div class="game-select">
+                    <label><input type="radio" name="game" value="tetris" checked> Tetris</label>
+                    <label><input type="radio" name="game" value="omok"> Omok</label>
+                    <label><input type="radio" name="game" value="chess"> Chess</label>
+                </div>
+                <label>방 이름</label>
+                <input type="text" id="room-name" placeholder="방 이름을 입력하세요" required>
+                <label>비밀번호 (선택)</label>
+                <input type="password" id="room-password" placeholder="없으면 비워두세요">
+                <div class="modal-buttons">
+                    <button type="button" class="btn" onclick="closeModal('create-room-overlay')">취소</button>
+                    <button type="submit" class="btn btn-primary">만들기</button>
+                </div>
+            </form>
         </div>
-    </main>
+    </div>
+
+    <!-- Password Prompt Modal -->
+    <div class="overlay" id="password-overlay">
+        <div class="overlay-content">
+            <h2>비밀번호 입력</h2>
+            <input type="password" id="join-password" placeholder="비밀번호">
+            <div class="modal-buttons">
+                <button class="btn" onclick="closeModal('password-overlay')">취소</button>
+                <button class="btn btn-primary" onclick="submitJoinPassword()">입장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invite Received Popup -->
+    <div class="overlay" id="invite-overlay">
+        <div class="invite-popup-wrap" style="--progress:360">
+            <div class="overlay-content invite-popup">
+                <div class="invite-timer-num" id="invite-timer-text">10</div>
+                <h2>게임 초대</h2>
+                <p><strong id="invite-inviter"></strong>님이 초대했습니다</p>
+                <p>방: <strong id="invite-room-name"></strong> (<span id="invite-game"></span>)</p>
+                <div class="modal-buttons">
+                    <button class="btn" id="invite-decline-btn" onclick="declineInvite()">거부</button>
+                    <button class="btn btn-primary" id="invite-accept-btn" onclick="acceptInvite()">수락</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        const MY_USER = "{{ user_id }}";
+        const socket = io();
+        socket.emit('join_lobby', { user_id: MY_USER });
+
+        let pendingJoinRoomId = null;
+        let currentInviteRoomId = null;
+        let inviteTimerId = null;
+
+        // ── Real-time room list ──
+        socket.on('rooms_updated', (data) => {
+            const list = document.getElementById('room-list');
+            if (data.rooms.length === 0) {
+                list.innerHTML = '<p class="empty-msg">생성된 방이 없습니다.</p>';
+                return;
+            }
+            list.innerHTML = data.rooms.map(r => `
+                <div class="room-item">
+                    <div class="room-info-row">
+                        <span class="room-game-badge">${r.game.toUpperCase()}</span>
+                        <span class="room-name">${r.name}</span>
+                        ${r.password ? '<span class="room-lock">🔒</span>' : ''}
+                    </div>
+                    <div class="room-meta">
+                        <span>호스트: ${r.host}</span>
+                        <span>${r.player_count}/${r.max_players}명</span>
+                    </div>
+                    <button class="btn btn-join" onclick="joinRoom('${r.id}', ${r.password})">참가</button>
+                </div>
+            `).join('');
+        });
+
+        // ── Real-time friend status ──
+        socket.on('friend_status_changed', (data) => {
+            const el = document.querySelector(`.friend-item[data-uid="${data.id}"]`);
+            if (!el) return;
+            el.className = 'friend-item ' + (data.logged_in ? 'online' : 'offline');
+            el.querySelector('.friend-status-text').textContent = data.logged_in ? '온라인' : '오프라인';
+        });
+
+        // ── Invite received ──
+        socket.on('invite_received', (data) => {
+            currentInviteRoomId = data.room_id;
+            document.getElementById('invite-inviter').textContent = data.inviter;
+            document.getElementById('invite-room-name').textContent = data.room_name;
+            document.getElementById('invite-game').textContent = data.game.toUpperCase();
+            document.getElementById('invite-overlay').classList.add('active');
+
+            const wrap = document.querySelector('.invite-popup-wrap');
+            const timerText = document.getElementById('invite-timer-text');
+            const start = Date.now();
+            const duration = 10000;
+
+            function tick() {
+                const remaining = Math.max(0, duration - (Date.now() - start));
+                wrap.style.setProperty('--progress', (remaining / duration) * 360);
+                timerText.textContent = Math.ceil(remaining / 1000);
+                if (remaining > 0) {
+                    inviteTimerId = requestAnimationFrame(tick);
+                } else {
+                    declineInvite();
+                }
+            }
+            tick();
+        });
+
+        socket.on('invite_accepted', (data) => {
+            if (data && data.error) {
+                alert(data.error);
+            } else if (data && data.room_id) {
+                window.location.href = '/room/' + data.room_id;
+            }
+        });
+
+        function acceptInvite() {
+            cancelAnimationFrame(inviteTimerId);
+            document.getElementById('invite-overlay').classList.remove('active');
+            socket.emit('invite_response', { room_id: currentInviteRoomId, user_id: MY_USER, accepted: true });
+        }
+
+        function declineInvite() {
+            cancelAnimationFrame(inviteTimerId);
+            document.getElementById('invite-overlay').classList.remove('active');
+            socket.emit('invite_response', { room_id: currentInviteRoomId, user_id: MY_USER, accepted: false });
+        }
+
+        // ── Room actions ──
+        document.getElementById('create-room-btn').addEventListener('click', () => {
+            document.getElementById('create-room-overlay').classList.add('active');
+        });
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        document.getElementById('create-room-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const game = document.querySelector('input[name="game"]:checked').value;
+            const name = document.getElementById('room-name').value;
+            const password = document.getElementById('room-password').value;
+            const res = await fetch('/api/rooms', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ game, name, password })
+            });
+            const data = await res.json();
+            if (data.room_id) window.location.href = '/room/' + data.room_id;
+        });
+
+        async function joinRoom(roomId, hasPassword) {
+            if (hasPassword) {
+                pendingJoinRoomId = roomId;
+                document.getElementById('password-overlay').classList.add('active');
+                return;
+            }
+            const res = await fetch('/api/rooms/' + roomId + '/join', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            const data = await res.json();
+            if (data.room_id) window.location.href = '/room/' + data.room_id;
+            else alert(data.error || '입장에 실패했습니다.');
+        }
+
+        async function submitJoinPassword() {
+            const pw = document.getElementById('join-password').value;
+            const res = await fetch('/api/rooms/' + pendingJoinRoomId + '/join', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pw })
+            });
+            const data = await res.json();
+            if (data.room_id) window.location.href = '/room/' + data.room_id;
+            else alert(data.error || '입장에 실패했습니다.');
+            closeModal('password-overlay');
+        }
+
+        async function addFriend() {
+            const input = document.getElementById('friend-id-input');
+            const fid = input.value.trim();
+            if (!fid) return;
+            const res = await fetch('/api/friends/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ friend_id: fid })
+            });
+            const data = await res.json();
+            if (data.ok) location.reload();
+            else alert(data.error || '추가에 실패했습니다.');
+        }
+    </script>
 </body>
 </html>

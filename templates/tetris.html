@@ -18,6 +18,9 @@
 
     <div class="game-container">
         <h1>Tetris</h1>
+        {% if room_id %}
+        <div class="mp-status" id="mp-status">상대방 연결 대기 중...</div>
+        {% endif %}
         <div class="tetris-wrapper">
             <div class="tetris-side">
                 <div class="panel">
@@ -39,23 +42,47 @@
                     <h3>Next</h3>
                     <canvas id="next-piece" width="100" height="100"></canvas>
                 </div>
+                {% if room_id %}
+                <div class="panel">
+                    <h3>상대방</h3>
+                    <canvas id="opponent-board" width="150" height="300"></canvas>
+                </div>
+                <div class="panel">
+                    <h3>상대 점수</h3>
+                    <div class="value" id="opponent-score">0</div>
+                </div>
+                {% endif %}
             </div>
         </div>
+        {% if not room_id %}
         <div class="game-controls">
             <button class="btn" id="start-btn">Start</button>
             <button class="btn" id="pause-btn">Pause</button>
         </div>
-        <p style="color:#666; margin-top:1rem; font-size:0.85rem;">Arrow keys: Move/Rotate &nbsp;|&nbsp; Space: Hard Drop</p>
+        <p style="color:#9a8b78; margin-top:1rem; font-size:0.85rem;">Arrow keys: Move/Rotate &nbsp;|&nbsp; Space: Hard Drop</p>
+        {% endif %}
     </div>
 
     <div class="overlay" id="game-over-overlay">
         <div class="overlay-content">
-            <h2>Game Over</h2>
+            <h2 id="game-over-title">Game Over</h2>
             <p>Score: <span id="final-score">0</span></p>
+            {% if room_id %}
+            <a href="/" class="btn">로비로 돌아가기</a>
+            {% else %}
             <button class="btn" id="restart-btn">Play Again</button>
+            {% endif %}
         </div>
     </div>
 
+    {% if room_id %}
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        const ROOM_ID = "{{ room_id }}";
+        const MY_USER = "{{ user_id }}";
+        const MY_PLAYER = {{ my_player or 1 }};
+    </script>
+    {% endif %}
     <script src="{{ url_for('static', filename='js/tetris.js') }}"></script>
 </body>
 </html>

@@ -7,16 +7,16 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #0f0f1a;
-    color: #e0e0e0;
+    background: #faf6f0;
+    color: #5a4e42;
     min-height: 100vh;
 }
 
 /* ===== Navigation ===== */
 .navbar {
-    background: rgba(15, 15, 30, 0.95);
+    background: rgba(250, 246, 240, 0.95);
     backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid #e6ddd3;
     padding: 1rem 2rem;
     display: flex;
     align-items: center;
@@ -26,44 +26,166 @@ body {
 .navbar .logo {
     font-size: 1.5rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #a38b6d;
     text-decoration: none;
 }
 
+.navbar .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
 .navbar .nav-links a {
-    color: #aaa;
+    color: #9a8b78;
     text-decoration: none;
-    margin-left: 1.5rem;
     font-size: 0.95rem;
     transition: color 0.2s;
 }
 
 .navbar .nav-links a:hover {
+    color: #5a4e42;
+}
+
+.nav-user {
+    color: #a38b6d;
+    font-weight: 600;
+}
+
+/* ===== Buttons ===== */
+.btn {
+    padding: 0.6rem 1.5rem;
+    border: 1px solid #c4aa82;
+    background: rgba(196, 170, 130, 0.15);
+    color: #7a6a55;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s, color 0.2s;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn:hover {
+    background: rgba(196, 170, 130, 0.35);
+    color: #5a4e42;
+}
+
+.btn-primary {
+    background: #a38b6d;
     color: #fff;
+    border-color: #a38b6d;
+}
+
+.btn-primary:hover {
+    background: #8c7559;
+    color: #fff;
+}
+
+/* ===== Alerts ===== */
+.alert {
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.alert-error {
+    background: #fce8e8;
+    color: #a33;
+    border: 1px solid #f0c0c0;
+}
+
+.alert-success {
+    background: #e8f5e8;
+    color: #3a3;
+    border: 1px solid #c0e8c0;
+}
+
+/* ===== Login ===== */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 60px);
+    padding: 2rem;
+}
+
+.login-box {
+    background: #fff;
+    border: 1px solid #e6ddd3;
+    border-radius: 16px;
+    padding: 3rem;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.login-box h1 {
+    color: #a38b6d;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+}
+
+.login-box form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.login-box input {
+    padding: 0.8rem 1rem;
+    border: 1px solid #e6ddd3;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: #faf6f0;
+    color: #5a4e42;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.login-box input:focus {
+    border-color: #c4aa82;
+}
+
+.toggle-text {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: #9a8b78;
+    cursor: pointer;
+}
+
+.toggle-text strong {
+    color: #a38b6d;
+}
+
+/* ===== Index Layout ===== */
+.index-layout {
+    display: flex;
+    max-width: 1300px;
+    margin: 0 auto;
+    gap: 2rem;
+    padding: 0 2rem;
+}
+
+.index-layout .dashboard {
+    flex: 1;
+    min-width: 0;
 }
 
 /* ===== Dashboard ===== */
 .dashboard {
     max-width: 1000px;
     margin: 0 auto;
-    padding: 4rem 2rem;
+    padding: 4rem 0;
     text-align: center;
 }
 
 .dashboard h1 {
     font-size: 2.5rem;
     margin-bottom: 0.5rem;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.dashboard .subtitle {
-    color: #888;
-    font-size: 1.1rem;
-    margin-bottom: 3rem;
+    color: #a38b6d;
 }
 
 .cards {
@@ -74,8 +196,8 @@ body {
 }
 
 .card {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid #e6ddd3;
     border-radius: 16px;
     padding: 2.5rem 2rem;
     width: 280px;
@@ -86,24 +208,535 @@ body {
 
 .card:hover {
     transform: translateY(-6px);
-    border-color: rgba(102, 126, 234, 0.4);
-    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.15);
+    border-color: #c4aa82;
+    box-shadow: 0 12px 40px rgba(163, 139, 109, 0.15);
 }
 
 .card .icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 1rem;
+    border: 2px dashed #d4c8b8;
+    border-radius: 12px;
+    background: #f5ede3;
 }
 
 .card h2 {
     font-size: 1.3rem;
     margin-bottom: 0.5rem;
+    color: #5a4e42;
 }
 
 .card p {
-    color: #888;
+    color: #9a8b78;
     font-size: 0.9rem;
     line-height: 1.5;
+}
+
+/* ===== Friends Sidebar ===== */
+.friends-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    padding-top: 4rem;
+}
+
+.friends-sidebar h3 {
+    font-size: 1.1rem;
+    color: #a38b6d;
+    margin-bottom: 1rem;
+}
+
+.friend-add {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.friend-add input {
+    flex: 1;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid #e6ddd3;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    background: #fff;
+    color: #5a4e42;
+    outline: none;
+}
+
+.friend-add input:focus {
+    border-color: #c4aa82;
+}
+
+.friend-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.friend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: #fff;
+    border: 1px solid #e6ddd3;
+    border-radius: 10px;
+    padding: 0.8rem;
+}
+
+.friend-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.friend-item.online .friend-status-dot {
+    background: #5cb85c;
+}
+
+.friend-item.offline .friend-status-dot {
+    background: #ccc;
+}
+
+.friend-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.friend-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #5a4e42;
+}
+
+.friend-score {
+    font-size: 0.8rem;
+    color: #9a8b78;
+}
+
+.friend-nearby {
+    font-size: 0.75rem;
+    color: #a38b6d;
+    font-weight: 600;
+    background: rgba(196, 170, 130, 0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 2px;
+}
+
+.friend-status-text {
+    font-size: 0.75rem;
+    color: #9a8b78;
+    white-space: nowrap;
+}
+
+/* ===== Room Section ===== */
+.room-section {
+    margin-top: 3rem;
+    text-align: left;
+}
+
+.room-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.room-header h2 {
+    font-size: 1.3rem;
+    color: #a38b6d;
+}
+
+.room-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.room-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #fff;
+    border: 1px solid #e6ddd3;
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+}
+
+.room-info-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.room-game-badge {
+    display: inline-block;
+    background: #a38b6d;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+}
+
+.room-name {
+    font-weight: 600;
+    color: #5a4e42;
+}
+
+.room-lock {
+    font-size: 0.85rem;
+}
+
+.room-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #9a8b78;
+}
+
+.btn-join {
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+}
+
+.empty-msg {
+    color: #bbb;
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.9rem;
+}
+
+/* ===== Create Room Modal ===== */
+.create-room-modal {
+    text-align: left;
+    min-width: 360px;
+}
+
+.create-room-modal h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.create-room-modal label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #7a6a55;
+    margin-bottom: 0.3rem;
+    margin-top: 1rem;
+}
+
+.create-room-modal input[type="text"],
+.create-room-modal input[type="password"] {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 1px solid #e6ddd3;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: #faf6f0;
+    color: #5a4e42;
+    outline: none;
+}
+
+.create-room-modal input:focus {
+    border-color: #c4aa82;
+}
+
+.game-select {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.3rem;
+}
+
+.game-select label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 400;
+    cursor: pointer;
+    margin-top: 0;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+/* Password prompt */
+#password-overlay .overlay-content {
+    min-width: 320px;
+}
+
+#password-overlay input {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 1px solid #e6ddd3;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: #faf6f0;
+    color: #5a4e42;
+    outline: none;
+    margin: 1rem 0;
+}
+
+/* ===== Waiting Layout (room + friends sidebar) ===== */
+.waiting-layout {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    min-height: calc(100vh - 60px);
+    padding: 2rem;
+    align-items: flex-start;
+}
+
+.waiting-layout .waiting-room {
+    min-height: auto;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.room-friends {
+    width: 240px;
+    flex-shrink: 0;
+    padding-top: 2rem;
+}
+
+.room-friends h3 {
+    font-size: 1rem;
+    color: #a38b6d;
+    margin-bottom: 1rem;
+}
+
+.friend-invite-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #fff;
+    border: 1px solid #e6ddd3;
+    border-radius: 8px;
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.friend-invite-item .friend-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.friend-invite-item.online .friend-status-dot { background: #5cb85c; }
+.friend-invite-item.offline .friend-status-dot { background: #ccc; }
+
+.friend-invite-item .friend-name {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #5a4e42;
+}
+
+.btn-invite {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.8rem;
+}
+
+.btn-invite:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ===== Toast ===== */
+.toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: #fff;
+    border: 1px solid #e6ddd3;
+    border-radius: 10px;
+    padding: 0.8rem 1.5rem;
+    font-size: 0.9rem;
+    color: #5a4e42;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 200;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+.toast.success {
+    border-color: #5cb85c;
+    color: #3a7a3a;
+}
+
+.toast.error {
+    border-color: #d9534f;
+    color: #a33;
+}
+
+/* ===== Invite Popup (countdown ring) ===== */
+.invite-popup-wrap {
+    position: relative;
+    padding: 4px;
+    border-radius: 20px;
+}
+
+.invite-popup-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    padding: 4px;
+    background: conic-gradient(
+        from 0deg,
+        #a38b6d calc(var(--progress) * 1deg),
+        #e6ddd3 calc(var(--progress) * 1deg)
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+}
+
+.invite-popup {
+    position: relative;
+    min-width: 320px;
+}
+
+.invite-timer-num {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.5rem;
+    width: 36px;
+    height: 36px;
+    background: #a38b6d;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+    z-index: 2;
+}
+
+/* ===== Disconnect Subtitle ===== */
+.disconnect-sub {
+    display: block;
+    font-size: 0.45em;
+    color: #9a8b78;
+    font-weight: 400;
+    margin-top: 0.3rem;
+}
+
+/* ===== Waiting Room ===== */
+.waiting-room {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 60px);
+    padding: 2rem;
+}
+
+.waiting-box {
+    background: #fff;
+    border: 1px solid #e6ddd3;
+    border-radius: 16px;
+    padding: 3rem;
+    text-align: center;
+    min-width: 400px;
+}
+
+.waiting-box h1 {
+    color: #a38b6d;
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+}
+
+.waiting-info {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+    color: #9a8b78;
+}
+
+.waiting-players h3 {
+    font-size: 0.9rem;
+    color: #9a8b78;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.8rem;
+}
+
+.player-slot {
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.player-slot.filled {
+    background: rgba(196, 170, 130, 0.15);
+    border: 1px solid #c4aa82;
+    color: #5a4e42;
+    font-weight: 600;
+}
+
+.player-slot.empty {
+    background: #f5ede3;
+    border: 1px dashed #d4c8b8;
+    color: #bbb;
+}
+
+.waiting-status {
+    margin-top: 1.5rem;
+    font-size: 1rem;
+    color: #a38b6d;
+    font-weight: 600;
+}
+
+.waiting-spinner {
+    margin: 1rem auto 0;
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e6ddd3;
+    border-top-color: #a38b6d;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== Multiplayer Status ===== */
+.mp-status {
+    font-size: 1rem;
+    color: #a38b6d;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding: 0.5rem 1.5rem;
+    background: rgba(196, 170, 130, 0.15);
+    border-radius: 8px;
+    border: 1px solid #e6ddd3;
 }
 
 /* ===== Game Page Layout ===== */
@@ -118,9 +751,7 @@ body {
 .game-container h1 {
     font-size: 1.8rem;
     margin-bottom: 1rem;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #a38b6d;
 }
 
 .game-info {
@@ -131,38 +762,22 @@ body {
 }
 
 .game-info span {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.6);
     padding: 0.5rem 1.2rem;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid #e6ddd3;
 }
 
 .game-board {
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    border: 2px solid #d4c8b8;
     border-radius: 8px;
-    background: #1a1a2e;
+    background: #f5ede3;
 }
 
 .game-controls {
     margin-top: 1rem;
     display: flex;
     gap: 1rem;
-}
-
-.btn {
-    padding: 0.6rem 1.5rem;
-    border: 1px solid rgba(102, 126, 234, 0.5);
-    background: rgba(102, 126, 234, 0.15);
-    color: #b0b8f0;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background 0.2s, color 0.2s;
-}
-
-.btn:hover {
-    background: rgba(102, 126, 234, 0.3);
-    color: #fff;
 }
 
 /* ===== Tetris Specific ===== */
@@ -179,8 +794,8 @@ body {
 }
 
 .tetris-side .panel {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid #e6ddd3;
     border-radius: 12px;
     padding: 1.2rem;
     text-align: center;
@@ -189,7 +804,7 @@ body {
 
 .tetris-side .panel h3 {
     font-size: 0.85rem;
-    color: #888;
+    color: #9a8b78;
     margin-bottom: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -198,7 +813,7 @@ body {
 .tetris-side .panel .value {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #667eea;
+    color: #a38b6d;
 }
 
 /* ===== Omok Specific ===== */
@@ -206,9 +821,9 @@ body {
     font-size: 1.1rem;
     margin-bottom: 1rem;
     padding: 0.5rem 1.5rem;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.6);
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid #e6ddd3;
 }
 
 /* ===== Chess Specific ===== */
@@ -219,8 +834,8 @@ body {
 }
 
 .chess-side {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid #e6ddd3;
     border-radius: 12px;
     padding: 1.2rem;
     min-width: 200px;
@@ -230,7 +845,7 @@ body {
 
 .chess-side h3 {
     font-size: 0.85rem;
-    color: #888;
+    color: #9a8b78;
     margin-bottom: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -239,16 +854,16 @@ body {
 .chess-side .move-list {
     font-size: 0.85rem;
     line-height: 1.8;
-    color: #bbb;
+    color: #7a6a55;
 }
 
 .chess-status {
     font-size: 1.1rem;
     margin-bottom: 1rem;
     padding: 0.5rem 1.5rem;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.6);
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid #e6ddd3;
 }
 
 /* ===== Overlay / Modal ===== */
@@ -256,7 +871,7 @@ body {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(90, 78, 66, 0.5);
     backdrop-filter: blur(4px);
     z-index: 100;
     justify-content: center;
@@ -268,8 +883,8 @@ body {
 }
 
 .overlay-content {
-    background: #1e1e32;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #faf6f0;
+    border: 1px solid #e6ddd3;
     border-radius: 16px;
     padding: 3rem;
     text-align: center;
@@ -278,12 +893,10 @@ body {
 .overlay-content h2 {
     font-size: 2rem;
     margin-bottom: 1rem;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #a38b6d;
 }
 
 .overlay-content p {
-    color: #aaa;
+    color: #9a8b78;
     margin-bottom: 1.5rem;
 }
