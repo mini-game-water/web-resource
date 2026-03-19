@@ -17,13 +17,13 @@
                 <h1>{{ room.name }}</h1>
                 <div class="waiting-info">
                     <span class="room-game-badge">{{ room.game | upper }}</span>
-                    <span>호스트: {{ room.host }}</span>
+                    <span>호스트: <span id="host-name">{{ room.host }}</span></span>
                 </div>
                 <div class="waiting-players">
                     <h3>플레이어</h3>
                     <div id="player-list">
                         {% for p in room.players %}
-                        <div class="player-slot filled">{{ p }}</div>
+                        <div class="player-slot filled">{% if p == room.host %}<span class="crown-icon">&#128081;</span> {% endif %}{{ p }}</div>
                         {% endfor %}
                         {% for _ in range(room.max_players - room.players|length) %}
                         <div class="player-slot empty">대기 중...</div>
@@ -32,7 +32,12 @@
                 </div>
                 <div class="waiting-status" id="waiting-status">상대방을 기다리는 중...</div>
                 <div class="waiting-spinner"></div>
-                <a href="/" class="btn" style="margin-top:1.5rem;">나가기</a>
+                <div class="waiting-actions">
+                    {% if room.host == user_id %}
+                    <button class="btn btn-primary" id="force-start-btn" style="display:none;" onclick="forceStart()">게임 시작</button>
+                    {% endif %}
+                    <a href="/" class="btn">나가기</a>
+                </div>
             </div>
         </div>
 
@@ -65,36 +70,76 @@
         const socket = io();
         const ROOM_ID = "{{ room.room_id }}";
         const MY_USER = "{{ user_id }}";
+        let currentHost = "{{ room.host }}";
+        let isLeaving = false;
 
         socket.emit('join_waiting', { room_id: ROOM_ID, user_id: MY_USER });
 
-        socket.on('room_update', (data) => {
+        function renderPlayerList(players, maxP, host) {
             const list = document.getElementById('player-list');
             list.innerHTML = '';
-            data.players.forEach(p => {
+            players.forEach(p => {
                 const div = document.createElement('div');
                 div.className = 'player-slot filled';
-                div.textContent = p;
+                if (p === host) {
+                    div.innerHTML = '<span class="crown-icon">&#128081;</span> ' + p;
+                } else {
+                    div.textContent = p;
+                }
                 list.appendChild(div);
             });
-            const maxP = data.max_players || {{ room.max_players }};
-            for (let i = data.count; i < maxP; i++) {
+            for (let i = players.length; i < maxP; i++) {
                 const div = document.createElement('div');
                 div.className = 'player-slot empty';
                 div.textContent = '대기 중...';
                 list.appendChild(div);
             }
+        }
+
+        socket.on('room_update', (data) => {
+            const maxP = data.max_players || {{ room.max_players }};
+            const host = data.host || currentHost;
+            currentHost = host;
+            document.getElementById('host-name').textContent = host;
+            renderPlayerList(data.players, maxP, host);
+
+            // Show/hide force start button (create if needed on host transfer)
+            let startBtn = document.getElementById('force-start-btn');
+            if (MY_USER === host && data.count >= 2 && data.count < maxP) {
+                if (!startBtn) {
+                    startBtn = document.createElement('button');
+                    startBtn.className = 'btn btn-primary';
+                    startBtn.id = 'force-start-btn';
+                    startBtn.textContent = '게임 시작';
+                    startBtn.onclick = forceStart;
+                    document.querySelector('.waiting-actions').prepend(startBtn);
+                }
+                startBtn.style.display = '';
+            } else if (startBtn) {
+                startBtn.style.display = 'none';
+            }
+
             if (data.count >= maxP) {
                 document.getElementById('waiting-status').textContent = '게임을 시작합니다!';
+            } else {
+                document.getElementById('waiting-status').textContent = '상대방을 기다리는 중...';
             }
         });
 
         socket.on('game_started', (data) => {
+            isLeaving = true;
             window.location.href = data.url;
         });
 
-        socket.on('player_left', () => {
-            document.getElementById('waiting-status').textContent = '상대방을 기다리는 중...';
+        function forceStart() {
+            socket.emit('force_start', { room_id: ROOM_ID, user_id: MY_USER });
+        }
+
+        // ── Tab close / navigate away = leave room ──
+        window.addEventListener('beforeunload', () => {
+            if (!isLeaving) {
+                socket.disconnect();
+            }
         });
 
         // ── Invite ──

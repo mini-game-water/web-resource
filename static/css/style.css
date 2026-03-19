@@ -756,6 +756,18 @@ body {
     color: #bbb;
 }
 
+.crown-icon {
+    font-size: 1rem;
+    margin-right: 0.2rem;
+}
+
+.waiting-actions {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
 .waiting-status {
     margin-top: 1.5rem;
     font-size: 1rem;

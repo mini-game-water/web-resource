@@ -195,6 +195,38 @@ def join_room(room_id, user_id):
         raise
 
 
+def remove_player_from_room(room_id, user_id):
+    """Remove a player from room's players list. Returns updated room or None if room not found."""
+    room = get_room(room_id)
+    if not room:
+        return None
+    players = room.get('players', [])
+    if user_id not in players:
+        return room
+    idx = players.index(user_id)
+    try:
+        resp = _rooms_table.update_item(
+            Key={'room_id': room_id},
+            UpdateExpression=f'REMOVE players[{idx}]',
+            ReturnValues='ALL_NEW',
+        )
+        return _convert_decimals(resp.get('Attributes'))
+    except ClientError:
+        return None
+
+
+def delete_room(room_id):
+    _rooms_table.delete_item(Key={'room_id': room_id})
+
+
+def update_room_host(room_id, new_host):
+    _rooms_table.update_item(
+        Key={'room_id': room_id},
+        UpdateExpression='SET host = :h',
+        ExpressionAttributeValues={':h': new_host},
+    )
+
+
 def set_room_status(room_id, status):
     _rooms_table.update_item(
         Key={'room_id': room_id},
