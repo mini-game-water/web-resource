@@ -20,6 +20,9 @@ with table.batch_writer(batch_size=25) as batch:
         item.pop('logged_in', None)
         item['status'] = 'offline'
         item['public_ip'] = ''
+        item.setdefault('role', 'user')
+        item.setdefault('name', '')
+        item.setdefault('email', '')
         batch.put_item(Item=item)
 
 print(f"Migrated {len(users)} users")

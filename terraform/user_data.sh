@@ -25,5 +25,6 @@ docker run -d \
   -e AWS_REGION=${aws_region} \
   -e USERS_TABLE=gamehub-users \
   -e ROOMS_TABLE=gamehub-rooms \
+  -e NOTICES_TABLE=gamehub-notices \
   -e SECRET_KEY='${app_secret_key}' \
   ${docker_image}

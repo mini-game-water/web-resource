@@ -45,3 +45,16 @@ resource "aws_dynamodb_table" "rooms" {
 
   tags = { Name = "gamehub-rooms" }
 }
+
+resource "aws_dynamodb_table" "notices" {
+  name         = "gamehub-notices"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "notice_id"
+
+  attribute {
+    name = "notice_id"
+    type = "S"
+  }
+
+  tags = { Name = "gamehub-notices" }
+}

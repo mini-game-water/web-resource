@@ -1,5 +1,6 @@
 import os
 import time
+import uuid
 from decimal import Decimal
 
 import boto3
@@ -21,6 +22,7 @@ _region = os.environ.get('AWS_REGION', 'us-east-1')
 _dynamodb = boto3.resource('dynamodb', region_name=_region)
 _users_table = _dynamodb.Table(os.environ.get('USERS_TABLE', 'gamehub-users'))
 _rooms_table = _dynamodb.Table(os.environ.get('ROOMS_TABLE', 'gamehub-rooms'))
+_notices_table = _dynamodb.Table(os.environ.get('NOTICES_TABLE', 'gamehub-notices'))
 
 ROOM_TTL_SECONDS = 3600  # 1 hour
 
@@ -33,12 +35,15 @@ def get_user(user_id):
     return _convert_decimals(item) if item else None
 
 
-def create_user(user_id, pw):
+def create_user(user_id, pw, name='', email=''):
     try:
         _users_table.put_item(
             Item={
                 'user_id': user_id,
                 'pw': pw,
+                'name': name,
+                'email': email,
+                'role': 'user',
                 'score': 0,
                 'status': 'offline',
                 'public_ip': '',
@@ -78,6 +83,37 @@ def update_user_status(user_id, status):
         ExpressionAttributeNames={'#s': 'status'},
         ExpressionAttributeValues={':status': status},
     )
+
+
+def update_user_profile(user_id, pw=None, name=None, email=None):
+    parts = []
+    names = {}
+    values = {}
+    if pw is not None:
+        parts.append('pw = :pw')
+        values[':pw'] = pw
+    if name is not None:
+        parts.append('#n = :name')
+        names['#n'] = 'name'
+        values[':name'] = name
+    if email is not None:
+        parts.append('email = :email')
+        values[':email'] = email
+    if not parts:
+        return
+    expr = 'SET ' + ', '.join(parts)
+    kwargs = {
+        'Key': {'user_id': user_id},
+        'UpdateExpression': expr,
+        'ExpressionAttributeValues': values,
+    }
+    if names:
+        kwargs['ExpressionAttributeNames'] = names
+    _users_table.update_item(**kwargs)
+
+
+def delete_user(user_id):
+    _users_table.delete_item(Key={'user_id': user_id})
 
 
 def add_friend(user_id, friend_id):
@@ -128,6 +164,37 @@ def batch_get_users(user_ids):
                 result[item['user_id']] = _convert_decimals(item)
             unprocessed = resp.get('UnprocessedKeys', {}).get(_users_table.name)
     return result
+
+
+# ──────────────────── Notice Operations ────────────────────
+
+def create_notice(author, title, content):
+    notice_id = uuid.uuid4().hex[:8]
+    now = int(time.time())
+    _notices_table.put_item(
+        Item={
+            'notice_id': notice_id,
+            'author': author,
+            'title': title,
+            'content': content,
+            'created_at': now,
+        }
+    )
+    return notice_id
+
+
+def list_notices():
+    resp = _notices_table.scan()
+    items = resp.get('Items', [])
+    while 'LastEvaluatedKey' in resp:
+        resp = _notices_table.scan(ExclusiveStartKey=resp['LastEvaluatedKey'])
+        items.extend(resp.get('Items', []))
+    items.sort(key=lambda x: x.get('created_at', 0), reverse=True)
+    return [_convert_decimals(item) for item in items]
+
+
+def delete_notice(notice_id):
+    _notices_table.delete_item(Key={'notice_id': notice_id})
 
 
 # ──────────────────── Room Operations ────────────────────

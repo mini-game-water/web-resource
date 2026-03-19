@@ -11,6 +11,7 @@
         <a href="/" class="logo">Game Hub</a>
         <div class="nav-links">
             <span class="nav-user">{{ user_id }}</span>
+            <button class="btn btn-sm" id="edit-profile-btn">프로필 수정</button>
             <a href="/logout">로그아웃</a>
         </div>
     </nav>
@@ -98,6 +99,31 @@
                 <p class="empty-msg">친구가 없습니다.</p>
                 {% endif %}
             </div>
+
+            <!-- Notice Board -->
+            <div class="notice-section">
+                <div class="notice-header">
+                    <h3>공지사항</h3>
+                    {% if is_admin %}
+                    <button class="btn btn-sm" id="create-notice-btn">작성</button>
+                    {% endif %}
+                </div>
+                <div class="notice-list" id="notice-list">
+                    {% for n in notices %}
+                    <div class="notice-item" data-id="{{ n.notice_id }}">
+                        <div class="notice-title">{{ n.title }}</div>
+                        <div class="notice-body">{{ n.content }}</div>
+                        <div class="notice-meta">{{ n.author }} &middot; {{ n.created_at }}</div>
+                        {% if is_admin %}
+                        <button class="notice-delete-btn" onclick="deleteNotice('{{ n.notice_id }}')">&times;</button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% if not notices %}
+                    <p class="empty-msg" id="no-notices">공지사항이 없습니다.</p>
+                    {% endif %}
+                </div>
+            </div>
         </aside>
     </div>
 
@@ -152,6 +178,44 @@
         </div>
     </div>
 
+    <!-- Profile Edit Modal -->
+    <div class="overlay" id="profile-overlay">
+        <div class="overlay-content create-room-modal">
+            <h2>프로필 수정</h2>
+            <form id="profile-form">
+                <label>아이디</label>
+                <input type="text" id="profile-uid" placeholder="아이디">
+                <label>비밀번호 (변경 시 입력)</label>
+                <input type="password" id="profile-pw" placeholder="변경하지 않으면 비워두세요">
+                <label>이름</label>
+                <input type="text" id="profile-name" placeholder="이름">
+                <label>이메일</label>
+                <input type="email" id="profile-email" placeholder="이메일">
+                <div class="modal-buttons">
+                    <button type="button" class="btn" onclick="closeModal('profile-overlay')">취소</button>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notice Create Modal -->
+    <div class="overlay" id="notice-overlay">
+        <div class="overlay-content create-room-modal">
+            <h2>공지사항 작성</h2>
+            <form id="notice-form">
+                <label>제목</label>
+                <input type="text" id="notice-title" placeholder="제목" required>
+                <label>내용</label>
+                <textarea id="notice-content" placeholder="내용" rows="4" style="width:100%;padding:0.7rem 1rem;border:1px solid #e6ddd3;border-radius:8px;font-size:0.9rem;background:#faf6f0;color:#5a4e42;outline:none;resize:vertical;font-family:inherit;"></textarea>
+                <div class="modal-buttons">
+                    <button type="button" class="btn" onclick="closeModal('notice-overlay')">취소</button>
+                    <button type="submit" class="btn btn-primary">게시</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Invite Received Popup -->
     <div class="overlay" id="invite-overlay">
         <div class="invite-popup-wrap" style="--progress:360">
@@ -172,6 +236,7 @@
     <script>
         const MY_USER = "{{ user_id }}";
         const MY_IP = "{{ user.get('public_ip', '') }}";
+        const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
         const socket = io();
         socket.emit('join_lobby', { user_id: MY_USER });
 
@@ -250,7 +315,7 @@
                         <span class="${badgeClass}">${badge}</span>
                         <span class="room-game-badge">${r.game.toUpperCase()}</span>
                         <span class="room-name">${r.name}</span>
-                        ${r.password ? '<span class="room-lock">🔒</span>' : ''}
+                        ${r.password ? '<span class="room-lock">&#128274;</span>' : ''}
                     </div>
                     <div class="room-meta">${meta}</div>
                     ${actionBtn}
@@ -435,6 +500,112 @@
             if (data.ok) location.reload();
             else alert(data.error || '추가에 실패했습니다.');
         }
+
+        // ── Profile edit ──
+        document.getElementById('edit-profile-btn').addEventListener('click', async () => {
+            const res = await fetch('/api/profile');
+            const data = await res.json();
+            document.getElementById('profile-uid').value = data.user_id || '';
+            document.getElementById('profile-pw').value = '';
+            document.getElementById('profile-name').value = data.name || '';
+            document.getElementById('profile-email').value = data.email || '';
+            document.getElementById('profile-overlay').classList.add('active');
+        });
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const body = {
+                user_id: document.getElementById('profile-uid').value.trim(),
+                pw: document.getElementById('profile-pw').value,
+                name: document.getElementById('profile-name').value.trim(),
+                email: document.getElementById('profile-email').value.trim(),
+            };
+            const res = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.ok) {
+                closeModal('profile-overlay');
+                if (data.new_id) {
+                    alert('아이디가 변경되었습니다. 다시 로그인해 주세요.');
+                    window.location.href = '/login';
+                } else {
+                    location.reload();
+                }
+            } else {
+                alert(data.error || '저장에 실패했습니다.');
+            }
+        });
+
+        // ── Notices ──
+        const createNoticeBtn = document.getElementById('create-notice-btn');
+        if (createNoticeBtn) {
+            createNoticeBtn.addEventListener('click', () => {
+                document.getElementById('notice-overlay').classList.add('active');
+            });
+        }
+
+        document.getElementById('notice-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('notice-title').value.trim();
+            const content = document.getElementById('notice-content').value.trim();
+            const res = await fetch('/api/notices', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, content })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                closeModal('notice-overlay');
+                document.getElementById('notice-title').value = '';
+                document.getElementById('notice-content').value = '';
+            } else {
+                alert(data.error || '게시에 실패했습니다.');
+            }
+        });
+
+        async function deleteNotice(noticeId) {
+            if (!confirm('공지를 삭제하시겠습니까?')) return;
+            await fetch('/api/notices/' + noticeId, { method: 'DELETE' });
+        }
+
+        function formatTime(ts) {
+            const d = new Date(ts * 1000);
+            return d.toLocaleDateString('ko-KR') + ' ' + d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function renderNotice(n) {
+            const deleteBtn = IS_ADMIN ? `<button class="notice-delete-btn" onclick="deleteNotice('${n.notice_id}')">&times;</button>` : '';
+            return `<div class="notice-item" data-id="${n.notice_id}">
+                <div class="notice-title">${n.title}</div>
+                <div class="notice-body">${n.content}</div>
+                <div class="notice-meta">${n.author} &middot; ${formatTime(n.created_at)}</div>
+                ${deleteBtn}
+            </div>`;
+        }
+
+        // Format existing notice timestamps
+        document.querySelectorAll('.notice-item .notice-meta').forEach(el => {
+            const item = el.closest('.notice-item');
+            // Re-rendered via socket, skip server-rendered
+        });
+
+        socket.on('notice_posted', (n) => {
+            const list = document.getElementById('notice-list');
+            const empty = document.getElementById('no-notices');
+            if (empty) empty.remove();
+            list.insertAdjacentHTML('afterbegin', renderNotice(n));
+        });
+
+        socket.on('notice_deleted', (data) => {
+            const el = document.querySelector(`.notice-item[data-id="${data.notice_id}"]`);
+            if (el) el.remove();
+            if (document.querySelectorAll('.notice-item').length === 0) {
+                document.getElementById('notice-list').innerHTML = '<p class="empty-msg" id="no-notices">공지사항이 없습니다.</p>';
+            }
+        });
     </script>
 </body>
 </html>

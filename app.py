@@ -1,5 +1,6 @@
 import os
 import uuid
+import time
 from functools import wraps
 
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
@@ -18,6 +19,7 @@ game_conns = {}
 lobby_sids = {}  # user_id -> sid (index page + spectator connections)
 spectator_conns = {}  # room_id -> set of user_ids
 game_states = {}  # room_id -> cached game state for spectators
+game_chats = {}  # room_id -> [{ user_id, message, timestamp }]
 
 
 def login_required(f):
@@ -25,6 +27,18 @@ def login_required(f):
     def wrapper(*args, **kwargs):
         if 'user_id' not in session:
             return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return wrapper
+
+
+def admin_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({'error': '로그인이 필요합니다.'}), 401
+        user = db.get_user(session['user_id'])
+        if not user or user.get('role') != 'admin':
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
         return f(*args, **kwargs)
     return wrapper
 
@@ -86,9 +100,11 @@ def login():
 def register():
     uid = request.form.get('user_id', '').strip()
     pw = request.form.get('password', '')
+    name = request.form.get('name', '').strip()
+    email = request.form.get('email', '').strip()
     if not uid or not pw:
         return render_template('login.html', error='아이디 또는 비밀번호를 확인해 주세요.', show_register=True)
-    if not db.create_user(uid, pw):
+    if not db.create_user(uid, pw, name=name, email=email):
         return render_template('login.html', error='이미 존재하는 아이디입니다.', show_register=True)
     return render_template('login.html', success='회원가입 성공! 로그인해 주세요.')
 
@@ -140,7 +156,11 @@ def index():
         'mode': 'spectate',
         'spectator_count': len(spectator_conns.get(r['room_id'], set()))
     } for r in spectatable]
-    return render_template('index.html', user_id=uid, user=user, friends=friends, rooms=room_list)
+
+    notices = db.list_notices()
+    is_admin = user.get('role') == 'admin'
+    return render_template('index.html', user_id=uid, user=user, friends=friends,
+                           rooms=room_list, notices=notices, is_admin=is_admin)
 
 
 @app.route('/room/<room_id>')
@@ -253,6 +273,105 @@ def add_friend():
     if not friend:
         return jsonify({'error': '사용자를 찾을 수 없습니다.'}), 404
     db.add_friend(uid, fid)
+    return jsonify({'ok': True})
+
+
+# ──────────────────── Profile API ────────────────────
+
+@app.route('/api/profile', methods=['GET'])
+@login_required
+def get_profile():
+    user = db.get_user(session['user_id'])
+    if not user:
+        return jsonify({'error': '사용자를 찾을 수 없습니다.'}), 404
+    return jsonify({
+        'user_id': user['user_id'],
+        'name': user.get('name', ''),
+        'email': user.get('email', ''),
+        'role': user.get('role', 'user'),
+    })
+
+
+@app.route('/api/profile', methods=['PUT'])
+@login_required
+def update_profile():
+    data = request.get_json()
+    uid = session['user_id']
+    user = db.get_user(uid)
+    if not user:
+        return jsonify({'error': '사용자를 찾을 수 없습니다.'}), 404
+
+    new_id = data.get('user_id', '').strip()
+    new_pw = data.get('pw', '').strip()
+    new_name = data.get('name', '').strip()
+    new_email = data.get('email', '').strip()
+
+    # ID change
+    if new_id and new_id != uid:
+        existing = db.get_user(new_id)
+        if existing:
+            return jsonify({'error': '이미 존재하는 아이디입니다.'}), 400
+        # Create new user with same data
+        new_user_data = dict(user)
+        new_user_data['user_id'] = new_id
+        if new_pw:
+            new_user_data['pw'] = new_pw
+        if new_name:
+            new_user_data['name'] = new_name
+        if new_email:
+            new_user_data['email'] = new_email
+        new_user_data.pop('public_ip', None)
+        new_user_data['public_ip'] = ''
+        new_user_data['status'] = 'offline'
+        db.delete_user(uid)
+        db._users_table.put_item(Item=new_user_data)
+        session['user_id'] = new_id
+        return jsonify({'ok': True, 'new_id': new_id})
+
+    # Update fields in place
+    db.update_user_profile(
+        uid,
+        pw=new_pw if new_pw else None,
+        name=new_name if new_name is not None else None,
+        email=new_email if new_email is not None else None,
+    )
+    return jsonify({'ok': True})
+
+
+# ──────────────────── Notice API ────────────────────
+
+@app.route('/api/notices', methods=['GET'])
+@login_required
+def get_notices():
+    notices = db.list_notices()
+    return jsonify({'notices': notices})
+
+
+@app.route('/api/notices', methods=['POST'])
+@admin_required
+def post_notice():
+    data = request.get_json()
+    title = (data.get('title') or '').strip()
+    content = (data.get('content') or '').strip()
+    if not title:
+        return jsonify({'error': '제목을 입력하세요.'}), 400
+    notice_id = db.create_notice(session['user_id'], title, content)
+    notice = {
+        'notice_id': notice_id,
+        'author': session['user_id'],
+        'title': title,
+        'content': content,
+        'created_at': int(time.time()),
+    }
+    socketio.emit('notice_posted', notice, room='lobby')
+    return jsonify({'ok': True, 'notice_id': notice_id})
+
+
+@app.route('/api/notices/<notice_id>', methods=['DELETE'])
+@admin_required
+def remove_notice(notice_id):
+    db.delete_notice(notice_id)
+    socketio.emit('notice_deleted', {'notice_id': notice_id}, room='lobby')
     return jsonify({'ok': True})
 
 
@@ -409,6 +528,29 @@ def on_coaching_suggest(data):
             emit('coaching_update', data, room=rid, include_self=False)
 
 
+# ──────────────────── Game Chat ────────────────────
+
+@socketio.on('game_chat')
+def on_game_chat(data):
+    rid = data.get('room_id')
+    uid = data.get('user_id')
+    message = (data.get('message') or '').strip()
+    if not rid or not uid or not message:
+        return
+    # Limit message length
+    message = message[:200]
+    chat_msg = {
+        'user_id': uid,
+        'message': message,
+        'timestamp': int(time.time() * 1000),
+    }
+    game_chats.setdefault(rid, []).append(chat_msg)
+    # Keep only last 100 messages
+    if len(game_chats[rid]) > 100:
+        game_chats[rid] = game_chats[rid][-100:]
+    emit('chat_message', chat_msg, room=rid)
+
+
 # ──────────────────── Invite System ────────────────────
 
 @socketio.on('invite_friend')
@@ -510,6 +652,10 @@ def on_disconnect():
         if rid in game_conns:
             game_conns[rid].discard(uid)
             emit('opponent_disconnected', {'user_id': uid}, room=rid)
+            # Clean up chat when all players leave
+            if not game_conns[rid]:
+                game_chats.pop(rid, None)
+                game_states.pop(rid, None)
     elif info['context'] == 'spectate':
         leave_room(rid)
         if rid in spectator_conns:

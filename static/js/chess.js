@@ -535,5 +535,35 @@
         });
     }
 
+    // ===== Game Chat =====
+    if (isMultiplayer && socket) {
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const chatSend = document.getElementById('chat-send');
+
+        function appendChat(msg) {
+            if (!chatMessages) return;
+            const div = document.createElement('div');
+            div.className = 'chat-msg' + (msg.user_id === MY_USER ? ' chat-mine' : '');
+            div.innerHTML = '<strong>' + msg.user_id + '</strong> ' + msg.message;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function sendChat() {
+            const text = (chatInput.value || '').trim();
+            if (!text) return;
+            socket.emit('game_chat', { room_id: ROOM_ID, user_id: MY_USER, message: text });
+            chatInput.value = '';
+        }
+
+        if (chatSend) chatSend.addEventListener('click', sendChat);
+        if (chatInput) chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); sendChat(); }
+        });
+
+        socket.on('chat_message', appendChat);
+    }
+
     init();
 })();

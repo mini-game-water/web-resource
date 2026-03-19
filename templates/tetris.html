@@ -91,6 +91,14 @@
     {% endif %}
 
     {% if room_id %}
+    <div class="game-chat" id="game-chat">
+        <h3>채팅</h3>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-wrap">
+            <input type="text" id="chat-input" placeholder="메시지 입력..." maxlength="200" autocomplete="off">
+            <button class="btn btn-primary btn-chat-send" id="chat-send">전송</button>
+        </div>
+    </div>
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <script>
         const ROOM_ID = "{{ room_id }}";

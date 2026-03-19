@@ -35,6 +35,7 @@ resource "aws_iam_role_policy" "dynamodb" {
         aws_dynamodb_table.users.arn,
         aws_dynamodb_table.rooms.arn,
         "${aws_dynamodb_table.rooms.arn}/index/*",
+        aws_dynamodb_table.notices.arn,
       ]
     }]
   })
