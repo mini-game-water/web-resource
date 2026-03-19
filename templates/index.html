@@ -115,7 +115,10 @@
                         <div class="notice-body">{{ n.content }}</div>
                         <div class="notice-meta">{{ n.author }} &middot; {{ n.created_at }}</div>
                         {% if is_admin %}
-                        <button class="notice-delete-btn" onclick="deleteNotice('{{ n.notice_id }}')">&times;</button>
+                        <div class="notice-actions">
+                            <button class="notice-edit-btn" onclick="editNotice('{{ n.notice_id }}', this)">수정</button>
+                            <button class="notice-delete-btn" onclick="deleteNotice('{{ n.notice_id }}')">&times;</button>
+                        </div>
                         {% endif %}
                     </div>
                     {% endfor %}
@@ -199,18 +202,19 @@
         </div>
     </div>
 
-    <!-- Notice Create Modal -->
+    <!-- Notice Create/Edit Modal -->
     <div class="overlay" id="notice-overlay">
         <div class="overlay-content create-room-modal">
-            <h2>공지사항 작성</h2>
+            <h2 id="notice-modal-title">공지사항 작성</h2>
             <form id="notice-form">
+                <input type="hidden" id="notice-edit-id" value="">
                 <label>제목</label>
                 <input type="text" id="notice-title" placeholder="제목" required>
                 <label>내용</label>
                 <textarea id="notice-content" placeholder="내용" rows="4" style="width:100%;padding:0.7rem 1rem;border:1px solid #e6ddd3;border-radius:8px;font-size:0.9rem;background:#faf6f0;color:#5a4e42;outline:none;resize:vertical;font-family:inherit;"></textarea>
                 <div class="modal-buttons">
                     <button type="button" class="btn" onclick="closeModal('notice-overlay')">취소</button>
-                    <button type="submit" class="btn btn-primary">게시</button>
+                    <button type="submit" class="btn btn-primary" id="notice-submit-btn">게시</button>
                 </div>
             </form>
         </div>
@@ -543,26 +547,54 @@
         const createNoticeBtn = document.getElementById('create-notice-btn');
         if (createNoticeBtn) {
             createNoticeBtn.addEventListener('click', () => {
+                document.getElementById('notice-edit-id').value = '';
+                document.getElementById('notice-title').value = '';
+                document.getElementById('notice-content').value = '';
+                document.getElementById('notice-modal-title').textContent = '공지사항 작성';
+                document.getElementById('notice-submit-btn').textContent = '게시';
                 document.getElementById('notice-overlay').classList.add('active');
             });
         }
 
+        function editNotice(noticeId, btn) {
+            const item = btn.closest('.notice-item');
+            const title = item.querySelector('.notice-title').textContent;
+            const body = item.querySelector('.notice-body').textContent;
+            document.getElementById('notice-edit-id').value = noticeId;
+            document.getElementById('notice-title').value = title;
+            document.getElementById('notice-content').value = body;
+            document.getElementById('notice-modal-title').textContent = '공지사항 수정';
+            document.getElementById('notice-submit-btn').textContent = '수정';
+            document.getElementById('notice-overlay').classList.add('active');
+        }
+
         document.getElementById('notice-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const editId = document.getElementById('notice-edit-id').value;
             const title = document.getElementById('notice-title').value.trim();
             const content = document.getElementById('notice-content').value.trim();
-            const res = await fetch('/api/notices', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, content })
-            });
+            let res;
+            if (editId) {
+                res = await fetch('/api/notices/' + editId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, content })
+                });
+            } else {
+                res = await fetch('/api/notices', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, content })
+                });
+            }
             const data = await res.json();
             if (data.ok) {
                 closeModal('notice-overlay');
+                document.getElementById('notice-edit-id').value = '';
                 document.getElementById('notice-title').value = '';
                 document.getElementById('notice-content').value = '';
             } else {
-                alert(data.error || '게시에 실패했습니다.');
+                alert(data.error || '저장에 실패했습니다.');
             }
         });
 
@@ -577,12 +609,15 @@
         }
 
         function renderNotice(n) {
-            const deleteBtn = IS_ADMIN ? `<button class="notice-delete-btn" onclick="deleteNotice('${n.notice_id}')">&times;</button>` : '';
+            const adminBtns = IS_ADMIN ? `<div class="notice-actions">
+                <button class="notice-edit-btn" onclick="editNotice('${n.notice_id}', this)">수정</button>
+                <button class="notice-delete-btn" onclick="deleteNotice('${n.notice_id}')">&times;</button>
+            </div>` : '';
             return `<div class="notice-item" data-id="${n.notice_id}">
                 <div class="notice-title">${n.title}</div>
                 <div class="notice-body">${n.content}</div>
                 <div class="notice-meta">${n.author} &middot; ${formatTime(n.created_at)}</div>
-                ${deleteBtn}
+                ${adminBtns}
             </div>`;
         }
 
@@ -597,6 +632,14 @@
             const empty = document.getElementById('no-notices');
             if (empty) empty.remove();
             list.insertAdjacentHTML('afterbegin', renderNotice(n));
+        });
+
+        socket.on('notice_updated', (data) => {
+            const el = document.querySelector(`.notice-item[data-id="${data.notice_id}"]`);
+            if (el) {
+                el.querySelector('.notice-title').textContent = data.title;
+                el.querySelector('.notice-body').textContent = data.content;
+            }
         });
 
         socket.on('notice_deleted', (data) => {

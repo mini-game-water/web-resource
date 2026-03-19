@@ -345,9 +345,14 @@
 
     // ===== Game Chat =====
     if (isMultiplayer && socket) {
+        const chatBox = document.getElementById('game-chat');
         const chatMessages = document.getElementById('chat-messages');
         const chatInput = document.getElementById('chat-input');
         const chatSend = document.getElementById('chat-send');
+        const chatHeader = document.getElementById('chat-header');
+        const chatOpacity = document.getElementById('chat-opacity');
+        const chatToggle = document.getElementById('chat-toggle-btn');
+        const chatResize = document.getElementById('chat-resize');
 
         function appendChat(msg) {
             if (!chatMessages) return;
@@ -371,6 +376,70 @@
         });
 
         socket.on('chat_message', appendChat);
+
+        // Opacity
+        if (chatOpacity) chatOpacity.addEventListener('input', () => {
+            chatBox.style.opacity = chatOpacity.value / 100;
+        });
+
+        // Minimize / Restore
+        if (chatToggle) chatToggle.addEventListener('click', () => {
+            chatBox.classList.toggle('minimized');
+            chatToggle.textContent = chatBox.classList.contains('minimized') ? '+' : '−';
+        });
+
+        // Drag
+        if (chatHeader) {
+            let dragging = false, dx = 0, dy = 0;
+            chatHeader.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.chat-controls')) return;
+                dragging = true;
+                const rect = chatBox.getBoundingClientRect();
+                dx = e.clientX - rect.left;
+                dy = e.clientY - rect.top;
+                chatBox.style.transition = 'none';
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (!dragging) return;
+                let x = e.clientX - dx;
+                let y = e.clientY - dy;
+                x = Math.max(0, Math.min(x, window.innerWidth - chatBox.offsetWidth));
+                y = Math.max(0, Math.min(y, window.innerHeight - chatBox.offsetHeight));
+                chatBox.style.left = x + 'px';
+                chatBox.style.top = y + 'px';
+                chatBox.style.right = 'auto';
+                chatBox.style.bottom = 'auto';
+            });
+            document.addEventListener('mouseup', () => { dragging = false; });
+        }
+
+        // Resize (top-left handle)
+        if (chatResize) {
+            let resizing = false, startX, startY, startW, startH, startLeft, startTop;
+            chatResize.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                resizing = true;
+                const rect = chatBox.getBoundingClientRect();
+                startX = e.clientX; startY = e.clientY;
+                startW = rect.width; startH = rect.height;
+                startLeft = rect.left; startTop = rect.top;
+                chatBox.style.transition = 'none';
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (!resizing) return;
+                const dxR = startX - e.clientX;
+                const dyR = startY - e.clientY;
+                const newW = Math.max(220, startW + dxR);
+                const newH = Math.max(120, startH + dyR);
+                chatBox.style.width = newW + 'px';
+                chatBox.style.height = newH + 'px';
+                chatBox.style.left = (startLeft - (newW - startW)) + 'px';
+                chatBox.style.top = (startTop - (newH - startH)) + 'px';
+                chatBox.style.right = 'auto';
+                chatBox.style.bottom = 'auto';
+            });
+            document.addEventListener('mouseup', () => { resizing = false; });
+        }
     }
 
     init();

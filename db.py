@@ -193,6 +193,14 @@ def list_notices():
     return [_convert_decimals(item) for item in items]
 
 
+def update_notice(notice_id, title, content):
+    _notices_table.update_item(
+        Key={'notice_id': notice_id},
+        UpdateExpression='SET title = :t, content = :c',
+        ExpressionAttributeValues={':t': title, ':c': content},
+    )
+
+
 def delete_notice(notice_id):
     _notices_table.delete_item(Key={'notice_id': notice_id})
 

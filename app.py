@@ -367,6 +367,19 @@ def post_notice():
     return jsonify({'ok': True, 'notice_id': notice_id})
 
 
+@app.route('/api/notices/<notice_id>', methods=['PUT'])
+@admin_required
+def edit_notice(notice_id):
+    data = request.get_json()
+    title = (data.get('title') or '').strip()
+    content = (data.get('content') or '').strip()
+    if not title:
+        return jsonify({'error': '제목을 입력하세요.'}), 400
+    db.update_notice(notice_id, title, content)
+    socketio.emit('notice_updated', {'notice_id': notice_id, 'title': title, 'content': content}, room='lobby')
+    return jsonify({'ok': True})
+
+
 @app.route('/api/notices/<notice_id>', methods=['DELETE'])
 @admin_required
 def remove_notice(notice_id):

@@ -9,12 +9,12 @@ import json
 from decimal import Decimal
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-table = dynamodb.Table('Users')
+table = dynamodb.Table('gamehub-users')
 
 with open('data/users.json', 'r') as f:
     users = json.load(f)
 
-with table.batch_writer(batch_size=25) as batch:
+with table.batch_writer() as batch:
     for uid, data in users.items():
         item = {'user_id': uid, **data}
         item.pop('logged_in', None)
