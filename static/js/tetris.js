@@ -593,11 +593,24 @@
             });
 
             socket.on('game_ready', () => {
-                gameReady = true;
                 const el = document.getElementById('mp-status');
-                if (el) el.textContent = '게임 시작!';
-                setTimeout(() => { if (el) el.style.display = 'none'; }, 1000);
-                startGame();
+                let countdown = 7;
+                if (el) {
+                    el.style.display = '';
+                    el.innerHTML = '<span class="countdown-num">' + countdown + '</span>';
+                }
+                const cdInterval = setInterval(() => {
+                    countdown--;
+                    if (countdown > 0) {
+                        if (el) el.innerHTML = '<span class="countdown-num">' + countdown + '</span>';
+                    } else {
+                        clearInterval(cdInterval);
+                        gameReady = true;
+                        if (el) el.textContent = '게임 시작!';
+                        setTimeout(() => { if (el) el.style.display = 'none'; }, 800);
+                        startGame();
+                    }
+                }, 1000);
             });
 
             socket.on('opponent_state', (data) => {

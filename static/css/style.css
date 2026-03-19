@@ -801,6 +801,20 @@ body {
     border: 1px solid #e6ddd3;
 }
 
+/* ===== Countdown ===== */
+.countdown-num {
+    font-size: 4rem;
+    font-weight: 800;
+    color: #a38b6d;
+    display: inline-block;
+    animation: countdown-pop 0.4s ease-out;
+}
+
+@keyframes countdown-pop {
+    0% { transform: scale(1.8); opacity: 0.3; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
 /* ===== Game Page Layout ===== */
 .game-container {
     display: flex;
