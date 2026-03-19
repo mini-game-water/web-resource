@@ -312,6 +312,9 @@
     // ===== Input =====
     if (!isSpectator) {
         document.addEventListener("keydown", (e) => {
+            if (["ArrowLeft","ArrowRight","ArrowDown","ArrowUp"," "].includes(e.key)) {
+                e.preventDefault();
+            }
             if (gameOver || paused) return;
             if (isMultiplayer && !gameReady) return;
             switch (e.key) {
@@ -336,7 +339,6 @@
                     break;
                 }
                 case " ":
-                    e.preventDefault();
                     hardDrop();
                     break;
             }

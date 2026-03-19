@@ -54,7 +54,9 @@
             <button class="btn" id="start-btn">Start</button>
             <button class="btn" id="pause-btn">Pause</button>
         </div>
-        <p style="color:#9a8b78; margin-top:1rem; font-size:0.85rem;">Arrow keys: Move/Rotate &nbsp;|&nbsp; Space: Hard Drop</p>
+        {% endif %}
+        {% if not is_spectator %}
+        <p style="color:#9a8b78; margin-top:1rem; font-size:0.85rem;">← → 이동 &nbsp;|&nbsp; ↑ 회전 &nbsp;|&nbsp; ↓ 소프트드롭 &nbsp;|&nbsp; Space 하드드롭</p>
         {% endif %}
     </div>
 
