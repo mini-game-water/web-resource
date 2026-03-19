@@ -1,0 +1,32 @@
+{
+  "alice": {
+    "pw": "1234",
+    "score": 1500,
+    "logged_in": false,
+    "public_ip": "",
+    "friends": [
+      "bob",
+      "charlie"
+    ]
+  },
+  "bob": {
+    "pw": "1234",
+    "score": 2100,
+    "logged_in": false,
+    "public_ip": "",
+    "friends": [
+      "alice",
+      "charlie"
+    ]
+  },
+  "charlie": {
+    "pw": "1234",
+    "score": 800,
+    "logged_in": false,
+    "public_ip": "",
+    "friends": [
+      "alice",
+      "bob"
+    ]
+  }
+}

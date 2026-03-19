@@ -6,7 +6,10 @@
       "Bash(python app.py)",
       "Bash(taskkill //F //IM python.exe)",
       "Bash(taskkill //F //IM python3.exe)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(pip uninstall:*)",
+      "Bash(grep -E \"\\\\.\\(tf|tfvars|json|yml|yaml|env|toml|cfg|config\\)$\")",
+      "Bash(terraform init:*)"
     ]
   }
 }

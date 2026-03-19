@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ room.name }} - Game Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Game Hub</a>
+    </nav>
+
+    <div class="waiting-layout">
+        <div class="waiting-room">
+            <div class="waiting-box">
+                <h1>{{ room.name }}</h1>
+                <div class="waiting-info">
+                    <span class="room-game-badge">{{ room.game | upper }}</span>
+                    <span>호스트: {{ room.host }}</span>
+                </div>
+                <div class="waiting-players">
+                    <h3>플레이어</h3>
+                    <div id="player-list">
+                        {% for p in room.players %}
+                        <div class="player-slot filled">{{ p }}</div>
+                        {% endfor %}
+                        {% for _ in range(room.max_players - room.players|length) %}
+                        <div class="player-slot empty">대기 중...</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="waiting-status" id="waiting-status">상대방을 기다리는 중...</div>
+                <div class="waiting-spinner"></div>
+                <a href="/" class="btn" style="margin-top:1.5rem;">나가기</a>
+            </div>
+        </div>
+
+        <aside class="room-friends">
+            <h3>친구 초대</h3>
+            <div class="friend-list">
+                {% for f in friends %}
+                <div class="friend-invite-item {{ 'online' if f.logged_in else 'offline' }}" id="invite-{{ f.id }}">
+                    <div class="friend-status-dot"></div>
+                    <span class="friend-name">{{ f.id }}</span>
+                    <button class="btn btn-invite"
+                            {% if not f.logged_in %}disabled{% endif %}
+                            onclick="inviteFriend('{{ f.id }}')">
+                        초대
+                    </button>
+                </div>
+                {% endfor %}
+                {% if not friends %}
+                <p class="empty-msg">친구가 없습니다.</p>
+                {% endif %}
+            </div>
+        </aside>
+    </div>
+
+    <!-- Toast notification -->
+    <div class="toast" id="invite-toast"></div>
+
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        const ROOM_ID = "{{ room.room_id }}";
+        const MY_USER = "{{ user_id }}";
+
+        socket.emit('join_waiting', { room_id: ROOM_ID, user_id: MY_USER });
+
+        socket.on('room_update', (data) => {
+            const list = document.getElementById('player-list');
+            list.innerHTML = '';
+            data.players.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'player-slot filled';
+                div.textContent = p;
+                list.appendChild(div);
+            });
+            for (let i = data.count; i < 2; i++) {
+                const div = document.createElement('div');
+                div.className = 'player-slot empty';
+                div.textContent = '대기 중...';
+                list.appendChild(div);
+            }
+            if (data.count >= 2) {
+                document.getElementById('waiting-status').textContent = '게임을 시작합니다!';
+            }
+        });
+
+        socket.on('game_started', (data) => {
+            window.location.href = data.url;
+        });
+
+        socket.on('player_left', () => {
+            document.getElementById('waiting-status').textContent = '상대방을 기다리는 중...';
+        });
+
+        // ── Invite ──
+        function inviteFriend(friendId) {
+            const btn = document.querySelector(`#invite-${friendId} .btn-invite`);
+            btn.disabled = true;
+            btn.textContent = '전송 중...';
+            socket.emit('invite_friend', { room_id: ROOM_ID, friend_id: friendId, user_id: MY_USER });
+        }
+
+        socket.on('invite_result', (data) => {
+            const btn = document.querySelector(`#invite-${data.friend_id} .btn-invite`);
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '초대';
+            }
+            if (data.accepted) {
+                showToast(`${data.friend_id}님이 초대를 수락했습니다!`, 'success');
+            } else {
+                showToast(`${data.friend_id}: ${data.reason}`, 'error');
+            }
+        });
+
+        function showToast(msg, type) {
+            const toast = document.getElementById('invite-toast');
+            toast.textContent = msg;
+            toast.className = 'toast show ' + (type || '');
+            setTimeout(() => { toast.className = 'toast'; }, 3000);
+        }
+    </script>
+</body>
+</html>

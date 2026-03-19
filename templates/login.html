@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Game Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Game Hub</a>
+    </nav>
+
+    <div class="login-container">
+        <div class="login-box">
+            <h1 id="form-title">로그인</h1>
+
+            {% if error %}
+            <div class="alert alert-error">{{ error }}</div>
+            {% endif %}
+            {% if success %}
+            <div class="alert alert-success">{{ success }}</div>
+            {% endif %}
+
+            <form id="login-form" method="POST" action="/login">
+                <input type="text" name="user_id" placeholder="아이디" required>
+                <input type="password" name="password" placeholder="비밀번호" required>
+                <button type="submit" class="btn btn-primary">로그인</button>
+            </form>
+
+            <form id="register-form" method="POST" action="/register" style="display:none;">
+                <input type="text" name="user_id" placeholder="아이디" required>
+                <input type="password" name="password" placeholder="비밀번호" required>
+                <button type="submit" class="btn btn-primary">회원가입</button>
+            </form>
+
+            <p class="toggle-text">
+                <span id="toggle-register">계정이 없으신가요? <strong>회원가입</strong></span>
+                <span id="toggle-login" style="display:none;">이미 계정이 있으신가요? <strong>로그인</strong></span>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('toggle-register').addEventListener('click', () => {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('register-form').style.display = 'block';
+            document.getElementById('toggle-register').style.display = 'none';
+            document.getElementById('toggle-login').style.display = 'inline';
+            document.getElementById('form-title').textContent = '회원가입';
+        });
+        document.getElementById('toggle-login').addEventListener('click', () => {
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('toggle-register').style.display = 'inline';
+            document.getElementById('toggle-login').style.display = 'none';
+            document.getElementById('form-title').textContent = '로그인';
+        });
+        {% if show_register %}
+        document.getElementById('toggle-register').click();
+        {% endif %}
+    </script>
+</body>
+</html>
