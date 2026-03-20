@@ -351,22 +351,111 @@
         <button class="game-help-btn">−</button>
     </div>
     <div class="game-help-body" id="game-help-body">
-        <p><strong>규칙</strong></p>
+        <p><strong>기본 규칙</strong></p>
         <ul>
-            <li>주사위 5개를 최대 3번 굴릴 수 있습니다.</li>
-            <li>원하는 주사위를 홀드한 뒤 나머지를 다시 굴립니다.</li>
-            <li>매 턴 12개 카테고리 중 하나에 점수를 기록합니다.</li>
-            <li>12턴 후 총점이 가장 높은 사람이 승리!</li>
+            <li>주사위 <strong>5개</strong>를 매 턴 최대 <strong>3번</strong> 굴릴 수 있습니다.</li>
+            <li>유지하고 싶은 주사위를 <strong>홀드</strong>한 뒤 나머지만 다시 굴립니다.</li>
+            <li>매 턴이 끝나면 <strong>12개 카테고리</strong> 중 하나를 선택하여 점수를 기록합니다.</li>
+            <li>12턴 후 <strong>총점이 가장 높은 플레이어</strong>가 승리합니다!</li>
         </ul>
-        <p><strong>카테고리</strong></p>
+
+        <p><strong>상단 섹션 (1~6)</strong></p>
+        <p style="margin-bottom:4px">해당 숫자만 골라서 합산합니다.</p>
+        <div class="yacht-example">
+            <div class="example-label">예시: "4" 카테고리 선택 시</div>
+            <div class="example-dice-row">
+                <span class="example-die highlight">4</span>
+                <span class="example-die">2</span>
+                <span class="example-die highlight">4</span>
+                <span class="example-die">6</span>
+                <span class="example-die highlight">4</span>
+            </div>
+            → 4가 3개이므로 <span class="example-result">= 12점</span>
+        </div>
+        <div class="yacht-example">
+            <div class="example-label">보너스: 상단 합계가 63점 이상이면 +35점!</div>
+            각 숫자를 3개 이상 모으면 63점 달성 (1×3 + 2×3 + ... + 6×3 = 63)
+        </div>
+
+        <p><strong>하단 섹션</strong></p>
+
+        <div class="yacht-example">
+            <div class="example-label">초이스 — 주사위 전체 합</div>
+            <div class="example-dice-row">
+                <span class="example-die">5</span>
+                <span class="example-die">6</span>
+                <span class="example-die">4</span>
+                <span class="example-die">6</span>
+                <span class="example-die">5</span>
+            </div>
+            → <span class="example-result">= 26점</span> (어떤 조합이든 합산)
+        </div>
+
+        <div class="yacht-example">
+            <div class="example-label">포커 — 같은 수 4개 이상 시 전체 합</div>
+            <div class="example-dice-row">
+                <span class="example-die highlight">3</span>
+                <span class="example-die highlight">3</span>
+                <span class="example-die highlight">3</span>
+                <span class="example-die highlight">3</span>
+                <span class="example-die">5</span>
+            </div>
+            → 3이 4개! <span class="example-result">= 17점</span> (전체 합)
+        </div>
+
+        <div class="yacht-example">
+            <div class="example-label">풀하우스 — 같은 수 3개 + 같은 수 2개 → 고정 25점</div>
+            <div class="example-dice-row">
+                <span class="example-die highlight">2</span>
+                <span class="example-die highlight">2</span>
+                <span class="example-die highlight">2</span>
+                <span class="example-die highlight">5</span>
+                <span class="example-die highlight">5</span>
+            </div>
+            → 2가 3개 + 5가 2개 <span class="example-result">= 25점</span>
+        </div>
+
+        <div class="yacht-example">
+            <div class="example-label">스몰 스트레이트 — 연속 4개 → 고정 15점</div>
+            <div class="example-dice-row">
+                <span class="example-die highlight">1</span>
+                <span class="example-die highlight">2</span>
+                <span class="example-die highlight">3</span>
+                <span class="example-die highlight">4</span>
+                <span class="example-die">4</span>
+            </div>
+            → 1-2-3-4 연속! <span class="example-result">= 15점</span>
+        </div>
+
+        <div class="yacht-example">
+            <div class="example-label">라지 스트레이트 — 연속 5개 → 고정 30점</div>
+            <div class="example-dice-row">
+                <span class="example-die highlight">2</span>
+                <span class="example-die highlight">3</span>
+                <span class="example-die highlight">4</span>
+                <span class="example-die highlight">5</span>
+                <span class="example-die highlight">6</span>
+            </div>
+            → 2-3-4-5-6 연속! <span class="example-result">= 30점</span>
+        </div>
+
+        <div class="yacht-example">
+            <div class="example-label">요트! — 5개 모두 같은 수 → 고정 50점</div>
+            <div class="example-dice-row">
+                <span class="example-die highlight">6</span>
+                <span class="example-die highlight">6</span>
+                <span class="example-die highlight">6</span>
+                <span class="example-die highlight">6</span>
+                <span class="example-die highlight">6</span>
+            </div>
+            → 최고의 족보! <span class="example-result">= 50점</span>
+        </div>
+
+        <p><strong>전략 팁</strong></p>
         <ul>
-            <li><strong>상단</strong>: 1~6 — 해당 숫자 합계 (63점↑ 시 보너스 +35)</li>
-            <li><strong>초이스</strong>: 모든 주사위 합계</li>
-            <li><strong>포커</strong>: 같은 수 4개 이상 시 전체 합</li>
-            <li><strong>풀하우스</strong>: 3+2 조합 시 25점</li>
-            <li><strong>스몰 스트레이트</strong>: 연속 4개 시 15점</li>
-            <li><strong>라지 스트레이트</strong>: 연속 5개 시 30점</li>
-            <li><strong>요트</strong>: 5개 모두 같으면 50점!</li>
+            <li>상단 보너스(+35)를 노리려면 각 숫자를 최소 3개씩 모으세요.</li>
+            <li>원하는 조합이 안 되면 <strong>초이스</strong>에 높은 합을 기록하세요.</li>
+            <li>0점이 되는 카테고리는 일찍 사용하는 것이 유리합니다.</li>
         </ul>
     </div>
 </div>

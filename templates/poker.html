@@ -417,49 +417,184 @@
     {% endif %}
 
     <script src="{{ url_for('static', filename='js/poker.js') }}"></script>
+<!-- Panel 1: Rules -->
 <div class="game-help-panel" id="game-help-panel">
     <div class="game-help-header" id="game-help-toggle">
-        <span>게임 설명</span>
+        <span>게임 규칙</span>
         <button class="game-help-btn">−</button>
     </div>
     <div class="game-help-body" id="game-help-body">
-        <p><strong>규칙 (텍사스 홀덤)</strong></p>
+        <p><strong>텍사스 홀덤 기본 규칙</strong></p>
         <ul>
-            <li>각 플레이어에게 2장의 카드가 배분됩니다.</li>
-            <li>커뮤니티 카드 5장과 조합하여 최강의 5장을 만드세요.</li>
-            <li>베팅 라운드: 프리플롭 → 플롭 → 턴 → 리버</li>
-            <li>폴드, 체크/콜, 레이즈 중 선택합니다.</li>
-            <li>시작 칩: 1000 코인</li>
+            <li>각 플레이어에게 <strong>2장의 홀 카드</strong>가 비공개로 배분됩니다.</li>
+            <li>테이블 중앙에 <strong>5장의 커뮤니티 카드</strong>가 단계별로 공개됩니다.</li>
+            <li>홀 카드 2장과 커뮤니티 카드 5장 중 <strong>최강의 5장 조합</strong>을 만드세요.</li>
         </ul>
-        <p><strong>핸드 랭킹 (높은 순)</strong></p>
-        <ol class="hand-ranking-list">
-            <li><strong>로얄 플러시</strong> — A K Q J 10 같은 무늬</li>
-            <li><strong>스트레이트 플러시</strong> — 연속 5장 같은 무늬</li>
-            <li><strong>포 오브 어 카인드</strong> — 같은 숫자 4장</li>
-            <li><strong>풀 하우스</strong> — 3장 + 2장</li>
-            <li><strong>플러시</strong> — 같은 무늬 5장</li>
-            <li><strong>스트레이트</strong> — 연속 5장</li>
-            <li><strong>쓰리 오브 어 카인드</strong> — 같은 숫자 3장</li>
-            <li><strong>투 페어</strong> — 페어 2조</li>
-            <li><strong>원 페어</strong> — 같은 숫자 2장</li>
-            <li><strong>하이 카드</strong> — 가장 높은 카드</li>
+        <p><strong>게임 진행 순서</strong></p>
+        <ol>
+            <li><strong>프리플롭</strong> — 홀 카드 2장 배분 후 첫 베팅</li>
+            <li><strong>플롭</strong> — 커뮤니티 카드 3장 공개 후 베팅</li>
+            <li><strong>턴</strong> — 4번째 커뮤니티 카드 공개 후 베팅</li>
+            <li><strong>리버</strong> — 5번째 커뮤니티 카드 공개 후 최종 베팅</li>
+            <li><strong>쇼다운</strong> — 남은 플레이어의 패를 비교하여 승자 결정</li>
         </ol>
+        <p><strong>베팅 액션</strong></p>
+        <ul>
+            <li><strong>폴드</strong> — 카드를 버리고 해당 라운드 포기</li>
+            <li><strong>체크</strong> — 추가 베팅 없이 넘기기 (앞 베팅이 없을 때)</li>
+            <li><strong>콜</strong> — 앞 사람의 베팅 금액과 동일하게 맞추기</li>
+            <li><strong>레이즈</strong> — 베팅 금액을 높이기</li>
+            <li><strong>올인</strong> — 보유 칩 전부를 베팅</li>
+        </ul>
+        <p><strong>기본 설정</strong></p>
+        <ul>
+            <li>시작 칩: <strong>10,000 코인</strong></li>
+            <li>빅 블라인드: <strong>1,000 코인</strong> / 스몰 블라인드: <strong>500 코인</strong></li>
+            <li>딜러(AI)가 항상 참여하여 최소 1:1 대결이 보장됩니다.</li>
+        </ul>
     </div>
 </div>
+
+<!-- Panel 2: Hand Rankings -->
+<div class="game-help-panel panel-second" id="hand-rank-panel">
+    <div class="game-help-header" id="hand-rank-toggle">
+        <span>핸드 랭킹</span>
+        <button class="game-help-btn">−</button>
+    </div>
+    <div class="game-help-body" id="hand-rank-body">
+        <ul class="hand-ranking-list">
+            <li>
+                <div class="hand-rank-name">1. 로얄 플러시</div>
+                <div class="hand-rank-desc">같은 무늬 A K Q J 10</div>
+                <div class="hand-example-cards">
+                    <span class="mini-card red highlight"><span class="mc-rank">A</span><span class="mc-suit">♠</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">K</span><span class="mc-suit">♠</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">Q</span><span class="mc-suit">♠</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">J</span><span class="mc-suit">♠</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">10</span><span class="mc-suit">♠</span></span>
+                </div>
+            </li>
+            <li>
+                <div class="hand-rank-name">2. 스트레이트 플러시</div>
+                <div class="hand-rank-desc">같은 무늬 연속 5장</div>
+                <div class="hand-example-cards">
+                    <span class="mini-card red highlight"><span class="mc-rank">9</span><span class="mc-suit">♥</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">8</span><span class="mc-suit">♥</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">7</span><span class="mc-suit">♥</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">6</span><span class="mc-suit">♥</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">5</span><span class="mc-suit">♥</span></span>
+                </div>
+            </li>
+            <li>
+                <div class="hand-rank-name">3. 포 오브 어 카인드</div>
+                <div class="hand-rank-desc">같은 숫자 4장 + 아무 카드 1장</div>
+                <div class="hand-example-cards">
+                    <span class="mini-card black highlight"><span class="mc-rank">Q</span><span class="mc-suit">♠</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">Q</span><span class="mc-suit">♥</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">Q</span><span class="mc-suit">♦</span></span>
+                    <span class="mini-card black highlight"><span class="mc-rank">Q</span><span class="mc-suit">♣</span></span>
+                    <span class="mini-card black"><span class="mc-rank">7</span><span class="mc-suit">♣</span></span>
+                </div>
+            </li>
+            <li>
+                <div class="hand-rank-name">4. 풀 하우스</div>
+                <div class="hand-rank-desc">같은 숫자 3장 + 같은 숫자 2장</div>
+                <div class="hand-example-cards">
+                    <span class="mini-card black highlight"><span class="mc-rank">K</span><span class="mc-suit">♠</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">K</span><span class="mc-suit">♥</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">K</span><span class="mc-suit">♦</span></span>
+                    <span class="mini-card black highlight"><span class="mc-rank">5</span><span class="mc-suit">♣</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">5</span><span class="mc-suit">♥</span></span>
+                </div>
+            </li>
+            <li>
+                <div class="hand-rank-name">5. 플러시</div>
+                <div class="hand-rank-desc">같은 무늬 5장 (연속 아님)</div>
+                <div class="hand-example-cards">
+                    <span class="mini-card red highlight"><span class="mc-rank">A</span><span class="mc-suit">♦</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">J</span><span class="mc-suit">♦</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">9</span><span class="mc-suit">♦</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">6</span><span class="mc-suit">♦</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">3</span><span class="mc-suit">♦</span></span>
+                </div>
+            </li>
+            <li>
+                <div class="hand-rank-name">6. 스트레이트</div>
+                <div class="hand-rank-desc">연속된 숫자 5장 (무늬 무관)</div>
+                <div class="hand-example-cards">
+                    <span class="mini-card black highlight"><span class="mc-rank">10</span><span class="mc-suit">♠</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">9</span><span class="mc-suit">♥</span></span>
+                    <span class="mini-card black highlight"><span class="mc-rank">8</span><span class="mc-suit">♣</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">7</span><span class="mc-suit">♦</span></span>
+                    <span class="mini-card black highlight"><span class="mc-rank">6</span><span class="mc-suit">♠</span></span>
+                </div>
+            </li>
+            <li>
+                <div class="hand-rank-name">7. 쓰리 오브 어 카인드</div>
+                <div class="hand-rank-desc">같은 숫자 3장 + 다른 카드 2장</div>
+                <div class="hand-example-cards">
+                    <span class="mini-card red highlight"><span class="mc-rank">8</span><span class="mc-suit">♥</span></span>
+                    <span class="mini-card black highlight"><span class="mc-rank">8</span><span class="mc-suit">♠</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">8</span><span class="mc-suit">♦</span></span>
+                    <span class="mini-card black"><span class="mc-rank">K</span><span class="mc-suit">♣</span></span>
+                    <span class="mini-card red"><span class="mc-rank">4</span><span class="mc-suit">♥</span></span>
+                </div>
+            </li>
+            <li>
+                <div class="hand-rank-name">8. 투 페어</div>
+                <div class="hand-rank-desc">같은 숫자 2장씩 2조 + 다른 카드 1장</div>
+                <div class="hand-example-cards">
+                    <span class="mini-card black highlight"><span class="mc-rank">A</span><span class="mc-suit">♠</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">A</span><span class="mc-suit">♥</span></span>
+                    <span class="mini-card red highlight"><span class="mc-rank">J</span><span class="mc-suit">♦</span></span>
+                    <span class="mini-card black highlight"><span class="mc-rank">J</span><span class="mc-suit">♣</span></span>
+                    <span class="mini-card black"><span class="mc-rank">3</span><span class="mc-suit">♠</span></span>
+                </div>
+            </li>
+            <li>
+                <div class="hand-rank-name">9. 원 페어</div>
+                <div class="hand-rank-desc">같은 숫자 2장 + 다른 카드 3장</div>
+                <div class="hand-example-cards">
+                    <span class="mini-card red highlight"><span class="mc-rank">10</span><span class="mc-suit">♥</span></span>
+                    <span class="mini-card black highlight"><span class="mc-rank">10</span><span class="mc-suit">♣</span></span>
+                    <span class="mini-card black"><span class="mc-rank">K</span><span class="mc-suit">♠</span></span>
+                    <span class="mini-card red"><span class="mc-rank">7</span><span class="mc-suit">♦</span></span>
+                    <span class="mini-card red"><span class="mc-rank">2</span><span class="mc-suit">♥</span></span>
+                </div>
+            </li>
+            <li>
+                <div class="hand-rank-name">10. 하이 카드</div>
+                <div class="hand-rank-desc">위 조합이 없을 때 가장 높은 카드</div>
+                <div class="hand-example-cards">
+                    <span class="mini-card black highlight"><span class="mc-rank">A</span><span class="mc-suit">♠</span></span>
+                    <span class="mini-card red"><span class="mc-rank">J</span><span class="mc-suit">♦</span></span>
+                    <span class="mini-card black"><span class="mc-rank">8</span><span class="mc-suit">♣</span></span>
+                    <span class="mini-card red"><span class="mc-rank">5</span><span class="mc-suit">♥</span></span>
+                    <span class="mini-card black"><span class="mc-rank">2</span><span class="mc-suit">♠</span></span>
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>
+
 <script>
 (function() {
-    const toggle = document.getElementById('game-help-toggle');
-    const body = document.getElementById('game-help-body');
-    const btn = toggle.querySelector('.game-help-btn');
-    toggle.addEventListener('click', () => {
-        if (body.style.display === 'none') {
-            body.style.display = '';
-            btn.textContent = '−';
-        } else {
-            body.style.display = 'none';
-            btn.textContent = '+';
-        }
-    });
+    function setupToggle(toggleId, bodyId) {
+        const toggle = document.getElementById(toggleId);
+        const body = document.getElementById(bodyId);
+        const btn = toggle.querySelector('.game-help-btn');
+        toggle.addEventListener('click', () => {
+            if (body.style.display === 'none') {
+                body.style.display = '';
+                btn.textContent = '−';
+            } else {
+                body.style.display = 'none';
+                btn.textContent = '+';
+            }
+        });
+    }
+    setupToggle('game-help-toggle', 'game-help-body');
+    setupToggle('hand-rank-toggle', 'hand-rank-body');
 })();
 </script>
 </body>
