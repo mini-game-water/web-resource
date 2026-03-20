@@ -1360,6 +1360,64 @@ body {
     opacity: 0.6;
 }
 
+/* ===== Participants Panel ===== */
+.participants-panel {
+    position: fixed;
+    top: 5rem;
+    right: 1rem;
+    width: 180px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #e6ddd3;
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    z-index: 40;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.participants-panel h4 {
+    font-size: 0.8rem;
+    color: #a38b6d;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.participant-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: #5a4e42;
+    padding: 0.2rem 0;
+}
+
+.participant-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.player-dot {
+    background: #5cb85c;
+}
+
+.spectator-dot {
+    background: #5bc0de;
+}
+
+.participant-role {
+    font-size: 0.7rem;
+    color: #9a8b78;
+}
+
+/* ===== Chat Role Tag ===== */
+.chat-role {
+    font-size: 0.75rem;
+    color: #9a8b78;
+    font-weight: 400;
+}
+
 /* ===== Notice Board (Index Sidebar) ===== */
 .notice-section {
     margin-top: 1.5rem;

@@ -441,6 +441,19 @@
             window.location.href = '/';
         });
 
+        socket.on('participants_update', (data) => {
+            const list = document.getElementById('participants-list');
+            if (!list) return;
+            let html = '';
+            (data.players || []).forEach(p => {
+                html += '<div class="participant-item"><span class="participant-dot player-dot"></span>' + p + ' <span class="participant-role">(Player)</span></div>';
+            });
+            (data.spectators || []).forEach(s => {
+                html += '<div class="participant-item"><span class="participant-dot spectator-dot"></span>' + s + ' <span class="participant-role">(Spectator)</span></div>';
+            });
+            list.innerHTML = html;
+        });
+
         if (isSpectator) {
             socket.emit('join_spectate', { room_id: ROOM_ID, user_id: MY_USER });
             socket.emit('user_status', { user_id: MY_USER, status: 'spectating' });
@@ -552,7 +565,8 @@
             if (!chatMessages) return;
             const div = document.createElement('div');
             div.className = 'chat-msg' + (msg.user_id === MY_USER ? ' chat-mine' : '');
-            div.innerHTML = '<strong>' + msg.user_id + '</strong> ' + msg.message;
+            const roleTag = msg.role ? ' <span class="chat-role">(' + msg.role + ')</span>' : '';
+            div.innerHTML = '<strong>' + msg.user_id + '</strong>' + roleTag + ' ' + msg.message;
             chatMessages.appendChild(div);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }

@@ -462,6 +462,7 @@ def on_join_game(data):
     actual_players = len(room.get('players', [])) if room else 2
     if len(game_conns[rid]) >= actual_players:
         emit('game_ready', {}, room=rid)
+    broadcast_participants(rid)
 
 
 @socketio.on('join_spectate')
@@ -478,6 +479,7 @@ def on_join_spectate(data):
         if 'eliminated' in sync_data and isinstance(sync_data['eliminated'], set):
             sync_data['eliminated'] = list(sync_data['eliminated'])
         emit('game_state_sync', sync_data)
+    broadcast_participants(rid)
 
 
 @socketio.on('game_move')
@@ -518,6 +520,16 @@ def destroy_game_room(rid):
     game_states.pop(rid, None)
     spectator_conns.pop(rid, None)
     broadcast_rooms()
+
+
+def broadcast_participants(rid):
+    """Broadcast current player and spectator list to the room."""
+    players = list(game_conns.get(rid, set()))
+    spectators = list(spectator_conns.get(rid, set()))
+    socketio.emit('participants_update', {
+        'players': players,
+        'spectators': spectators,
+    }, room=rid)
 
 
 @socketio.on('game_over_event')
@@ -565,8 +577,12 @@ def on_game_chat(data):
         return
     # Limit message length
     message = message[:200]
+    # Determine role (player or spectator)
+    is_player = rid in game_conns and uid in game_conns[rid]
+    role = 'Player' if is_player else 'Spectator'
     chat_msg = {
         'user_id': uid,
+        'role': role,
         'message': message,
         'timestamp': int(time.time() * 1000),
     }
@@ -678,15 +694,35 @@ def on_disconnect():
         if rid in game_conns:
             game_conns[rid].discard(uid)
             emit('opponent_disconnected', {'user_id': uid}, room=rid)
+
+            # Tetris multi-player: treat disconnect as elimination
+            room = db.get_room(rid)
+            if room and room['game'] == 'tetris' and room.get('max_players', 2) > 2:
+                gs = game_states.setdefault(rid, {'players': {}, 'eliminated': set()})
+                if 'eliminated' not in gs:
+                    gs['eliminated'] = set()
+                gs['eliminated'].add(uid)
+                emit('player_eliminated', {'user_id': uid}, room=rid)
+                all_players = set(room.get('players', []))
+                alive = all_players - gs['eliminated']
+                if len(alive) <= 1 and alive:
+                    winner = alive.pop()
+                    emit('game_winner', {'winner': winner}, room=rid)
+                    destroy_game_room(rid)
+                    return
+
             # Destroy room when all players leave
             if not game_conns[rid]:
                 destroy_game_room(rid)
+            else:
+                broadcast_participants(rid)
     elif info['context'] == 'spectate':
         leave_room(rid)
         if rid in spectator_conns:
             spectator_conns[rid].discard(uid)
         if uid in lobby_sids and lobby_sids[uid] == request.sid:
             del lobby_sids[uid]
+        broadcast_participants(rid)
 
 
 # ──────────────────── Main ────────────────────
