@@ -314,14 +314,27 @@
                 row.style.display = 'none';
             }
         }
-        document.querySelectorAll('input[name="game"]').forEach(radio => {
-            radio.addEventListener('change', updateMaxPlayersVisibility);
-        });
-        document.getElementById('allow-spectate').addEventListener('change', (e) => {
+        function updateCoachingState() {
+            const game = document.querySelector('input[name="game"]:checked').value;
+            const spectateChecked = document.getElementById('allow-spectate').checked;
             const coachingCheckbox = document.getElementById('allow-coaching');
-            coachingCheckbox.disabled = !e.target.checked;
-            if (!e.target.checked) coachingCheckbox.checked = false;
+            const noCoachingGames = ['tetris', 'poker', 'yacht'];
+
+            if (noCoachingGames.includes(game)) {
+                coachingCheckbox.disabled = true;
+                coachingCheckbox.checked = false;
+            } else {
+                coachingCheckbox.disabled = !spectateChecked;
+                if (!spectateChecked) coachingCheckbox.checked = false;
+            }
+        }
+        document.querySelectorAll('input[name="game"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                updateMaxPlayersVisibility();
+                updateCoachingState();
+            });
         });
+        document.getElementById('allow-spectate').addEventListener('change', updateCoachingState);
 
         function renderRooms() {
             const filtered = activeGameFilter === 'all'
@@ -338,9 +351,15 @@
             }
             list.innerHTML = visible.map(r => {
                 const isSpectate = r.mode === 'spectate';
-                const actionBtn = isSpectate
-                    ? `<button class="btn btn-spectate" onclick="spectateRoom('${r.id}', '${r.game}')">관전</button>`
-                    : `<button class="btn btn-join" onclick="joinRoom('${r.id}', ${r.password})">참가</button>`;
+                let actionBtn;
+                if (isSpectate) {
+                    actionBtn = `<button class="btn btn-spectate" onclick="spectateRoom('${r.id}', '${r.game}')">관전</button>`;
+                    if (r.game === 'poker' && r.player_count < r.max_players) {
+                        actionBtn += ` <button class="btn btn-join" onclick="joinPokerGame('${r.id}', ${r.password})">참여</button>`;
+                    }
+                } else {
+                    actionBtn = `<button class="btn btn-join" onclick="joinRoom('${r.id}', ${r.password})">참가</button>`;
+                }
                 const meta = isSpectate
                     ? `<span>관전: ${r.spectator_count || 0}명</span><span>${r.player_count}/${r.max_players}명</span>`
                     : `<span>호스트: ${r.host}</span><span>${r.player_count}/${r.max_players}명</span>`;
@@ -363,6 +382,25 @@
 
         function spectateRoom(roomId, game) {
             window.location.href = '/' + game + '?room_id=' + roomId + '&spectate=1';
+        }
+
+        async function joinPokerGame(roomId, hasPassword) {
+            let password = '';
+            if (hasPassword) {
+                password = prompt('비밀번호를 입력하세요:');
+                if (password === null) return;
+            }
+            const res = await fetch('/api/rooms/' + roomId + '/join-game', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            const data = await res.json();
+            if (data.room_id) {
+                window.location.href = '/poker?room_id=' + data.room_id;
+            } else {
+                alert(data.error || '참여할 수 없습니다.');
+            }
         }
 
         document.getElementById('load-more-btn').addEventListener('click', () => {

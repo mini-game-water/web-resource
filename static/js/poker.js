@@ -20,9 +20,10 @@
         '\uc2a4\ud2b8\ub808\uc774\ud2b8 \ud50c\ub7ec\uc2dc', '\ub85c\uc584 \ud50c\ub7ec\uc2dc'
     ];
     const STARTING_CHIPS = 1000;
-    const SMALL_BLIND = 10;
-    const BIG_BLIND = 20;
-    const SOLO_PLAYER_NAMES = ['\ub098', 'AI \ub51c\ub7ec 1', 'AI \ub51c\ub7ec 2', 'AI \ub51c\ub7ec 3'];
+    const SMALL_BLIND = 500;
+    const BIG_BLIND = 1000;
+    const DEALER_NAME = '딜러';
+    const SOLO_PLAYER_NAMES = ['나', DEALER_NAME];
 
     // ── Determine player names and count ──
     let PLAYER_NAMES;
@@ -30,17 +31,24 @@
     let myIndex = 0;
     let isHost = false;
 
+    let pendingJoins = [];
+
     if (isMultiplayer) {
         PLAYER_NAMES = roomPlayers.slice();
+        PLAYER_NAMES.push(DEALER_NAME); // Always add dealer as AI
         NUM_PLAYERS = PLAYER_NAMES.length;
         myIndex = PLAYER_NAMES.indexOf(myUser);
         if (myIndex === -1) myIndex = 0;
         isHost = (myIndex === 0); // Player 1 is the host
     } else {
         PLAYER_NAMES = SOLO_PLAYER_NAMES;
-        NUM_PLAYERS = 4;
+        NUM_PLAYERS = 2;
         myIndex = 0;
         isHost = true;
+    }
+
+    function isAIPlayer(idx) {
+        return PLAYER_NAMES[idx] === DEALER_NAME;
     }
 
     // ── Game State ──
@@ -641,9 +649,19 @@
         handInProgress = state.handInProgress;
         gameRunning = state.gameRunning;
 
+        // Sync player list if it changed (mid-game joins)
+        if (state.playerStates.length !== NUM_PLAYERS) {
+            PLAYER_NAMES = state.playerStates.map(ps => ps.name);
+            NUM_PLAYERS = PLAYER_NAMES.length;
+            if (isMultiplayer) myIndex = PLAYER_NAMES.indexOf(myUser);
+            players = [];
+            initArrays();
+            createSeats(PLAYER_NAMES, isSpectator ? 0 : myIndex);
+        }
+
         state.playerStates.forEach((ps, i) => {
             if (!players[i]) {
-                players[i] = { name: ps.name, chips: ps.chips, hand: [], isAI: false };
+                players[i] = { name: ps.name, chips: ps.chips, hand: [], isAI: ps.name === DEALER_NAME };
             }
             players[i].name = ps.name;
             players[i].chips = ps.chips;
@@ -714,13 +732,40 @@
                 name: PLAYER_NAMES[i],
                 chips: STARTING_CHIPS,
                 hand: [],
-                isAI: isMultiplayer ? false : (i !== 0)
+                isAI: isAIPlayer(i)
             });
         }
         initArrays();
     }
 
     async function startNewHand() {
+        // Process pending mid-game joins
+        if (pendingJoins.length > 0 && (isHost || !isMultiplayer)) {
+            for (const uid of pendingJoins) {
+                if (!PLAYER_NAMES.includes(uid)) {
+                    // Insert before the dealer (last element)
+                    const dealerIdx = PLAYER_NAMES.indexOf(DEALER_NAME);
+                    PLAYER_NAMES.splice(dealerIdx, 0, uid);
+                    NUM_PLAYERS = PLAYER_NAMES.length;
+                    players.splice(dealerIdx, 0, {
+                        name: uid,
+                        chips: STARTING_CHIPS,
+                        hand: [],
+                        isAI: false
+                    });
+                    disconnectedPlayers.splice(dealerIdx, 0, false);
+                    // Update myIndex if needed
+                    if (isMultiplayer) {
+                        myIndex = PLAYER_NAMES.indexOf(myUser);
+                    }
+                }
+            }
+            pendingJoins = [];
+            initArrays();
+            createSeats(PLAYER_NAMES, isSpectator ? 0 : myIndex);
+            updatePlayerInfo();
+        }
+
         if (checkGameOver()) return;
 
         handInProgress = true;
@@ -883,25 +928,10 @@
             updateBettingControls();
             broadcastState();
 
-            if (isMultiplayer && !players[currentPlayerIndex].isAI) {
-                // In multiplayer: if it's my turn (and I'm host), wait for my input
-                // If it's another player's turn, wait for their action via socket
-                if (currentPlayerIndex === myIndex) {
-                    await waitForPlayerAction();
-                } else {
-                    // Host waits for remote player's action
-                    await waitForRemoteAction();
-                }
-            } else if (currentPlayerIndex === myIndex) {
-                // Solo mode: human player
-                await waitForPlayerAction();
-            } else {
-                // AI player (solo mode only)
-                await sleep(600 + Math.random() * 800);
-                // Auto-fold disconnected players
-                if (disconnectedPlayers[currentPlayerIndex]) {
-                    await executePlayerAction('fold', 0, currentPlayerIndex);
-                } else {
+            if (players[currentPlayerIndex].isAI) {
+                // AI player (dealer) — works in both solo and multiplayer
+                if (isHost || !isMultiplayer) {
+                    await sleep(600 + Math.random() * 800);
                     const decision = aiDecision(currentPlayerIndex);
                     if (decision.action === 'raise') {
                         const toCall = roundBet - currentBets[currentPlayerIndex];
@@ -909,7 +939,27 @@
                     } else {
                         await executePlayerAction(decision.action, 0, currentPlayerIndex);
                     }
+                } else {
+                    // Non-host waits for state broadcast from host
+                    await waitForRemoteAction();
                 }
+            } else if (disconnectedPlayers[currentPlayerIndex]) {
+                // Auto-fold disconnected players
+                if (isHost || !isMultiplayer) {
+                    await executePlayerAction('fold', 0, currentPlayerIndex);
+                } else {
+                    await waitForRemoteAction();
+                }
+            } else if (isMultiplayer) {
+                if (currentPlayerIndex === myIndex) {
+                    await waitForPlayerAction();
+                } else {
+                    // Host waits for remote player's action
+                    await waitForRemoteAction();
+                }
+            } else {
+                // Solo mode: human player
+                await waitForPlayerAction();
             }
 
             if (bettingRoundComplete()) return;
@@ -1309,11 +1359,14 @@
             socket.on('game_ready', () => {
                 gameReady = true;
                 const el = document.getElementById('mp-status');
-                if (el) el.textContent = '\uac8c\uc784 \uc2dc\uc791!';
+                if (el) el.textContent = '게임 시작!';
                 setTimeout(() => { if (el) el.style.display = 'none'; }, 1000);
 
-                // Auto-start the game when ready
-                if (!gameRunning) {
+                // If game is already running (mid-game join), notify others
+                if (gameRunning) {
+                    socket.emit('poker_join_request', { room_id: ROOM_ID, user_id: MY_USER });
+                } else {
+                    // Auto-start the game when ready
                     startBtn.click();
                 }
             });
@@ -1363,6 +1416,13 @@
 
             socket.on('opponent_disconnected', handleDisconnect);
             socket.on('opponent_game_over', handleDisconnect);
+
+            // Mid-game join for poker
+            socket.on('poker_player_joined', (data) => {
+                if (data.user_id && !pendingJoins.includes(data.user_id)) {
+                    pendingJoins.push(data.user_id);
+                }
+            });
         }
     }
 

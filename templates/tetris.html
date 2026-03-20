@@ -19,6 +19,9 @@
         </div>
         {% endif %}
     </nav>
+    {% if room_id %}
+    <a href="/" class="btn btn-lobby-back" id="lobby-back-btn">로비로</a>
+    {% endif %}
 
     <div class="game-container">
         <h1>Tetris</h1>
@@ -129,5 +132,42 @@
     </script>
     {% endif %}
     <script src="{{ url_for('static', filename='js/tetris.js') }}"></script>
+<div class="game-help-panel" id="game-help-panel">
+    <div class="game-help-header" id="game-help-toggle">
+        <span>게임 설명</span>
+        <button class="game-help-btn">−</button>
+    </div>
+    <div class="game-help-body" id="game-help-body">
+        <p><strong>조작법</strong></p>
+        <ul>
+            <li>← → : 좌우 이동</li>
+            <li>↑ : 회전</li>
+            <li>↓ : 소프트 드롭</li>
+            <li>Space : 하드 드롭</li>
+        </ul>
+        <p><strong>규칙</strong></p>
+        <ul>
+            <li>가로 줄을 완성하면 줄이 사라지고 점수를 획득합니다.</li>
+            <li>블록이 꼭대기에 닿으면 게임 오버!</li>
+            <li>멀티: 마지막까지 살아남으면 승리!</li>
+        </ul>
+    </div>
+</div>
+<script>
+(function() {
+    const toggle = document.getElementById('game-help-toggle');
+    const body = document.getElementById('game-help-body');
+    const btn = toggle.querySelector('.game-help-btn');
+    toggle.addEventListener('click', () => {
+        if (body.style.display === 'none') {
+            body.style.display = '';
+            btn.textContent = '−';
+        } else {
+            body.style.display = 'none';
+            btn.textContent = '+';
+        }
+    });
+})();
+</script>
 </body>
 </html>

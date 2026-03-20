@@ -19,6 +19,9 @@
         </div>
         {% endif %}
     </nav>
+    {% if room_id %}
+    <a href="/" class="btn btn-lobby-back" id="lobby-back-btn">로비로</a>
+    {% endif %}
 
     <div class="game-container">
         <h1>Omok (Five in a Row)</h1>
@@ -103,5 +106,35 @@
     </script>
     {% endif %}
     <script src="{{ url_for('static', filename='js/omok.js') }}"></script>
+<div class="game-help-panel" id="game-help-panel">
+    <div class="game-help-header" id="game-help-toggle">
+        <span>게임 설명</span>
+        <button class="game-help-btn">−</button>
+    </div>
+    <div class="game-help-body" id="game-help-body">
+        <p><strong>규칙</strong></p>
+        <ul>
+            <li>흑(●)과 백(○)이 번갈아 돌을 놓습니다.</li>
+            <li>가로, 세로, 대각선으로 5개를 연속 놓으면 승리!</li>
+            <li>제한 시간 45초 내에 착수하지 않으면 랜덤 위치에 놓입니다.</li>
+        </ul>
+    </div>
+</div>
+<script>
+(function() {
+    const toggle = document.getElementById('game-help-toggle');
+    const body = document.getElementById('game-help-body');
+    const btn = toggle.querySelector('.game-help-btn');
+    toggle.addEventListener('click', () => {
+        if (body.style.display === 'none') {
+            body.style.display = '';
+            btn.textContent = '−';
+        } else {
+            body.style.display = 'none';
+            btn.textContent = '+';
+        }
+    });
+})();
+</script>
 </body>
 </html>

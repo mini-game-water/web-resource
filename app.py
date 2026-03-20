@@ -281,6 +281,29 @@ def join_room_api(room_id):
     return jsonify({'room_id': room_id})
 
 
+@app.route('/api/rooms/<room_id>/join-game', methods=['POST'])
+@login_required
+def join_game_api(room_id):
+    """Allow joining a poker game that's already in progress."""
+    room = db.get_room(room_id)
+    if not room:
+        return jsonify({'error': '방을 찾을 수 없습니다.'}), 404
+    if room.get('game') != 'poker':
+        return jsonify({'error': '포커 방만 중간 참여 가능합니다.'}), 400
+    if room.get('password'):
+        pw = (request.get_json() or {}).get('password', '')
+        if pw != room['password']:
+            return jsonify({'error': '비밀번호가 틀립니다.'}), 403
+    uid = session['user_id']
+    if uid in room.get('players', []):
+        return jsonify({'room_id': room_id})
+    if len(room.get('players', [])) >= room.get('max_players', 6):
+        return jsonify({'error': '방이 가득 찼습니다.'}), 400
+    db.join_room(room_id, uid)
+    broadcast_rooms()
+    return jsonify({'room_id': room_id, 'joining_mid_game': True})
+
+
 @app.route('/api/friends/add', methods=['POST'])
 @login_required
 def add_friend():
@@ -444,7 +467,8 @@ def on_join_waiting(data):
     max_p = room.get('max_players', 2) if room else 2
     host = room.get('host', '') if room else ''
     emit('room_update', {'players': players, 'count': len(players), 'max_players': max_p, 'host': host}, room=rid)
-    if len(waiting_conns[rid]) >= max_p:
+    min_to_start = 1 if room and room['game'] == 'poker' else max_p
+    if len(waiting_conns[rid]) >= min_to_start:
         if room and room['status'] == 'waiting':
             db.set_room_status(rid, 'playing')
             url = f"/{room['game']}?room_id={rid}"
@@ -459,11 +483,12 @@ def on_force_start(data):
     room = db.get_room(rid)
     if not room or room['status'] != 'waiting':
         return
-    # Only host can force start, and need at least 2 players
+    # Only host can force start
     if room.get('host') != uid:
         return
     players = room.get('players', [])
-    if len(players) < 2:
+    min_start = 1 if room.get('game') == 'poker' else 2
+    if len(players) < min_start:
         return
     db.set_room_status(rid, 'playing')
     url = f"/{room['game']}?room_id={rid}"
@@ -559,6 +584,10 @@ def on_game_over(data):
     loser = data.get('loser') or data.get('user_id')
     room = db.get_room(rid) if rid else None
 
+    # Poker manages its own game lifecycle
+    if room and room.get('game') == 'poker':
+        return
+
     if room and room['game'] == 'tetris' and room.get('max_players', 2) > 2:
         # Multi-player tetris: elimination mode
         gs = game_states.setdefault(rid, {'players': {}, 'eliminated': set()})
@@ -578,6 +607,14 @@ def on_game_over(data):
         # Don't destroy room yet — let remaining player see the victory screen.
         # Room will be cleaned up when the last player disconnects.
         emit('opponent_game_over', data, room=rid, include_self=False)
+
+
+@socketio.on('poker_join_request')
+def on_poker_join_request(data):
+    rid = data.get('room_id')
+    uid = data.get('user_id')
+    if rid:
+        emit('poker_player_joined', {'user_id': uid}, room=rid)
 
 
 @socketio.on('coaching_suggest')

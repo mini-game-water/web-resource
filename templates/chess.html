@@ -19,6 +19,9 @@
         </div>
         {% endif %}
     </nav>
+    {% if room_id %}
+    <a href="/" class="btn btn-lobby-back" id="lobby-back-btn">로비로</a>
+    {% endif %}
 
     <div class="game-container">
         <h1>Chess</h1>
@@ -108,5 +111,41 @@
     </script>
     {% endif %}
     <script src="{{ url_for('static', filename='js/chess.js') }}"></script>
+<div class="game-help-panel" id="game-help-panel">
+    <div class="game-help-header" id="game-help-toggle">
+        <span>게임 설명</span>
+        <button class="game-help-btn">−</button>
+    </div>
+    <div class="game-help-body" id="game-help-body">
+        <p><strong>규칙</strong></p>
+        <ul>
+            <li>체스의 기본 규칙을 따릅니다.</li>
+            <li>캐슬링, 앙파상, 프로모션을 지원합니다.</li>
+            <li>킹이 위험한 칸에는 빨간 X 표시가 됩니다.</li>
+            <li>체크 상태에서도 자유롭게 이동할 수 있지만, 킹이 잡히는 수를 두면 패배합니다.</li>
+        </ul>
+        <p><strong>조작</strong></p>
+        <ul>
+            <li>기물을 클릭 후 이동할 칸을 클릭하세요.</li>
+            <li>초록색 점이 이동 가능한 칸입니다.</li>
+        </ul>
+    </div>
+</div>
+<script>
+(function() {
+    const toggle = document.getElementById('game-help-toggle');
+    const body = document.getElementById('game-help-body');
+    const btn = toggle.querySelector('.game-help-btn');
+    toggle.addEventListener('click', () => {
+        if (body.style.display === 'none') {
+            body.style.display = '';
+            btn.textContent = '−';
+        } else {
+            body.style.display = 'none';
+            btn.textContent = '+';
+        }
+    });
+})();
+</script>
 </body>
 </html>

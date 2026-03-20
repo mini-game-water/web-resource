@@ -265,6 +265,9 @@
         </div>
         {% endif %}
     </nav>
+    {% if room_id %}
+    <a href="/" class="btn btn-lobby-back" id="lobby-back-btn">로비로</a>
+    {% endif %}
 
     <div class="game-container">
         <h1>Yacht Dice</h1>
@@ -342,5 +345,46 @@
     {% endif %}
 
     <script src="{{ url_for('static', filename='js/yacht.js') }}"></script>
+<div class="game-help-panel" id="game-help-panel">
+    <div class="game-help-header" id="game-help-toggle">
+        <span>게임 설명</span>
+        <button class="game-help-btn">−</button>
+    </div>
+    <div class="game-help-body" id="game-help-body">
+        <p><strong>규칙</strong></p>
+        <ul>
+            <li>주사위 5개를 최대 3번 굴릴 수 있습니다.</li>
+            <li>원하는 주사위를 홀드한 뒤 나머지를 다시 굴립니다.</li>
+            <li>매 턴 12개 카테고리 중 하나에 점수를 기록합니다.</li>
+            <li>12턴 후 총점이 가장 높은 사람이 승리!</li>
+        </ul>
+        <p><strong>카테고리</strong></p>
+        <ul>
+            <li><strong>상단</strong>: 1~6 — 해당 숫자 합계 (63점↑ 시 보너스 +35)</li>
+            <li><strong>초이스</strong>: 모든 주사위 합계</li>
+            <li><strong>포커</strong>: 같은 수 4개 이상 시 전체 합</li>
+            <li><strong>풀하우스</strong>: 3+2 조합 시 25점</li>
+            <li><strong>스몰 스트레이트</strong>: 연속 4개 시 15점</li>
+            <li><strong>라지 스트레이트</strong>: 연속 5개 시 30점</li>
+            <li><strong>요트</strong>: 5개 모두 같으면 50점!</li>
+        </ul>
+    </div>
+</div>
+<script>
+(function() {
+    const toggle = document.getElementById('game-help-toggle');
+    const body = document.getElementById('game-help-body');
+    const btn = toggle.querySelector('.game-help-btn');
+    toggle.addEventListener('click', () => {
+        if (body.style.display === 'none') {
+            body.style.display = '';
+            btn.textContent = '−';
+        } else {
+            body.style.display = 'none';
+            btn.textContent = '+';
+        }
+    });
+})();
+</script>
 </body>
 </html>

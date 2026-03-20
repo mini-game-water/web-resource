@@ -95,6 +95,78 @@ body {
 .btn-coaching-clear:hover {
     background: #c0392b;
 }
+.btn-lobby-back {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    z-index: 9999;
+    background: rgba(90, 78, 66, 0.85);
+    color: #fff;
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: background 0.2s;
+    border: 1px solid rgba(255,255,255,0.15);
+}
+.btn-lobby-back:hover {
+    background: rgba(163, 139, 109, 0.95);
+}
+
+/* Game Help Panel */
+.game-help-panel {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    z-index: 9998;
+    background: rgba(250, 246, 240, 0.95);
+    border: 1px solid #d4c8b8;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    max-width: 320px;
+    max-height: 70vh;
+    overflow: hidden;
+    font-size: 0.85rem;
+}
+.game-help-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    cursor: pointer;
+    background: #f0e8d8;
+    border-radius: 10px 10px 0 0;
+    font-weight: 600;
+    color: #5a4e42;
+    user-select: none;
+}
+.game-help-btn {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: #5a4e42;
+    line-height: 1;
+}
+.game-help-body {
+    padding: 10px 14px;
+    overflow-y: auto;
+    max-height: calc(70vh - 40px);
+    color: #5a4e42;
+    line-height: 1.5;
+}
+.game-help-body ul, .game-help-body ol {
+    margin: 4px 0 8px 18px;
+}
+.game-help-body li {
+    margin-bottom: 2px;
+}
+.game-help-body p {
+    margin: 6px 0 2px 0;
+}
+.hand-ranking-list li {
+    margin-bottom: 4px;
+}
 
 /* ===== Alerts ===== */
 .alert {
