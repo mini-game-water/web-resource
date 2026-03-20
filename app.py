@@ -396,6 +396,7 @@ def on_join_lobby(data):
     join_room('lobby')
     lobby_sids[uid] = request.sid
     sid_info[request.sid] = {'user_id': uid, 'room_id': 'lobby', 'context': 'lobby'}
+    broadcast_rooms()
 
 
 @socketio.on('user_status')
@@ -565,7 +566,7 @@ def on_coaching_suggest(data):
     if rid:
         room = db.get_room(rid)
         if room and room.get('allow_coaching'):
-            emit('coaching_update', data, room=rid, include_self=False)
+            emit('coaching_update', data, room=rid)
 
 
 # ──────────────────── Game Chat ────────────────────

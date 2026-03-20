@@ -332,7 +332,7 @@
             ctx.fillText("abcdefgh"[bc], c * SQ + SQ - 2, canvas.height - 2);
         }
 
-        // Draw coaching arrows
+        // Draw coaching arrows with name tags
         for (const [uid, arrow] of Object.entries(coachingArrows)) {
             const fromR = flipBoard ? 7 - arrow.fr : arrow.fr;
             const fromC = flipBoard ? 7 - arrow.fc : arrow.fc;
@@ -342,7 +342,7 @@
             const x1 = fromC * SQ + SQ / 2, y1 = fromR * SQ + SQ / 2;
             const x2 = toC * SQ + SQ / 2, y2 = toR * SQ + SQ / 2;
 
-            ctx.strokeStyle = 'rgba(0, 150, 255, 0.6)';
+            ctx.strokeStyle = 'rgba(0, 150, 255, 0.5)';
             ctx.lineWidth = 5;
             ctx.beginPath();
             ctx.moveTo(x1, y1);
@@ -357,8 +357,15 @@
             ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
             ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
             ctx.closePath();
-            ctx.fillStyle = 'rgba(0, 150, 255, 0.6)';
+            ctx.fillStyle = 'rgba(0, 150, 255, 0.5)';
             ctx.fill();
+
+            // Name tag at arrow midpoint
+            const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+            ctx.font = '11px sans-serif';
+            ctx.fillStyle = 'rgba(0, 100, 200, 0.5)';
+            ctx.textAlign = 'center';
+            ctx.fillText(uid, mx, my - 8);
         }
     }
 

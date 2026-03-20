@@ -141,7 +141,7 @@
             }
         }
 
-        // Draw coaching dots
+        // Draw coaching dots with name tags
         for (const [uid, dot] of Object.entries(coachingDots)) {
             const x = PADDING + dot.col * CELL;
             const y = PADDING + dot.row * CELL;
@@ -152,6 +152,11 @@
             ctx.strokeStyle = 'rgba(0, 100, 200, 0.7)';
             ctx.lineWidth = 2;
             ctx.stroke();
+            // Name tag
+            ctx.font = '10px sans-serif';
+            ctx.fillStyle = 'rgba(0, 100, 200, 0.5)';
+            ctx.textAlign = 'center';
+            ctx.fillText(uid, x, y - CELL * 0.3);
         }
     }
 
