@@ -7,10 +7,13 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
 import db
+import game_logger
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'game-hub-dev-secret-key')
 socketio = SocketIO(app, async_mode='gevent')
+
+game_logger.init()
 
 # In-memory state (ephemeral SocketIO connection tracking — not persisted)
 sid_info = {}
@@ -90,6 +93,7 @@ def login():
             session['user_id'] = uid
             ip = client_ip()
             db.update_user_login(uid, ip)
+            game_logger.log_login(uid, ip)
             broadcast_friend_status(uid, 'online', ip)
             return redirect(url_for('index'))
         error = '아이디 또는 비밀번호가 올바르지 않습니다.'
@@ -106,6 +110,7 @@ def register():
         return render_template('login.html', error='아이디 또는 비밀번호를 확인해 주세요.', show_register=True)
     if not db.create_user(uid, pw, name=name, email=email):
         return render_template('login.html', error='이미 존재하는 아이디입니다.', show_register=True)
+    game_logger.log_register(uid)
     return render_template('login.html', success='회원가입 성공! 로그인해 주세요.')
 
 
@@ -115,6 +120,7 @@ def logout():
     uid = session.pop('user_id', None)
     if uid:
         db.update_user_logout(uid)
+        game_logger.log_logout(uid)
         broadcast_friend_status(uid, 'offline')
     return redirect(url_for('login'))
 
@@ -249,6 +255,8 @@ def create_room():
         max_players = max(2, min(6, max_players))
     else:
         max_players = 2
+    allow_spectate = bool(data.get('allow_spectate'))
+    allow_coaching = bool(data.get('allow_coaching'))
     db.create_room(
         room_id=rid,
         name=data.get('name', 'Untitled'),
@@ -256,9 +264,11 @@ def create_room():
         password=data.get('password', ''),
         host=session['user_id'],
         max_players=max_players,
-        allow_spectate=bool(data.get('allow_spectate')),
-        allow_coaching=bool(data.get('allow_coaching')),
+        allow_spectate=allow_spectate,
+        allow_coaching=allow_coaching,
     )
+    game_logger.log_room_create(rid, session['user_id'], game, max_players,
+                                allow_spectate, allow_coaching)
     broadcast_rooms()
     return jsonify({'room_id': rid})
 
@@ -277,6 +287,7 @@ def join_room_api(room_id):
         return jsonify({'error': '방이 가득 찼습니다.'}), 400
     uid = session['user_id']
     db.join_room(room_id, uid)
+    game_logger.log_room_join(room_id, uid)
     broadcast_rooms()
     return jsonify({'room_id': room_id})
 
@@ -300,6 +311,7 @@ def join_game_api(room_id):
     if len(room.get('players', [])) >= room.get('max_players', 6):
         return jsonify({'error': '방이 가득 찼습니다.'}), 400
     db.join_room(room_id, uid)
+    game_logger.log_poker_mid_join(room_id, uid)
     broadcast_rooms()
     return jsonify({'room_id': room_id, 'joining_mid_game': True})
 
@@ -316,6 +328,7 @@ def add_friend():
     if not friend:
         return jsonify({'error': '사용자를 찾을 수 없습니다.'}), 404
     db.add_friend(uid, fid)
+    game_logger.log_friend_add(uid, fid)
     return jsonify({'ok': True})
 
 
@@ -349,6 +362,16 @@ def update_profile():
     new_name = data.get('name', '').strip()
     new_email = data.get('email', '').strip()
 
+    changed = []
+    if new_id and new_id != uid:
+        changed.append('user_id')
+    if new_pw:
+        changed.append('password')
+    if new_name:
+        changed.append('name')
+    if new_email:
+        changed.append('email')
+
     # ID change
     if new_id and new_id != uid:
         existing = db.get_user(new_id)
@@ -369,6 +392,7 @@ def update_profile():
         db.delete_user(uid)
         db._users_table.put_item(Item=new_user_data)
         session['user_id'] = new_id
+        game_logger.log_profile_update(new_id, changed)
         return jsonify({'ok': True, 'new_id': new_id})
 
     # Update fields in place
@@ -378,6 +402,8 @@ def update_profile():
         name=new_name if new_name is not None else None,
         email=new_email if new_email is not None else None,
     )
+    if changed:
+        game_logger.log_profile_update(uid, changed)
     return jsonify({'ok': True})
 
 
@@ -450,7 +476,9 @@ def on_user_status(data):
         user = db.get_user(uid)
         if not user or user.get('status') == 'offline':
             return
+        old_status = user.get('status', 'offline')
         db.update_user_status(uid, status)
+        game_logger.log_status_change(uid, old_status, status)
         ip = user.get('public_ip', '') if user else ''
         broadcast_friend_status(uid, status, ip)
 
@@ -472,6 +500,7 @@ def on_join_waiting(data):
         if room and room['status'] == 'waiting':
             db.set_room_status(rid, 'playing')
             url = f"/{room['game']}?room_id={rid}"
+            game_logger.log_game_start(rid, room['game'], list(waiting_conns[rid]))
             emit('game_started', {'url': url}, room=rid)
             broadcast_rooms()
 
@@ -492,6 +521,7 @@ def on_force_start(data):
         return
     db.set_room_status(rid, 'playing')
     url = f"/{room['game']}?room_id={rid}"
+    game_logger.log_game_start(rid, room['game'], players, forced=True)
     emit('game_started', {'url': url}, room=rid)
     broadcast_rooms()
 
@@ -519,6 +549,7 @@ def on_join_spectate(data):
     sid_info[request.sid] = {'user_id': uid, 'room_id': rid, 'context': 'spectate'}
     spectator_conns.setdefault(rid, set()).add(uid)
     lobby_sids[uid] = request.sid  # Allow receiving invites while spectating
+    game_logger.log_spectate_join(rid, uid)
     # Send cached game state
     if rid in game_states:
         sync_data = dict(game_states[rid])
@@ -536,6 +567,9 @@ def on_game_move(data):
     if 'moves' not in game_states[rid]:
         game_states[rid]['moves'] = []
     game_states[rid]['moves'].append(data)
+    room = db.get_room(rid)
+    game_logger.log_game_move(rid, data.get('user_id', ''),
+                              room.get('game', '') if room else '', data.get('type'))
     emit('opponent_move', data, room=rid, include_self=False)
 
 
@@ -554,12 +588,15 @@ def on_tetris_state(data):
         'lines': data.get('lines', 0),
         'piece': data.get('piece'),
     }
+    game_logger.log_tetris_state(rid, uid, data['score'],
+                                 data.get('level', 1), data.get('lines', 0))
     emit('opponent_state', data, room=rid, include_self=False)
 
 
 def destroy_game_room(rid):
     """Delete room from DB, kick spectators, clean up in-memory state."""
     socketio.emit('room_destroyed', {}, room=rid)
+    game_logger.log_room_delete(rid, reason='all_left')
     db.delete_room(rid)
     game_conns.pop(rid, None)
     game_chats.pop(rid, None)
@@ -594,18 +631,21 @@ def on_game_over(data):
         if 'eliminated' not in gs:
             gs['eliminated'] = set()
         gs['eliminated'].add(loser)
+        game_logger.log_player_eliminated(rid, room['game'], loser)
         emit('player_eliminated', {'user_id': loser}, room=rid)
 
         all_players = set(room.get('players', []))
         alive = all_players - gs['eliminated']
         if len(alive) <= 1 and alive:
             winner = alive.pop()
+            game_logger.log_game_over(rid, room['game'], winner=winner,
+                                      loser=list(gs['eliminated']))
             emit('game_winner', {'winner': winner}, room=rid)
             destroy_game_room(rid)
     else:
         # 2-player game: notify opponent of victory.
-        # Don't destroy room yet — let remaining player see the victory screen.
-        # Room will be cleaned up when the last player disconnects.
+        game_logger.log_game_over(rid, room['game'] if room else 'unknown',
+                                  loser=loser)
         emit('opponent_game_over', data, room=rid, include_self=False)
 
 
@@ -623,6 +663,7 @@ def on_coaching_suggest(data):
     if rid:
         room = db.get_room(rid)
         if room and room.get('allow_coaching'):
+            game_logger.log_coaching(rid, data.get('user_id', ''), room.get('game', ''))
             emit('coaching_update', data, room=rid)
 
 
@@ -631,6 +672,7 @@ def on_coaching_clear(data):
     rid = data.get('room_id')
     uid = data.get('user_id')
     if rid:
+        game_logger.log_coaching_clear(rid, uid)
         emit('coaching_cleared', {'user_id': uid}, room=rid)
 
 
@@ -654,6 +696,7 @@ def on_game_chat(data):
         'message': message,
         'timestamp': int(time.time() * 1000),
     }
+    game_logger.log_chat(rid, uid, role, message)
     game_chats.setdefault(rid, []).append(chat_msg)
     # Keep only last 100 messages
     if len(game_chats[rid]) > 100:
@@ -675,6 +718,7 @@ def on_invite_friend(data):
     if fid not in lobby_sids:
         emit('invite_result', {'friend_id': fid, 'accepted': False, 'reason': '접속 중이 아닙니다.'})
         return
+    game_logger.log_invite_sent(rid, uid, fid)
     emit('invite_received', {
         'room_id': rid,
         'room_name': room['name'],
@@ -699,6 +743,7 @@ def on_invite_response(data):
             host_sid = sid
             break
 
+    game_logger.log_invite_response(rid, uid, accepted)
     if accepted and len(room.get('players', [])) < room.get('max_players', 2):
         db.join_room(rid, uid)
         if host_sid:
@@ -735,11 +780,13 @@ def on_disconnect():
         # (if room is 'playing', player is navigating to the game page, not leaving)
         room = db.get_room(rid)
         if room and room.get('status') == 'waiting':
+            game_logger.log_room_leave(rid, uid, reason='disconnect_waiting')
             updated_room = db.remove_player_from_room(rid, uid)
             if updated_room:
                 players = updated_room.get('players', [])
                 if len(players) == 0:
                     # Room empty — delete it
+                    game_logger.log_room_delete(rid, reason='empty')
                     db.delete_room(rid)
                     waiting_conns.pop(rid, None)
                     broadcast_rooms()
@@ -748,6 +795,7 @@ def on_disconnect():
                     if updated_room.get('host') == uid:
                         new_host = players[-1]
                         db.update_room_host(rid, new_host)
+                        game_logger.log_room_host_transfer(rid, uid, new_host)
                         updated_room['host'] = new_host
                     host = updated_room.get('host', players[0])
                     emit('room_update', {
@@ -761,6 +809,7 @@ def on_disconnect():
         leave_room(rid)
         if rid in game_conns:
             game_conns[rid].discard(uid)
+            game_logger.log_room_leave(rid, uid, reason='disconnect_game')
             emit('opponent_disconnected', {'user_id': uid}, room=rid)
 
             # Tetris multi-player: treat disconnect as elimination
@@ -788,6 +837,7 @@ def on_disconnect():
         leave_room(rid)
         if rid in spectator_conns:
             spectator_conns[rid].discard(uid)
+        game_logger.log_spectate_leave(rid, uid)
         if uid in lobby_sids and lobby_sids[uid] == request.sid:
             del lobby_sids[uid]
         broadcast_participants(rid)

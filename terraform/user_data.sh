@@ -27,4 +27,6 @@ docker run -d \
   -e ROOMS_TABLE=gamehub-rooms \
   -e NOTICES_TABLE=gamehub-notices \
   -e SECRET_KEY='${app_secret_key}' \
+  -e LOG_BUCKET=${log_bucket} \
+  -e LOG_FLUSH_INTERVAL=60 \
   ${docker_image}

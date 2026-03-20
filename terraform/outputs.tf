@@ -18,3 +18,23 @@ output "private_key_pem" {
   value       = tls_private_key.ec2.private_key_pem
   sensitive   = true
 }
+
+output "log_bucket" {
+  description = "S3 bucket for game event logs"
+  value       = aws_s3_bucket.logs.id
+}
+
+output "athena_workgroup" {
+  description = "Athena workgroup name"
+  value       = aws_athena_workgroup.gamehub.name
+}
+
+output "athena_database" {
+  description = "Glue/Athena database name"
+  value       = aws_glue_catalog_database.gamehub.name
+}
+
+output "grafana_url" {
+  description = "Amazon Managed Grafana workspace URL"
+  value       = aws_grafana_workspace.gamehub.endpoint
+}

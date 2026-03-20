@@ -25,6 +25,7 @@ resource "aws_instance" "app" {
     aws_region     = var.aws_region
     app_secret_key = var.app_secret_key
     docker_image   = var.docker_image
+    log_bucket     = aws_s3_bucket.logs.id
   }))
 
   metadata_options {
