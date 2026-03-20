@@ -71,6 +71,9 @@
     <div class="participants-panel" id="participants-panel">
         <h4>참가자</h4>
         <div id="participants-list"></div>
+        {% if is_spectator and room and room.allow_coaching %}
+        <button class="btn btn-coaching-clear" id="coaching-clear-btn" style="margin-top:8px;width:100%;">훈수 지우기</button>
+        {% endif %}
     </div>
     <div class="game-chat" id="game-chat">
         <div class="chat-header" id="chat-header">

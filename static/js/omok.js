@@ -22,6 +22,21 @@
     // Coaching dots from spectators
     let coachingDots = {}; // user_id -> { row, col }
 
+    // Assign distinct colors to spectators
+    const COACHING_COLORS = [
+        [0, 150, 255], [255, 100, 50], [50, 200, 100], [200, 50, 200],
+        [255, 180, 0], [0, 200, 200], [255, 80, 120], [100, 120, 255],
+    ];
+    const coachingColorMap = {};
+    let nextColorIdx = 0;
+    function getCoachingColor(uid) {
+        if (!(uid in coachingColorMap)) {
+            coachingColorMap[uid] = COACHING_COLORS[nextColorIdx % COACHING_COLORS.length];
+            nextColorIdx++;
+        }
+        return coachingColorMap[uid];
+    }
+
     function init() {
         board = Array.from({ length: SIZE }, () => new Array(SIZE).fill(0));
         currentPlayer = 1;
@@ -141,20 +156,21 @@
             }
         }
 
-        // Draw coaching dots with name tags
+        // Draw coaching dots with per-user colors and name tags
         for (const [uid, dot] of Object.entries(coachingDots)) {
+            const [cr, cg, cb] = getCoachingColor(uid);
             const x = PADDING + dot.col * CELL;
             const y = PADDING + dot.row * CELL;
             ctx.beginPath();
             ctx.arc(x, y, CELL * 0.2, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(0, 150, 255, 0.45)';
+            ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, 0.45)`;
             ctx.fill();
-            ctx.strokeStyle = 'rgba(0, 100, 200, 0.7)';
+            ctx.strokeStyle = `rgba(${cr}, ${cg}, ${cb}, 0.7)`;
             ctx.lineWidth = 2;
             ctx.stroke();
             // Name tag
             ctx.font = '10px sans-serif';
-            ctx.fillStyle = 'rgba(0, 100, 200, 0.5)';
+            ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, 0.6)`;
             ctx.textAlign = 'center';
             ctx.fillText(uid, x, y - CELL * 0.3);
         }
@@ -362,6 +378,23 @@
                 draw();
             }
         });
+
+        socket.on('coaching_cleared', (data) => {
+            if (data.user_id) {
+                delete coachingDots[data.user_id];
+            } else {
+                coachingDots = {};
+            }
+            draw();
+        });
+
+        // Clear coaching button
+        const clearBtn = document.getElementById('coaching-clear-btn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                socket.emit('coaching_clear', { room_id: ROOM_ID, user_id: MY_USER });
+            });
+        }
     }
 
     // ===== Game Chat =====

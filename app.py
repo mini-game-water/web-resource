@@ -167,7 +167,9 @@ def index():
 @login_required
 def room_page(room_id):
     room = db.get_room(room_id)
-    if not room or session['user_id'] not in room.get('players', []):
+    if not room:
+        return render_template('room_not_found.html'), 404
+    if session['user_id'] not in room.get('players', []):
         return redirect(url_for('index'))
     uid = session['user_id']
     user = db.get_user(uid) or {}
@@ -189,6 +191,8 @@ def _game_route(template):
     room = db.get_room(room_id) if room_id else None
     is_spectator = request.args.get('spectate') == '1'
     my_player = None
+    if room_id and not room:
+        return render_template('room_not_found.html'), 404
     if room and not is_spectator and session['user_id'] in room.get('players', []):
         my_player = room['players'].index(session['user_id']) + 1
     elif room and is_spectator and not room.get('allow_spectate'):
@@ -567,6 +571,14 @@ def on_coaching_suggest(data):
         room = db.get_room(rid)
         if room and room.get('allow_coaching'):
             emit('coaching_update', data, room=rid)
+
+
+@socketio.on('coaching_clear')
+def on_coaching_clear(data):
+    rid = data.get('room_id')
+    uid = data.get('user_id')
+    if rid:
+        emit('coaching_cleared', {'user_id': uid}, room=rid)
 
 
 # ──────────────────── Game Chat ────────────────────

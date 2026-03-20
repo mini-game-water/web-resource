@@ -31,9 +31,25 @@
     let board, selected, turn, moveHistory, gameOver;
     let castleRights, enPassant;
 
-    // Coaching arrows from spectators
+    // Coaching from spectators
     let coachingArrows = {}; // user_id -> { fr, fc, tr, tc }
+    let coachingDots = {};   // user_id -> { row, col } (first-click indicator)
     let coachingClickFirst = null;
+
+    // Assign distinct colors to spectators
+    const COACHING_COLORS = [
+        [0, 150, 255], [255, 100, 50], [50, 200, 100], [200, 50, 200],
+        [255, 180, 0], [0, 200, 200], [255, 80, 120], [100, 120, 255],
+    ];
+    const coachingColorMap = {};
+    let nextColorIdx = 0;
+    function getCoachingColor(uid) {
+        if (!(uid in coachingColorMap)) {
+            coachingColorMap[uid] = COACHING_COLORS[nextColorIdx % COACHING_COLORS.length];
+            nextColorIdx++;
+        }
+        return coachingColorMap[uid];
+    }
 
     function init() {
         board = INITIAL_BOARD.map(r => [...r]);
@@ -44,6 +60,7 @@
         castleRights = { wK: true, wQ: true, bK: true, bQ: true };
         enPassant = null;
         coachingArrows = {};
+        coachingDots = {};
         coachingClickFirst = null;
         document.getElementById("move-list").innerHTML = "";
         document.getElementById("status").textContent = "White's Turn";
@@ -153,27 +170,30 @@
     }
 
     function legalMoves(r, c) {
+        // Allow all pseudo-legal moves (no check restriction)
+        return pseudoMoves(r, c);
+    }
+
+    // Find king destination squares where king would be captured next turn
+    function kingDangerSquares(r, c) {
         const piece = board[r][c];
-        const side = isWhite(piece) ? "w" : "b";
-        return pseudoMoves(r, c).filter(([nr, nc]) => {
+        if (piece.toUpperCase() !== 'K') return [];
+        const side = isWhite(piece) ? 'w' : 'b';
+        const enemySide = side === 'w' ? 'b' : 'w';
+        const moves = pseudoMoves(r, c);
+        const danger = [];
+        for (const [nr, nc] of moves) {
+            // Simulate move
             const captured = board[nr][nc];
-            let epCaptured = " ";
-            if (piece.toUpperCase() === "P" && enPassant && nr === enPassant.row && nc === enPassant.col) {
-                const epRow = side === "w" ? nr + 1 : nr - 1;
-                epCaptured = board[epRow][nc];
-                board[epRow][nc] = " ";
-            }
             board[nr][nc] = piece;
-            board[r][c] = " ";
-            const legal = !isInCheck(side);
+            board[r][c] = ' ';
+            const attacked = isSquareAttacked(nr, nc, enemySide);
+            // Restore
             board[r][c] = piece;
             board[nr][nc] = captured;
-            if (epCaptured !== " ") {
-                const epRow = side === "w" ? nr + 1 : nr - 1;
-                board[epRow][nc] = epCaptured;
-            }
-            return legal;
-        });
+            if (attacked) danger.push([nr, nc]);
+        }
+        return danger;
     }
 
     // ===== Move Execution =====
@@ -229,6 +249,7 @@
 
         turn = turn === "w" ? "b" : "w";
         coachingArrows = {}; // Clear coaching on turn change
+        coachingDots = {};
         checkGameState();
     }
 
@@ -275,6 +296,7 @@
         const moveColor = "rgba(196, 170, 130, 0.5)";
 
         const validMoves = selected ? legalMoves(selected[0], selected[1]) : [];
+        const dangerSquares = selected ? kingDangerSquares(selected[0], selected[1]) : [];
 
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
@@ -290,13 +312,29 @@
                 ctx.fillRect(c * SQ, r * SQ, SQ, SQ);
 
                 if (validMoves.some(([mr, mc]) => mr === br && mc === bc)) {
-                    ctx.fillStyle = moveColor;
-                    if (board[br][bc] !== " ") {
+                    const isDanger = dangerSquares.some(([dr, dc]) => dr === br && dc === bc);
+                    if (isDanger) {
+                        // Red X for king danger squares
+                        ctx.fillStyle = 'rgba(220, 50, 50, 0.25)';
                         ctx.fillRect(c * SQ, r * SQ, SQ, SQ);
-                    } else {
+                        ctx.strokeStyle = 'rgba(220, 50, 50, 0.7)';
+                        ctx.lineWidth = 3;
+                        const pad = SQ * 0.25;
                         ctx.beginPath();
-                        ctx.arc(c * SQ + SQ / 2, r * SQ + SQ / 2, 10, 0, Math.PI * 2);
-                        ctx.fill();
+                        ctx.moveTo(c * SQ + pad, r * SQ + pad);
+                        ctx.lineTo(c * SQ + SQ - pad, r * SQ + SQ - pad);
+                        ctx.moveTo(c * SQ + SQ - pad, r * SQ + pad);
+                        ctx.lineTo(c * SQ + pad, r * SQ + SQ - pad);
+                        ctx.stroke();
+                    } else {
+                        ctx.fillStyle = moveColor;
+                        if (board[br][bc] !== " ") {
+                            ctx.fillRect(c * SQ, r * SQ, SQ, SQ);
+                        } else {
+                            ctx.beginPath();
+                            ctx.arc(c * SQ + SQ / 2, r * SQ + SQ / 2, 10, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
                     }
                 }
 
@@ -332,8 +370,28 @@
             ctx.fillText("abcdefgh"[bc], c * SQ + SQ - 2, canvas.height - 2);
         }
 
-        // Draw coaching arrows with name tags
+        // Draw coaching dots (first-click indicators) with per-user colors
+        for (const [uid, dot] of Object.entries(coachingDots)) {
+            const [cr, cg, cb] = getCoachingColor(uid);
+            const dr = flipBoard ? 7 - dot.row : dot.row;
+            const dc = flipBoard ? 7 - dot.col : dot.col;
+            const dx = dc * SQ + SQ / 2, dy = dr * SQ + SQ / 2;
+            ctx.beginPath();
+            ctx.arc(dx, dy, SQ * 0.18, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, 0.5)`;
+            ctx.fill();
+            ctx.strokeStyle = `rgba(${cr}, ${cg}, ${cb}, 0.8)`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.font = '10px sans-serif';
+            ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, 0.6)`;
+            ctx.textAlign = 'center';
+            ctx.fillText(uid, dx, dy - SQ * 0.25);
+        }
+
+        // Draw coaching arrows with per-user colors and name tags
         for (const [uid, arrow] of Object.entries(coachingArrows)) {
+            const [cr, cg, cb] = getCoachingColor(uid);
             const fromR = flipBoard ? 7 - arrow.fr : arrow.fr;
             const fromC = flipBoard ? 7 - arrow.fc : arrow.fc;
             const toR = flipBoard ? 7 - arrow.tr : arrow.tr;
@@ -342,7 +400,7 @@
             const x1 = fromC * SQ + SQ / 2, y1 = fromR * SQ + SQ / 2;
             const x2 = toC * SQ + SQ / 2, y2 = toR * SQ + SQ / 2;
 
-            ctx.strokeStyle = 'rgba(0, 150, 255, 0.5)';
+            ctx.strokeStyle = `rgba(${cr}, ${cg}, ${cb}, 0.5)`;
             ctx.lineWidth = 5;
             ctx.beginPath();
             ctx.moveTo(x1, y1);
@@ -357,13 +415,13 @@
             ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
             ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
             ctx.closePath();
-            ctx.fillStyle = 'rgba(0, 150, 255, 0.5)';
+            ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, 0.5)`;
             ctx.fill();
 
             // Name tag at arrow midpoint
             const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
             ctx.font = '11px sans-serif';
-            ctx.fillStyle = 'rgba(0, 100, 200, 0.5)';
+            ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, 0.6)`;
             ctx.textAlign = 'center';
             ctx.fillText(uid, mx, my - 8);
         }
@@ -380,10 +438,17 @@
         if (flipBoard) { row = 7 - row; col = 7 - col; }
         if (!inBounds(row, col)) return;
 
-        // Spectator coaching: draw arrows
+        // Spectator coaching: first click = dot, second click = arrow
         if (isSpectator && isMultiplayer && typeof ALLOW_COACHING !== 'undefined' && ALLOW_COACHING) {
             if (!coachingClickFirst) {
                 coachingClickFirst = { row, col };
+                // Broadcast first-click dot
+                socket.emit('coaching_suggest', {
+                    room_id: ROOM_ID,
+                    user_id: MY_USER,
+                    type: 'dot',
+                    data: { row, col }
+                });
             } else {
                 if (coachingClickFirst.row !== row || coachingClickFirst.col !== col) {
                     socket.emit('coaching_suggest', {
@@ -393,7 +458,10 @@
                         data: { fr: coachingClickFirst.row, fc: coachingClickFirst.col, tr: row, tc: col }
                     });
                 }
+                // Clear the dot after arrow is placed (or same-square cancel)
+                delete coachingDots[MY_USER];
                 coachingClickFirst = null;
+                draw();
             }
             return;
         }
@@ -554,9 +622,33 @@
         socket.on('coaching_update', (data) => {
             if (data.type === 'arrow' && data.data) {
                 coachingArrows[data.user_id] = data.data;
+                delete coachingDots[data.user_id]; // Remove dot when arrow placed
+                draw();
+            } else if (data.type === 'dot' && data.data) {
+                coachingDots[data.user_id] = data.data;
                 draw();
             }
         });
+
+        socket.on('coaching_cleared', (data) => {
+            if (data.user_id) {
+                delete coachingArrows[data.user_id];
+                delete coachingDots[data.user_id];
+            } else {
+                coachingArrows = {};
+                coachingDots = {};
+            }
+            draw();
+        });
+
+        // Clear coaching button
+        const clearBtn = document.getElementById('coaching-clear-btn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                socket.emit('coaching_clear', { room_id: ROOM_ID, user_id: MY_USER });
+                coachingClickFirst = null;
+            });
+        }
     }
 
     // ===== Game Chat =====

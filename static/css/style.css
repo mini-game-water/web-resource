@@ -83,6 +83,19 @@ body {
     color: #fff;
 }
 
+.btn-coaching-clear {
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+.btn-coaching-clear:hover {
+    background: #c0392b;
+}
+
 /* ===== Alerts ===== */
 .alert {
     padding: 0.8rem 1rem;
