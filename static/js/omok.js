@@ -10,7 +10,7 @@
     const isSpectator = typeof IS_SPECTATOR !== 'undefined' && IS_SPECTATOR;
     const myPlayer = isMultiplayer && !isSpectator ? MY_PLAYER : null; // 1=black, 2=white
     let socket = null;
-    let gameReady = !isMultiplayer;
+    let gameReady = !isMultiplayer || isSpectator;
 
     let board, currentPlayer, gameOver;
     let lastMoves = { 1: null, 2: null };
@@ -246,7 +246,7 @@
         socket = io();
 
         socket.on('room_destroyed', () => {
-            window.location.href = '/';
+            if (!gameOver) window.location.href = '/';
         });
 
         socket.on('participants_update', (data) => {
@@ -338,15 +338,17 @@
             placeStone(data.row, data.col, data.player !== undefined ? data.player : currentPlayer);
         });
 
-        socket.on('opponent_disconnected', () => {
-            if (!gameOver && !isSpectator) {
-                gameOver = true;
-                stopTurnTimer();
-                document.getElementById("status").textContent = "승리!";
-                document.getElementById("win-message").innerHTML = '승리!<br><span class="disconnect-sub">상대방이 나갔습니다!</span>';
-                document.getElementById("win-overlay").classList.add("active");
-            }
-        });
+        function showVictoryByLeave() {
+            if (gameOver || isSpectator) return;
+            gameOver = true;
+            stopTurnTimer();
+            document.getElementById("status").textContent = "승리!";
+            document.getElementById("win-message").innerHTML = '승리!<br><span class="disconnect-sub">상대방이 나갔습니다!</span>';
+            document.getElementById("win-overlay").classList.add("active");
+        }
+
+        socket.on('opponent_disconnected', showVictoryByLeave);
+        socket.on('opponent_game_over', showVictoryByLeave);
 
         // Coaching updates
         socket.on('coaching_update', (data) => {

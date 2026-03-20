@@ -553,8 +553,10 @@ def on_game_over(data):
             emit('game_winner', {'winner': winner}, room=rid)
             destroy_game_room(rid)
     else:
+        # 2-player game: notify opponent of victory.
+        # Don't destroy room yet — let remaining player see the victory screen.
+        # Room will be cleaned up when the last player disconnects.
         emit('opponent_game_over', data, room=rid, include_self=False)
-        destroy_game_room(rid)
 
 
 @socketio.on('coaching_suggest')

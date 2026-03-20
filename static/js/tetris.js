@@ -502,7 +502,7 @@
         createOpponentPanels();
 
         socket.on('room_destroyed', () => {
-            window.location.href = '/';
+            if (!gameOver) window.location.href = '/';
         });
 
         socket.on('participants_update', (data) => {
