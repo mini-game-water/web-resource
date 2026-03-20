@@ -437,6 +437,10 @@
     if (isMultiplayer) {
         socket = io();
 
+        socket.on('room_destroyed', () => {
+            window.location.href = '/';
+        });
+
         if (isSpectator) {
             socket.emit('join_spectate', { room_id: ROOM_ID, user_id: MY_USER });
             socket.emit('user_status', { user_id: MY_USER, status: 'spectating' });
@@ -492,11 +496,9 @@
         } else {
             socket.emit('join_game', { room_id: ROOM_ID, user_id: MY_USER });
 
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden && !gameOver && gameReady) {
-                    gameOver = true;
+            window.addEventListener('beforeunload', () => {
+                if (!gameOver && gameReady) {
                     socket.emit('game_over_event', { room_id: ROOM_ID, loser: MY_USER });
-                    window.location.href = '/';
                 }
             });
 

@@ -509,6 +509,17 @@ def on_tetris_state(data):
     emit('opponent_state', data, room=rid, include_self=False)
 
 
+def destroy_game_room(rid):
+    """Delete room from DB, kick spectators, clean up in-memory state."""
+    socketio.emit('room_destroyed', {}, room=rid)
+    db.delete_room(rid)
+    game_conns.pop(rid, None)
+    game_chats.pop(rid, None)
+    game_states.pop(rid, None)
+    spectator_conns.pop(rid, None)
+    broadcast_rooms()
+
+
 @socketio.on('game_over_event')
 def on_game_over(data):
     rid = data.get('room_id')
@@ -528,8 +539,10 @@ def on_game_over(data):
         if len(alive) <= 1 and alive:
             winner = alive.pop()
             emit('game_winner', {'winner': winner}, room=rid)
+            destroy_game_room(rid)
     else:
         emit('opponent_game_over', data, room=rid, include_self=False)
+        destroy_game_room(rid)
 
 
 @socketio.on('coaching_suggest')
@@ -665,10 +678,9 @@ def on_disconnect():
         if rid in game_conns:
             game_conns[rid].discard(uid)
             emit('opponent_disconnected', {'user_id': uid}, room=rid)
-            # Clean up chat when all players leave
+            # Destroy room when all players leave
             if not game_conns[rid]:
-                game_chats.pop(rid, None)
-                game_states.pop(rid, None)
+                destroy_game_room(rid)
     elif info['context'] == 'spectate':
         leave_room(rid)
         if rid in spectator_conns:
