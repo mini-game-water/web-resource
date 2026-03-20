@@ -9,11 +9,15 @@
 <body>
     <nav class="navbar">
         <a href="/" class="logo">Game Hub</a>
+        {% if not room_id %}
         <div class="nav-links">
             <a href="/tetris">Tetris</a>
             <a href="/omok">Omok</a>
             <a href="/chess">Chess</a>
+            <a href="/yacht">Yacht</a>
+            <a href="/poker">Poker</a>
         </div>
+        {% endif %}
     </nav>
 
     <div class="game-container">

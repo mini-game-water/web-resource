@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yacht Dice - Game Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .yacht-container {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            padding: 1rem;
+        }
+        .dice-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        .dice-row {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            perspective: 800px;
+        }
+        .die-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* 3D Dice */
+        .die-scene {
+            width: 70px;
+            height: 70px;
+            perspective: 400px;
+            cursor: pointer;
+        }
+        .die-cube {
+            width: 70px;
+            height: 70px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s;
+        }
+        .die-cube.rolling {
+            transition: none;
+        }
+        .die-face {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            background: #fff;
+            border: 2px solid #d4c8b8;
+            border-radius: 10px;
+            box-sizing: border-box;
+            display: grid;
+            backface-visibility: hidden;
+            box-shadow: inset 0 0 8px rgba(163, 139, 109, 0.1);
+        }
+        .die-face.front  { transform: rotateY(0deg) translateZ(35px); }
+        .die-face.back   { transform: rotateY(180deg) translateZ(35px); }
+        .die-face.right  { transform: rotateY(90deg) translateZ(35px); }
+        .die-face.left   { transform: rotateY(-90deg) translateZ(35px); }
+        .die-face.top    { transform: rotateX(90deg) translateZ(35px); }
+        .die-face.bottom { transform: rotateX(-90deg) translateZ(35px); }
+
+        /* Pip layouts */
+        .die-face.val-1 { grid-template: 1fr / 1fr; place-items: center; }
+        .die-face.val-2 { grid-template: 1fr 1fr / 1fr; }
+        .die-face.val-3 { grid-template: 1fr 1fr 1fr / 1fr; }
+        .die-face.val-4 { grid-template: 1fr 1fr / 1fr 1fr; place-items: center; }
+        .die-face.val-5 { grid-template: 1fr 1fr 1fr / 1fr 1fr 1fr; }
+        .die-face.val-6 { grid-template: 1fr 1fr 1fr / 1fr 1fr; place-items: center; }
+
+        .pip {
+            width: 14px;
+            height: 14px;
+            background: #5a4e42;
+            border-radius: 50%;
+            box-shadow: inset 0 2px 3px rgba(0,0,0,0.3);
+        }
+
+        /* Pip positioning */
+        .die-face.val-1 .pip { justify-self: center; align-self: center; }
+        .die-face.val-2 .pip:nth-child(1) { justify-self: center; align-self: start; margin-top: 10px; }
+        .die-face.val-2 .pip:nth-child(2) { justify-self: center; align-self: end; margin-bottom: 10px; }
+        .die-face.val-3 .pip:nth-child(1) { justify-self: end; align-self: start; margin: 8px 12px 0 0; }
+        .die-face.val-3 .pip:nth-child(2) { justify-self: center; align-self: center; }
+        .die-face.val-3 .pip:nth-child(3) { justify-self: start; align-self: end; margin: 0 0 8px 12px; }
+        .die-face.val-5 .pip:nth-child(1) { grid-row: 1; grid-column: 1; justify-self: center; align-self: center; }
+        .die-face.val-5 .pip:nth-child(2) { grid-row: 1; grid-column: 3; justify-self: center; align-self: center; }
+        .die-face.val-5 .pip:nth-child(3) { grid-row: 2; grid-column: 2; justify-self: center; align-self: center; }
+        .die-face.val-5 .pip:nth-child(4) { grid-row: 3; grid-column: 1; justify-self: center; align-self: center; }
+        .die-face.val-5 .pip:nth-child(5) { grid-row: 3; grid-column: 3; justify-self: center; align-self: center; }
+
+        /* Die held state */
+        .die-scene.held .die-face {
+            background: #f0e8d8;
+            border-color: #a38b6d;
+            box-shadow: inset 0 0 12px rgba(163, 139, 109, 0.3);
+        }
+        .die-scene.held {
+            filter: drop-shadow(0 0 6px rgba(163, 139, 109, 0.5));
+        }
+
+        .hold-btn {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.8rem;
+            border: 1px solid #d4c8b8;
+            border-radius: 6px;
+            background: #faf6f0;
+            color: #9a8b78;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .hold-btn:hover { background: #f0e8d8; }
+        .hold-btn.active {
+            background: #a38b6d;
+            color: #fff;
+            border-color: #a38b6d;
+        }
+
+        .roll-btn {
+            padding: 0.8rem 2.5rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 10px;
+            background: #a38b6d;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+        .roll-btn:hover:not(:disabled) {
+            background: #8a7359;
+            transform: translateY(-1px);
+        }
+        .roll-btn:disabled {
+            background: #d4c8b8;
+            cursor: not-allowed;
+        }
+
+        .turn-info {
+            color: #9a8b78;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        /* Scorecard */
+        .scorecard {
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            min-width: 280px;
+        }
+        .scorecard th, .scorecard td {
+            padding: 0.5rem 0.8rem;
+            border: 1px solid #e6ddd3;
+            text-align: center;
+        }
+        .scorecard th {
+            background: #f0e8d8;
+            color: #5a4e42;
+            font-weight: 600;
+        }
+        .scorecard .cat-name {
+            text-align: left;
+            font-weight: 500;
+            color: #5a4e42;
+        }
+        .scorecard .score-cell {
+            cursor: pointer;
+            min-width: 60px;
+            color: #b8a898;
+            transition: all 0.15s;
+        }
+        .scorecard .score-cell:hover {
+            background: #f0e8d8;
+            color: #5a4e42;
+        }
+        .scorecard .score-cell.scored {
+            color: #5a4e42;
+            font-weight: 700;
+            cursor: default;
+            background: #faf6f0;
+        }
+        .scorecard .score-cell.scored:hover {
+            background: #faf6f0;
+        }
+        .scorecard .score-cell.preview {
+            color: #a38b6d;
+            font-style: italic;
+        }
+        .scorecard .score-cell.zero-preview {
+            color: #d4c8b8;
+        }
+        .scorecard .section-header {
+            background: #e6ddd3;
+            font-weight: 700;
+            color: #5a4e42;
+        }
+        .scorecard .total-row td {
+            font-weight: 700;
+            background: #f0e8d8;
+            color: #5a4e42;
+            font-size: 1rem;
+        }
+        .scorecard .bonus-row td {
+            color: #a38b6d;
+            font-style: italic;
+        }
+        .scorecard .subtotal-row td {
+            background: #f8f2ea;
+            font-weight: 600;
+            color: #7a6b5a;
+        }
+
+        /* Shadow under dice during roll */
+        .die-shadow {
+            width: 50px;
+            height: 10px;
+            background: radial-gradient(ellipse, rgba(90,78,66,0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            margin-top: -4px;
+            transition: opacity 0.3s;
+        }
+        .die-shadow.rolling {
+            animation: shadow-pulse 0.15s ease-in-out infinite alternate;
+        }
+        @keyframes shadow-pulse {
+            from { transform: scale(1); opacity: 0.6; }
+            to   { transform: scale(1.3); opacity: 0.2; }
+        }
+
+        .game-message {
+            text-align: center;
+            color: #a38b6d;
+            font-size: 1rem;
+            font-weight: 600;
+            min-height: 1.5em;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Game Hub</a>
+        <div class="nav-links">
+            <a href="/tetris">Tetris</a>
+            <a href="/omok">Omok</a>
+            <a href="/chess">Chess</a>
+            <a href="/yacht">Yacht</a>
+            <a href="/poker">Poker</a>
+        </div>
+    </nav>
+
+    <div class="game-container">
+        <h1>Yacht Dice</h1>
+        <div class="yacht-container">
+            <div class="dice-area">
+                <div class="dice-row" id="dice-row">
+                    <!-- 5 dice generated by JS -->
+                </div>
+                <div class="game-message" id="game-message">주사위를 굴려 게임을 시작하세요!</div>
+                <button class="roll-btn" id="roll-btn">주사위 굴리기 (3)</button>
+                <div class="turn-info" id="turn-info">턴: 1 / 12</div>
+            </div>
+            <div>
+                <table class="scorecard" id="scorecard">
+                    <thead>
+                        <tr>
+                            <th>카테고리</th>
+                            <th>점수</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scorecard-body">
+                        <!-- Generated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="game-over-overlay">
+        <div class="overlay-content">
+            <h2>게임 종료!</h2>
+            <p>최종 점수: <span id="final-score">0</span></p>
+            <button class="btn" id="restart-btn">다시 시작</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/yacht.js') }}"></script>
+</body>
+</html>

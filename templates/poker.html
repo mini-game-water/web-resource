@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker - Game Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .poker-table-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 1rem auto;
+        }
+        .poker-table {
+            position: relative;
+            width: 900px;
+            height: 520px;
+            background: radial-gradient(ellipse at center, #2d7a3a 0%, #1a5c28 60%, #0f3d18 100%);
+            border-radius: 260px / 260px;
+            border: 12px solid #5c3a1e;
+            box-shadow: 0 0 0 6px #3d2510, 0 8px 32px rgba(0,0,0,0.5), inset 0 0 60px rgba(0,0,0,0.3);
+            overflow: visible;
+        }
+        /* Pot display */
+        .pot-display {
+            position: absolute;
+            top: 42%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffd700;
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+            z-index: 10;
+        }
+        /* Community cards */
+        .community-cards {
+            position: absolute;
+            top: 52%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+        /* Player seats */
+        .player-seat {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+        }
+        .player-seat.seat-0 { bottom: -32px; left: 50%; transform: translateX(-50%); }
+        .player-seat.seat-1 { top: 10px; left: 50%; transform: translateX(-50%); }
+        .player-seat.seat-2 { top: 50%; left: -10px; transform: translateY(-50%); }
+        .player-seat.seat-3 { top: 50%; right: -10px; transform: translateY(-50%); }
+        .player-info {
+            background: rgba(0,0,0,0.65);
+            color: #fff;
+            padding: 4px 14px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 0.82rem;
+            min-width: 90px;
+            white-space: nowrap;
+        }
+        .player-info.active-turn {
+            box-shadow: 0 0 12px 3px #ffd700;
+            border: 2px solid #ffd700;
+        }
+        .player-info.folded {
+            opacity: 0.4;
+        }
+        .player-info.eliminated {
+            opacity: 0.25;
+        }
+        .player-info .player-name {
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .player-info .player-chips {
+            color: #ffd700;
+            font-size: 0.78rem;
+        }
+        .player-info .player-action {
+            color: #8f8;
+            font-size: 0.72rem;
+            min-height: 1em;
+        }
+        .player-info .dealer-chip {
+            display: inline-block;
+            background: #fff;
+            color: #333;
+            font-weight: bold;
+            font-size: 0.6rem;
+            width: 18px;
+            height: 18px;
+            line-height: 18px;
+            border-radius: 50%;
+            text-align: center;
+            margin-left: 4px;
+            vertical-align: middle;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+        .player-bet {
+            color: #ffd700;
+            font-size: 0.75rem;
+            margin-top: 2px;
+            min-height: 1em;
+        }
+        .player-cards {
+            display: flex;
+            gap: 4px;
+            margin: 4px 0;
+        }
+        /* ── 3D Card Styles ── */
+        .card-3d {
+            width: 58px;
+            height: 82px;
+            perspective: 600px;
+            cursor: default;
+        }
+        .card-3d.mini {
+            width: 48px;
+            height: 68px;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+        }
+        .card-3d.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+        }
+        .card-front {
+            background: #fff;
+            transform: rotateY(180deg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 1px solid #ccc;
+        }
+        .card-front .card-rank {
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+        .card-front .card-suit {
+            font-size: 1.4rem;
+            line-height: 1;
+        }
+        .card-3d.mini .card-front .card-rank { font-size: 0.9rem; }
+        .card-3d.mini .card-front .card-suit { font-size: 1.1rem; }
+        .card-front .corner-tl, .card-front .corner-br {
+            position: absolute;
+            font-size: 0.55rem;
+            line-height: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .card-front .corner-tl { top: 3px; left: 4px; }
+        .card-front .corner-br { bottom: 3px; right: 4px; transform: rotate(180deg); }
+        .card-front.red { color: #d32f2f; }
+        .card-front.black { color: #222; }
+        .card-back {
+            background: linear-gradient(135deg, #1a3a8a 0%, #2255bb 50%, #1a3a8a 100%);
+            border: 2px solid #fff;
+        }
+        .card-back-pattern {
+            width: 100%;
+            height: 100%;
+            border-radius: 4px;
+            background:
+                repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.08) 4px, rgba(255,255,255,0.08) 8px),
+                repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(255,255,255,0.08) 4px, rgba(255,255,255,0.08) 8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card-back-logo {
+            width: 28px;
+            height: 28px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        .card-3d.dealing {
+            animation: dealCard 0.4s ease-out forwards;
+        }
+        @keyframes dealCard {
+            from { transform: translate(200px, -150px) scale(0.3); opacity: 0; }
+            to { transform: translate(0, 0) scale(1); opacity: 1; }
+        }
+        .card-3d.dealing-left {
+            animation: dealCardLeft 0.4s ease-out forwards;
+        }
+        @keyframes dealCardLeft {
+            from { transform: translate(-200px, -150px) scale(0.3); opacity: 0; }
+            to { transform: translate(0, 0) scale(1); opacity: 1; }
+        }
+        .card-3d:hover {
+            filter: brightness(1.05);
+        }
+        /* Betting controls */
+        .betting-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 0.8rem;
+            flex-wrap: wrap;
+        }
+        .betting-controls .btn {
+            min-width: 80px;
+            font-size: 0.9rem;
+            padding: 8px 16px;
+        }
+        .btn-fold { background: #c0392b; color: #fff; }
+        .btn-fold:hover { background: #e74c3c; }
+        .btn-check { background: #27ae60; color: #fff; }
+        .btn-check:hover { background: #2ecc71; }
+        .btn-raise { background: #f39c12; color: #fff; }
+        .btn-raise:hover { background: #f1c40f; }
+        .raise-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .raise-group input[type="range"] {
+            width: 120px;
+            accent-color: #f39c12;
+        }
+        .raise-amount {
+            color: #ffd700;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center;
+        }
+        .betting-controls.hidden { display: none; }
+        /* Round info */
+        .round-info {
+            text-align: center;
+            color: #9a8b78;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        /* Hand result banner */
+        .hand-result {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.85);
+            color: #ffd700;
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            z-index: 30;
+            text-align: center;
+            display: none;
+            border: 2px solid #ffd700;
+        }
+        .hand-result.visible { display: block; animation: fadeInResult 0.3s ease; }
+        @keyframes fadeInResult {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Game Hub</a>
+        <div class="nav-links">
+            <a href="/tetris">Tetris</a>
+            <a href="/omok">Omok</a>
+            <a href="/chess">Chess</a>
+            <a href="/yacht">Yacht</a>
+            <a href="/poker">Poker</a>
+        </div>
+    </nav>
+
+    <div class="game-container">
+        <h1>Texas Hold'em Poker</h1>
+        <div class="poker-table-wrap">
+            <div class="poker-table" id="poker-table">
+                <div class="pot-display" id="pot-display">팟: 0</div>
+                <div class="community-cards" id="community-cards"></div>
+                <div class="hand-result" id="hand-result"></div>
+
+                <div class="player-seat seat-0" id="seat-0">
+                    <div class="player-cards" id="cards-0"></div>
+                    <div class="player-bet" id="bet-0"></div>
+                    <div class="player-info" id="info-0">
+                        <div class="player-name" id="name-0">나</div>
+                        <div class="player-chips" id="chips-0">1000</div>
+                        <div class="player-action" id="action-0"></div>
+                    </div>
+                </div>
+                <div class="player-seat seat-1" id="seat-1">
+                    <div class="player-info" id="info-1">
+                        <div class="player-name" id="name-1">AI 딜러 1</div>
+                        <div class="player-chips" id="chips-1">1000</div>
+                        <div class="player-action" id="action-1"></div>
+                    </div>
+                    <div class="player-bet" id="bet-1"></div>
+                    <div class="player-cards" id="cards-1"></div>
+                </div>
+                <div class="player-seat seat-2" id="seat-2">
+                    <div class="player-info" id="info-2">
+                        <div class="player-name" id="name-2">AI 딜러 2</div>
+                        <div class="player-chips" id="chips-2">1000</div>
+                        <div class="player-action" id="action-2"></div>
+                    </div>
+                    <div class="player-bet" id="bet-2"></div>
+                    <div class="player-cards" id="cards-2"></div>
+                </div>
+                <div class="player-seat seat-3" id="seat-3">
+                    <div class="player-info" id="info-3">
+                        <div class="player-name" id="name-3">AI 딜러 3</div>
+                        <div class="player-chips" id="chips-3">1000</div>
+                        <div class="player-action" id="action-3"></div>
+                    </div>
+                    <div class="player-bet" id="bet-3"></div>
+                    <div class="player-cards" id="cards-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="betting-controls hidden" id="betting-controls">
+            <button class="btn btn-fold" id="btn-fold">폴드</button>
+            <button class="btn btn-check" id="btn-check">체크</button>
+            <div class="raise-group">
+                <button class="btn btn-raise" id="btn-raise">레이즈</button>
+                <input type="range" id="raise-slider" min="0" max="1000" step="10" value="40">
+                <span class="raise-amount" id="raise-amount">40</span>
+            </div>
+        </div>
+
+        <div class="round-info" id="round-info">게임을 시작하세요</div>
+
+        <div class="game-controls" style="margin-top: 0.8rem;">
+            <button class="btn" id="start-btn">게임 시작</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="game-over-overlay">
+        <div class="overlay-content">
+            <h2 id="game-over-title">게임 종료</h2>
+            <p id="game-over-msg"></p>
+            <button class="btn" id="restart-btn">다시 시작</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/poker.js') }}"></script>
+</body>
+</html>

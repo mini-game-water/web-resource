@@ -220,6 +220,18 @@ def chess():
     return _game_route('chess.html')
 
 
+@app.route('/yacht')
+@login_required
+def yacht():
+    return render_template('yacht.html', user_id=session['user_id'])
+
+
+@app.route('/poker')
+@login_required
+def poker():
+    return render_template('poker.html', user_id=session['user_id'])
+
+
 # ──────────────────── Room API ────────────────────
 
 @app.route('/api/rooms', methods=['POST'])
