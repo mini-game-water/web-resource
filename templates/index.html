@@ -68,6 +68,8 @@
                     <button class="filter-tab" data-game="tetris">Tetris</button>
                     <button class="filter-tab" data-game="omok">Omok</button>
                     <button class="filter-tab" data-game="chess">Chess</button>
+                    <button class="filter-tab" data-game="yacht">Yacht</button>
+                    <button class="filter-tab" data-game="poker">Poker</button>
                 </div>
                 <div class="room-list" id="room-list"></div>
                 <div class="room-load-more" id="room-load-more" style="display:none;">
@@ -154,9 +156,11 @@
                     <label><input type="radio" name="game" value="tetris" checked> Tetris</label>
                     <label><input type="radio" name="game" value="omok"> Omok</label>
                     <label><input type="radio" name="game" value="chess"> Chess</label>
+                    <label><input type="radio" name="game" value="yacht"> Yacht Dice</label>
+                    <label><input type="radio" name="game" value="poker"> Poker</label>
                 </div>
                 <div id="max-players-row">
-                    <label>최대 인원 (Tetris)</label>
+                    <label id="max-players-label">최대 인원</label>
                     <select id="max-players">
                         <option value="2">2명</option>
                         <option value="3">3명</option>
@@ -173,7 +177,7 @@
                 <input type="password" id="room-password" placeholder="없으면 비워두세요">
                 <div class="modal-options">
                     <label class="option-label"><input type="checkbox" id="allow-spectate"> 관전 허용</label>
-                    <label class="option-label" id="coaching-option" style="display:none;"><input type="checkbox" id="allow-coaching"> 훈수 허용</label>
+                    <label class="option-label coaching-option-label" id="coaching-option"><input type="checkbox" id="allow-coaching" disabled> 훈수 허용</label>
                 </div>
                 <div class="modal-buttons">
                     <button type="button" class="btn" onclick="closeModal('create-room-overlay')">취소</button>
@@ -293,15 +297,30 @@
         });
 
         // ── Create room modal: show/hide options ──
+        function updateMaxPlayersVisibility() {
+            const game = document.querySelector('input[name="game"]:checked').value;
+            const row = document.getElementById('max-players-row');
+            const sel = document.getElementById('max-players');
+            if (game === 'tetris') {
+                row.style.display = '';
+                sel.innerHTML = '<option value="2">2명</option><option value="3">3명</option><option value="4">4명</option><option value="5">5명</option><option value="6">6명</option><option value="7">7명</option><option value="8">8명</option>';
+            } else if (game === 'yacht') {
+                row.style.display = '';
+                sel.innerHTML = '<option value="2">2명</option><option value="3">3명</option><option value="4">4명</option>';
+            } else if (game === 'poker') {
+                row.style.display = '';
+                sel.innerHTML = '<option value="2">2명</option><option value="3">3명</option><option value="4">4명</option><option value="5">5명</option><option value="6">6명</option>';
+            } else {
+                row.style.display = 'none';
+            }
+        }
         document.querySelectorAll('input[name="game"]').forEach(radio => {
-            radio.addEventListener('change', () => {
-                document.getElementById('max-players-row').style.display =
-                    radio.value === 'tetris' && radio.checked ? '' : 'none';
-            });
+            radio.addEventListener('change', updateMaxPlayersVisibility);
         });
         document.getElementById('allow-spectate').addEventListener('change', (e) => {
-            document.getElementById('coaching-option').style.display = e.target.checked ? '' : 'none';
-            if (!e.target.checked) document.getElementById('allow-coaching').checked = false;
+            const coachingCheckbox = document.getElementById('allow-coaching');
+            coachingCheckbox.disabled = !e.target.checked;
+            if (!e.target.checked) coachingCheckbox.checked = false;
         });
 
         function renderRooms() {
@@ -464,7 +483,7 @@
             const game = document.querySelector('input[name="game"]:checked').value;
             const name = document.getElementById('room-name').value;
             const password = document.getElementById('room-password').value;
-            const max_players = game === 'tetris' ? parseInt(document.getElementById('max-players').value) : 2;
+            const max_players = ['tetris', 'yacht', 'poker'].includes(game) ? parseInt(document.getElementById('max-players').value) : 2;
             const allow_spectate = document.getElementById('allow-spectate').checked;
             const allow_coaching = document.getElementById('allow-coaching').checked;
             const res = await fetch('/api/rooms', {

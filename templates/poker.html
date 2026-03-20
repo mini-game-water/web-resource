@@ -22,14 +22,14 @@
             box-shadow: 0 0 0 6px #3d2510, 0 8px 32px rgba(0,0,0,0.5), inset 0 0 60px rgba(0,0,0,0.3);
             overflow: visible;
         }
-        /* Pot display */
+        /* Pot display — LARGER */
         .pot-display {
             position: absolute;
             top: 42%;
             left: 50%;
             transform: translate(-50%, -50%);
             color: #ffd700;
-            font-size: 1.3rem;
+            font-size: 1.8rem;
             font-weight: bold;
             text-shadow: 0 2px 4px rgba(0,0,0,0.6);
             z-index: 10;
@@ -52,10 +52,12 @@
             align-items: center;
             z-index: 10;
         }
-        .player-seat.seat-0 { bottom: -32px; left: 50%; transform: translateX(-50%); }
-        .player-seat.seat-1 { top: 10px; left: 50%; transform: translateX(-50%); }
-        .player-seat.seat-2 { top: 50%; left: -10px; transform: translateY(-50%); }
-        .player-seat.seat-3 { top: 50%; right: -10px; transform: translateY(-50%); }
+        .player-seat.seat-0 { bottom: -35px; left: 50%; transform: translateX(-50%); }
+        .player-seat.seat-1 { top: -5px; left: 50%; transform: translateX(-50%); }
+        .player-seat.seat-2 { top: 30%; left: -15px; }
+        .player-seat.seat-3 { top: 30%; right: -15px; }
+        .player-seat.seat-4 { bottom: 15%; left: -15px; }
+        .player-seat.seat-5 { bottom: 15%; right: -15px; }
         .player-info {
             background: rgba(0,0,0,0.65);
             color: #fff;
@@ -82,7 +84,7 @@
         }
         .player-info .player-chips {
             color: #ffd700;
-            font-size: 0.78rem;
+            font-size: 1rem;
         }
         .player-info .player-action {
             color: #8f8;
@@ -103,6 +105,18 @@
             margin-left: 4px;
             vertical-align: middle;
             box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+        /* My seat — larger info */
+        .player-seat.my-seat .player-info {
+            font-size: 0.95rem;
+            padding: 6px 18px;
+            min-width: 110px;
+        }
+        .player-seat.my-seat .player-info .player-name {
+            font-size: 1.05rem;
+        }
+        .player-seat.my-seat .player-info .player-chips {
+            font-size: 1.15rem;
         }
         .player-bet {
             color: #ffd700;
@@ -125,6 +139,16 @@
         .card-3d.mini {
             width: 48px;
             height: 68px;
+        }
+        /* Larger cards for community */
+        .card-3d.community-card {
+            width: 65px;
+            height: 92px;
+        }
+        /* Larger cards for my seat */
+        .card-3d.my-card {
+            width: 72px;
+            height: 100px;
         }
         .card-inner {
             position: relative;
@@ -164,6 +188,10 @@
         }
         .card-3d.mini .card-front .card-rank { font-size: 0.9rem; }
         .card-3d.mini .card-front .card-suit { font-size: 1.1rem; }
+        .card-3d.my-card .card-front .card-rank { font-size: 1.3rem; }
+        .card-3d.my-card .card-front .card-suit { font-size: 1.6rem; }
+        .card-3d.community-card .card-front .card-rank { font-size: 1.2rem; }
+        .card-3d.community-card .card-front .card-suit { font-size: 1.5rem; }
         .card-front .corner-tl, .card-front .corner-br {
             position: absolute;
             font-size: 0.55rem;
@@ -285,11 +313,20 @@
             from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
             to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         }
+        /* Multiplayer status */
+        .mp-status {
+            text-align: center;
+            color: #c4aa82;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar">
         <a href="/" class="logo">Game Hub</a>
+        {% if not room_id %}
         <div class="nav-links">
             <a href="/tetris">Tetris</a>
             <a href="/omok">Omok</a>
@@ -297,52 +334,22 @@
             <a href="/yacht">Yacht</a>
             <a href="/poker">Poker</a>
         </div>
+        {% endif %}
     </nav>
 
     <div class="game-container">
         <h1>Texas Hold'em Poker</h1>
+
+        {% if room_id %}
+        <div class="mp-status" id="mp-status">{% if is_spectator %}관전 모드{% else %}상대방 연결 대기 중...{% endif %}</div>
+        {% endif %}
+
         <div class="poker-table-wrap">
             <div class="poker-table" id="poker-table">
                 <div class="pot-display" id="pot-display">팟: 0</div>
                 <div class="community-cards" id="community-cards"></div>
                 <div class="hand-result" id="hand-result"></div>
-
-                <div class="player-seat seat-0" id="seat-0">
-                    <div class="player-cards" id="cards-0"></div>
-                    <div class="player-bet" id="bet-0"></div>
-                    <div class="player-info" id="info-0">
-                        <div class="player-name" id="name-0">나</div>
-                        <div class="player-chips" id="chips-0">1000</div>
-                        <div class="player-action" id="action-0"></div>
-                    </div>
-                </div>
-                <div class="player-seat seat-1" id="seat-1">
-                    <div class="player-info" id="info-1">
-                        <div class="player-name" id="name-1">AI 딜러 1</div>
-                        <div class="player-chips" id="chips-1">1000</div>
-                        <div class="player-action" id="action-1"></div>
-                    </div>
-                    <div class="player-bet" id="bet-1"></div>
-                    <div class="player-cards" id="cards-1"></div>
-                </div>
-                <div class="player-seat seat-2" id="seat-2">
-                    <div class="player-info" id="info-2">
-                        <div class="player-name" id="name-2">AI 딜러 2</div>
-                        <div class="player-chips" id="chips-2">1000</div>
-                        <div class="player-action" id="action-2"></div>
-                    </div>
-                    <div class="player-bet" id="bet-2"></div>
-                    <div class="player-cards" id="cards-2"></div>
-                </div>
-                <div class="player-seat seat-3" id="seat-3">
-                    <div class="player-info" id="info-3">
-                        <div class="player-name" id="name-3">AI 딜러 3</div>
-                        <div class="player-chips" id="chips-3">1000</div>
-                        <div class="player-action" id="action-3"></div>
-                    </div>
-                    <div class="player-bet" id="bet-3"></div>
-                    <div class="player-cards" id="cards-3"></div>
-                </div>
+                <!-- Seats generated by JS -->
             </div>
         </div>
 
@@ -370,6 +377,41 @@
             <button class="btn" id="restart-btn">다시 시작</button>
         </div>
     </div>
+
+    {% if room_id %}
+    <div class="participants-panel" id="participants-panel">
+        <h4>참가자</h4>
+        <div id="participants-list"></div>
+    </div>
+    <div class="game-chat" id="game-chat">
+        <div class="chat-header" id="chat-header">
+            <span class="chat-title">채팅</span>
+            <div class="chat-controls">
+                <label class="chat-opacity-label" title="투명도">
+                    <input type="range" id="chat-opacity" min="20" max="100" value="100" class="chat-opacity-slider">
+                </label>
+                <button class="chat-toggle-btn" id="chat-toggle-btn" title="최소화">−</button>
+            </div>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-wrap">
+                <input type="text" id="chat-input" placeholder="메시지 입력..." maxlength="200" autocomplete="off">
+                <button class="btn btn-primary btn-chat-send" id="chat-send">전송</button>
+            </div>
+        </div>
+        <div class="chat-resize-handle" id="chat-resize"></div>
+    </div>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        const ROOM_ID = "{{ room_id }}";
+        const MY_USER = "{{ user_id }}";
+        const MY_PLAYER = {{ my_player or 0 }};
+        const IS_SPECTATOR = {{ 'true' if is_spectator else 'false' }};
+        const ROOM_PLAYERS = {{ room.players | tojson if room else '[]' }};
+        const ALLOW_COACHING = false;
+    </script>
+    {% endif %}
 
     <script src="{{ url_for('static', filename='js/poker.js') }}"></script>
 </body>

@@ -223,13 +223,13 @@ def chess():
 @app.route('/yacht')
 @login_required
 def yacht():
-    return render_template('yacht.html', user_id=session['user_id'])
+    return _game_route('yacht.html')
 
 
 @app.route('/poker')
 @login_required
 def poker():
-    return render_template('poker.html', user_id=session['user_id'])
+    return _game_route('poker.html')
 
 
 # ──────────────────── Room API ────────────────────
@@ -243,6 +243,10 @@ def create_room():
     max_players = int(data.get('max_players', 2))
     if game == 'tetris':
         max_players = max(2, min(8, max_players))
+    elif game == 'yacht':
+        max_players = max(2, min(4, max_players))
+    elif game == 'poker':
+        max_players = max(2, min(6, max_players))
     else:
         max_players = 2
     db.create_room(

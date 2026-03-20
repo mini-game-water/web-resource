@@ -243,11 +243,19 @@
             font-weight: 600;
             min-height: 1.5em;
         }
+
+        .scorecard .active-col {
+            background: #f0e8d8;
+        }
+        .scorecard th.active-col {
+            background: #e0d4c0;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar">
         <a href="/" class="logo">Game Hub</a>
+        {% if not room_id %}
         <div class="nav-links">
             <a href="/tetris">Tetris</a>
             <a href="/omok">Omok</a>
@@ -255,10 +263,14 @@
             <a href="/yacht">Yacht</a>
             <a href="/poker">Poker</a>
         </div>
+        {% endif %}
     </nav>
 
     <div class="game-container">
         <h1>Yacht Dice</h1>
+        {% if room_id %}
+        <div class="mp-status" id="mp-status">{% if is_spectator %}관전 모드{% else %}상대방 연결 대기 중...{% endif %}</div>
+        {% endif %}
         <div class="yacht-container">
             <div class="dice-area">
                 <div class="dice-row" id="dice-row">
@@ -273,7 +285,7 @@
                     <thead>
                         <tr>
                             <th>카테고리</th>
-                            <th>점수</th>
+                            <th id="score-header">점수</th>
                         </tr>
                     </thead>
                     <tbody id="scorecard-body">
@@ -287,10 +299,47 @@
     <div class="overlay" id="game-over-overlay">
         <div class="overlay-content">
             <h2>게임 종료!</h2>
-            <p>최종 점수: <span id="final-score">0</span></p>
+            <p id="final-score-text">최종 점수: <span id="final-score">0</span></p>
+            {% if not room_id %}
             <button class="btn" id="restart-btn">다시 시작</button>
+            {% endif %}
         </div>
     </div>
+
+    {% if room_id %}
+    <div class="participants-panel" id="participants-panel">
+        <h4>참가자</h4>
+        <div id="participants-list"></div>
+    </div>
+    <div class="game-chat" id="game-chat">
+        <div class="chat-header" id="chat-header">
+            <span class="chat-title">채팅</span>
+            <div class="chat-controls">
+                <label class="chat-opacity-label" title="투명도">
+                    <input type="range" id="chat-opacity" min="20" max="100" value="100" class="chat-opacity-slider">
+                </label>
+                <button class="chat-toggle-btn" id="chat-toggle-btn" title="최소화">−</button>
+            </div>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-wrap">
+                <input type="text" id="chat-input" placeholder="메시지 입력..." maxlength="200" autocomplete="off">
+                <button class="btn btn-primary btn-chat-send" id="chat-send">전송</button>
+            </div>
+        </div>
+        <div class="chat-resize-handle" id="chat-resize"></div>
+    </div>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        const ROOM_ID = "{{ room_id }}";
+        const MY_USER = "{{ user_id }}";
+        const MY_PLAYER = {{ my_player or 0 }};
+        const IS_SPECTATOR = {{ 'true' if is_spectator else 'false' }};
+        const ROOM_PLAYERS = {{ room.players | tojson if room else '[]' }};
+        const ALLOW_COACHING = false;
+    </script>
+    {% endif %}
 
     <script src="{{ url_for('static', filename='js/yacht.js') }}"></script>
 </body>

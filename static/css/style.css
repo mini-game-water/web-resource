@@ -1165,6 +1165,14 @@ body {
 .option-label input[type="checkbox"] {
     accent-color: #a38b6d;
 }
+.option-label input[type="checkbox"]:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.coaching-option-label:has(input:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 
 #max-players-row {
     margin-top: 0.5rem;
