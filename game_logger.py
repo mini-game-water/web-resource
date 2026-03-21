@@ -95,7 +95,7 @@ def flush():
         if s3 and BUCKET:
             # Append unique suffix to avoid overwrites within same flush interval
             suffix = uuid.uuid4().hex[:8]
-            key = f"{prefix}/{cat}-{suffix}.json.gz"
+            key = f"{cat}/{prefix}/{cat}-{suffix}.json.gz"
             try:
                 s3.put_object(
                     Bucket=BUCKET,
