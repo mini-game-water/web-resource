@@ -1031,6 +1031,7 @@
         function sendChat() {
             const text = (chatInput.value || '').trim();
             if (!text) return;
+            appendChat({ user_id: MY_USER, role: 'Player', message: text });
             socket.emit('game_chat', { room_id: ROOM_ID, user_id: MY_USER, message: text });
             chatInput.value = '';
         }

@@ -534,6 +534,8 @@ def on_join_game(data):
     sid_info[request.sid] = {'user_id': uid, 'room_id': rid, 'context': 'game'}
     game_conns.setdefault(rid, set()).add(uid)
     room = db.get_room(rid)
+    game_logger.log('game_activity', 'player_join_game', room_id=rid, user_id=uid,
+                     game=room.get('game', '') if room else '')
     # Use actual player count (not max_players) for force-started games
     actual_players = len(room.get('players', [])) if room else 2
     if len(game_conns[rid]) >= actual_players:
@@ -569,7 +571,7 @@ def on_game_move(data):
     game_states[rid]['moves'].append(data)
     room = db.get_room(rid)
     game_logger.log_game_move(rid, data.get('user_id', ''),
-                              room.get('game', '') if room else '', data.get('type'))
+                              room.get('game', '') if room else '', move_data=data.get('type'))
     emit('opponent_move', data, room=rid, include_self=False)
 
 
@@ -654,6 +656,7 @@ def on_poker_join_request(data):
     rid = data.get('room_id')
     uid = data.get('user_id')
     if rid:
+        game_logger.log_poker_mid_join(rid, uid)
         emit('poker_player_joined', {'user_id': uid}, room=rid)
 
 
@@ -701,7 +704,7 @@ def on_game_chat(data):
     # Keep only last 100 messages
     if len(game_chats[rid]) > 100:
         game_chats[rid] = game_chats[rid][-100:]
-    emit('chat_message', chat_msg, room=rid)
+    emit('chat_message', chat_msg, room=rid, include_self=False)
 
 
 # ──────────────────── Invite System ────────────────────

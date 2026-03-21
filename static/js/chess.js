@@ -165,13 +165,43 @@
     }
 
     function isInCheck(side) {
-        const [kr, kc] = findKing(side);
+        const king = findKing(side);
+        if (!king) return false;
+        const [kr, kc] = king;
         return isSquareAttacked(kr, kc, side === "w" ? "b" : "w");
     }
 
     function legalMoves(r, c) {
-        // Allow all pseudo-legal moves (no check restriction)
-        return pseudoMoves(r, c);
+        const piece = board[r][c];
+        if (piece === " ") return [];
+        const side = isWhite(piece) ? "w" : "b";
+        const enemy = side === "w" ? "b" : "w";
+        const pseudo = pseudoMoves(r, c);
+        const legal = [];
+        for (const [tr, tc] of pseudo) {
+            // Simulate the move
+            const captured = board[tr][tc];
+            const origFrom = board[r][c];
+            board[tr][tc] = piece;
+            board[r][c] = " ";
+            // Handle en passant capture
+            let epCaptured = null;
+            let epRow = -1;
+            if (piece.toUpperCase() === "P" && enPassant && tr === enPassant.row && tc === enPassant.col) {
+                epRow = side === "w" ? tr + 1 : tr - 1;
+                epCaptured = board[epRow][tc];
+                board[epRow][tc] = " ";
+            }
+            // Check if own king is safe after this move
+            const king = findKing(side);
+            const inCheck = king ? isSquareAttacked(king[0], king[1], enemy) : false;
+            // Restore
+            board[r][c] = origFrom;
+            board[tr][tc] = captured;
+            if (epCaptured !== null) board[epRow][tc] = epCaptured;
+            if (!inCheck) legal.push([tr, tc]);
+        }
+        return legal;
     }
 
     // Find king destination squares where king would be captured next turn
@@ -226,6 +256,9 @@
             if (fr === 0 && fc === 7) castleRights.bK = false;
         }
 
+        // Check if a king is being captured (game ends immediately)
+        const capturedIsKing = captured.toUpperCase() === "K";
+
         board[tr][tc] = piece;
         board[fr][fc] = " ";
 
@@ -247,6 +280,15 @@
         }
         moveListEl.scrollTop = moveListEl.scrollHeight;
 
+        if (capturedIsKing) {
+            gameOver = true;
+            const winner = side === "w" ? "White" : "Black";
+            document.getElementById("status").textContent = `${winner} wins! King captured!`;
+            document.getElementById("game-over-message").textContent = `${winner} wins!`;
+            document.getElementById("game-over-overlay").classList.add("active");
+            return;
+        }
+
         turn = turn === "w" ? "b" : "w";
         coachingArrows = {}; // Clear coaching on turn change
         coachingDots = {};
@@ -254,6 +296,9 @@
     }
 
     function checkGameState() {
+        // If king is already gone (captured), game is already over
+        if (!findKing(turn)) return;
+
         let hasLegalMove = false;
         for (let r = 0; r < 8 && !hasLegalMove; r++)
             for (let c = 0; c < 8 && !hasLegalMove; c++)
@@ -675,6 +720,7 @@
         function sendChat() {
             const text = (chatInput.value || '').trim();
             if (!text) return;
+            appendChat({ user_id: MY_USER, role: 'Player', message: text });
             socket.emit('game_chat', { room_id: ROOM_ID, user_id: MY_USER, message: text });
             chatInput.value = '';
         }

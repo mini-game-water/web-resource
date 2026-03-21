@@ -51,8 +51,21 @@
         return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
     }
 
+    // 7-Bag System: each bag contains one of each piece type (1-7),
+    // shuffled randomly. When the bag is empty, a new bag is generated.
+    let pieceBag = [];
+
+    function fillBag() {
+        pieceBag = [1, 2, 3, 4, 5, 6, 7];
+        for (let i = pieceBag.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pieceBag[i], pieceBag[j]] = [pieceBag[j], pieceBag[i]];
+        }
+    }
+
     function randomType() {
-        return Math.floor(Math.random() * 7) + 1;
+        if (pieceBag.length === 0) fillBag();
+        return pieceBag.pop();
     }
 
     function cloneShape(type) {
@@ -438,6 +451,7 @@
         score = 0; level = 1; lines = 0;
         gameOver = false; paused = false; eliminated = false;
         dropInterval = 1000;
+        pieceBag = []; // Reset bag for new game
         nextPiece = randomType();
         spawn();
         updateUI();
@@ -709,6 +723,7 @@
         function sendChat() {
             const text = (chatInput.value || '').trim();
             if (!text) return;
+            appendChat({ user_id: MY_USER, role: 'Player', message: text });
             socket.emit('game_chat', { room_id: ROOM_ID, user_id: MY_USER, message: text });
             chatInput.value = '';
         }

@@ -650,16 +650,26 @@
         gameRunning = state.gameRunning;
 
         // Sync player list if it changed (mid-game joins)
+        const stateNames = state.playerStates.map(ps => ps.name);
+        const localHasMyUser = isMultiplayer && myUser && !isSpectator;
+        const stateHasMyUser = localHasMyUser ? stateNames.includes(myUser) : true;
+
         if (state.playerStates.length !== NUM_PLAYERS) {
-            PLAYER_NAMES = state.playerStates.map(ps => ps.name);
-            NUM_PLAYERS = PLAYER_NAMES.length;
-            if (isMultiplayer) myIndex = PLAYER_NAMES.indexOf(myUser);
-            players = [];
-            initArrays();
-            createSeats(PLAYER_NAMES, isSpectator ? 0 : myIndex);
+            if (!stateHasMyUser && localHasMyUser && state.playerStates.length < NUM_PLAYERS) {
+                // Host hasn't processed our join yet — keep local player list,
+                // only apply state for the players we know about from the host
+            } else {
+                PLAYER_NAMES = stateNames;
+                NUM_PLAYERS = PLAYER_NAMES.length;
+                if (isMultiplayer) myIndex = PLAYER_NAMES.indexOf(myUser);
+                players = [];
+                initArrays();
+                createSeats(PLAYER_NAMES, isSpectator ? 0 : myIndex);
+            }
         }
 
         state.playerStates.forEach((ps, i) => {
+            if (i >= NUM_PLAYERS) return; // Skip if state has more players than local
             if (!players[i]) {
                 players[i] = { name: ps.name, chips: ps.chips, hand: [], isAI: ps.name === DEALER_NAME };
             }
@@ -1450,6 +1460,7 @@
         function sendChat() {
             const text = (chatInput.value || '').trim();
             if (!text) return;
+            appendChat({ user_id: MY_USER, role: 'Player', message: text });
             socket.emit('game_chat', { room_id: ROOM_ID, user_id: MY_USER, message: text });
             chatInput.value = '';
         }
