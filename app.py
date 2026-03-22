@@ -194,6 +194,12 @@ def room_page(room_id):
         return render_template('room_not_found.html'), 404
     if session['user_id'] not in room.get('players', []):
         return redirect(url_for('index'))
+
+    # If room is already playing, redirect straight to the game page
+    if room.get('status') == 'playing':
+        game = room.get('game', 'tetris')
+        return redirect(f'/{game}?room_id={room_id}')
+
     uid = session['user_id']
     user = db.get_user(uid) or {}
     friend_ids = user.get('friends', [])
@@ -558,7 +564,7 @@ def on_join_waiting(data):
     max_p = room.get('max_players', 2) if room else 2
     host = room.get('host', '') if room else ''
     emit('room_update', {'players': players, 'count': len(players), 'max_players': max_p, 'host': host}, room=rid)
-    min_to_start = 1 if room and room['game'] in ('poker', 'rummikub') else max_p
+    min_to_start = 2 if room and room['game'] in ('poker', 'rummikub') else max_p
     if len(waiting_conns[rid]) >= min_to_start:
         if room and room['status'] == 'waiting':
             db.set_room_status(rid, 'playing')
@@ -579,7 +585,7 @@ def on_force_start(data):
     if room.get('host') != uid:
         return
     players = room.get('players', [])
-    min_start = 1 if room.get('game') in ('poker', 'rummikub') else 2
+    min_start = 2
     if len(players) < min_start:
         return
     db.set_room_status(rid, 'playing')
