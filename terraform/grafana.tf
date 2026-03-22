@@ -175,39 +175,39 @@ resource "grafana_dashboard" "gamehub_logs" {
           rawSQL = <<-EOT
             SELECT timestamp, category, event_type, user_id, room_id
             FROM user_activity
-            WHERE year = CAST(YEAR(CURRENT_DATE) AS VARCHAR)
-              AND month = LPAD(CAST(MONTH(CURRENT_DATE) AS VARCHAR), 2, '0')
-              AND day = LPAD(CAST(DAY(CURRENT_DATE) AS VARCHAR), 2, '0')
+            WHERE year = YEAR(CURRENT_DATE)
+              AND month = MONTH(CURRENT_DATE)
+              AND day = DAY(CURRENT_DATE)
             UNION ALL
             SELECT timestamp, category, event_type, user_id, room_id
             FROM room_activity
-            WHERE year = CAST(YEAR(CURRENT_DATE) AS VARCHAR)
-              AND month = LPAD(CAST(MONTH(CURRENT_DATE) AS VARCHAR), 2, '0')
-              AND day = LPAD(CAST(DAY(CURRENT_DATE) AS VARCHAR), 2, '0')
+            WHERE year = YEAR(CURRENT_DATE)
+              AND month = MONTH(CURRENT_DATE)
+              AND day = DAY(CURRENT_DATE)
             UNION ALL
             SELECT timestamp, category, event_type, user_id, room_id
             FROM game_activity
-            WHERE year = CAST(YEAR(CURRENT_DATE) AS VARCHAR)
-              AND month = LPAD(CAST(MONTH(CURRENT_DATE) AS VARCHAR), 2, '0')
-              AND day = LPAD(CAST(DAY(CURRENT_DATE) AS VARCHAR), 2, '0')
+            WHERE year = YEAR(CURRENT_DATE)
+              AND month = MONTH(CURRENT_DATE)
+              AND day = DAY(CURRENT_DATE)
             UNION ALL
             SELECT timestamp, category, event_type, user_id, room_id
             FROM chat_activity
-            WHERE year = CAST(YEAR(CURRENT_DATE) AS VARCHAR)
-              AND month = LPAD(CAST(MONTH(CURRENT_DATE) AS VARCHAR), 2, '0')
-              AND day = LPAD(CAST(DAY(CURRENT_DATE) AS VARCHAR), 2, '0')
+            WHERE year = YEAR(CURRENT_DATE)
+              AND month = MONTH(CURRENT_DATE)
+              AND day = DAY(CURRENT_DATE)
             UNION ALL
             SELECT timestamp, category, event_type, user_id, room_id
             FROM friend_activity
-            WHERE year = CAST(YEAR(CURRENT_DATE) AS VARCHAR)
-              AND month = LPAD(CAST(MONTH(CURRENT_DATE) AS VARCHAR), 2, '0')
-              AND day = LPAD(CAST(DAY(CURRENT_DATE) AS VARCHAR), 2, '0')
+            WHERE year = YEAR(CURRENT_DATE)
+              AND month = MONTH(CURRENT_DATE)
+              AND day = DAY(CURRENT_DATE)
             UNION ALL
             SELECT timestamp, category, event_type, user_id, room_id
             FROM spectate_activity
-            WHERE year = CAST(YEAR(CURRENT_DATE) AS VARCHAR)
-              AND month = LPAD(CAST(MONTH(CURRENT_DATE) AS VARCHAR), 2, '0')
-              AND day = LPAD(CAST(DAY(CURRENT_DATE) AS VARCHAR), 2, '0')
+            WHERE year = YEAR(CURRENT_DATE)
+              AND month = MONTH(CURRENT_DATE)
+              AND day = DAY(CURRENT_DATE)
             ORDER BY timestamp DESC
             LIMIT 200
           EOT
@@ -224,9 +224,9 @@ resource "grafana_dashboard" "gamehub_logs" {
           rawSQL = <<-EOT
             SELECT timestamp, event_type, user_id, ip
             FROM user_activity
-            WHERE year = CAST(YEAR(CURRENT_DATE) AS VARCHAR)
-              AND month = LPAD(CAST(MONTH(CURRENT_DATE) AS VARCHAR), 2, '0')
-              AND day = LPAD(CAST(DAY(CURRENT_DATE) AS VARCHAR), 2, '0')
+            WHERE year = YEAR(CURRENT_DATE)
+              AND month = MONTH(CURRENT_DATE)
+              AND day = DAY(CURRENT_DATE)
               AND event_type IN ('login', 'logout', 'register')
             ORDER BY timestamp DESC
             LIMIT 50
@@ -255,9 +255,9 @@ resource "grafana_dashboard" "gamehub_logs" {
               category,
               COUNT(*) AS count
             FROM user_activity
-            WHERE year = CAST(YEAR(CURRENT_DATE) AS VARCHAR)
-              AND month = LPAD(CAST(MONTH(CURRENT_DATE) AS VARCHAR), 2, '0')
-              AND day = LPAD(CAST(DAY(CURRENT_DATE) AS VARCHAR), 2, '0')
+            WHERE year = YEAR(CURRENT_DATE)
+              AND month = MONTH(CURRENT_DATE)
+              AND day = DAY(CURRENT_DATE)
             GROUP BY 1, 2
             ORDER BY 1
           EOT
@@ -274,9 +274,9 @@ resource "grafana_dashboard" "gamehub_logs" {
           rawSQL = <<-EOT
             SELECT timestamp, event_type, room_id, user_id, game, host
             FROM room_activity
-            WHERE year = CAST(YEAR(CURRENT_DATE) AS VARCHAR)
-              AND month = LPAD(CAST(MONTH(CURRENT_DATE) AS VARCHAR), 2, '0')
-              AND day = LPAD(CAST(DAY(CURRENT_DATE) AS VARCHAR), 2, '0')
+            WHERE year = YEAR(CURRENT_DATE)
+              AND month = MONTH(CURRENT_DATE)
+              AND day = DAY(CURRENT_DATE)
             ORDER BY timestamp DESC
             LIMIT 50
           EOT
@@ -293,9 +293,9 @@ resource "grafana_dashboard" "gamehub_logs" {
           rawSQL = <<-EOT
             SELECT timestamp, event_type, room_id, user_id, game, winner, loser
             FROM game_activity
-            WHERE year = CAST(YEAR(CURRENT_DATE) AS VARCHAR)
-              AND month = LPAD(CAST(MONTH(CURRENT_DATE) AS VARCHAR), 2, '0')
-              AND day = LPAD(CAST(DAY(CURRENT_DATE) AS VARCHAR), 2, '0')
+            WHERE year = YEAR(CURRENT_DATE)
+              AND month = MONTH(CURRENT_DATE)
+              AND day = DAY(CURRENT_DATE)
             ORDER BY timestamp DESC
             LIMIT 50
           EOT
@@ -312,9 +312,9 @@ resource "grafana_dashboard" "gamehub_logs" {
           rawSQL = <<-EOT
             SELECT timestamp, room_id, user_id, role, message
             FROM chat_activity
-            WHERE year = CAST(YEAR(CURRENT_DATE) AS VARCHAR)
-              AND month = LPAD(CAST(MONTH(CURRENT_DATE) AS VARCHAR), 2, '0')
-              AND day = LPAD(CAST(DAY(CURRENT_DATE) AS VARCHAR), 2, '0')
+            WHERE year = YEAR(CURRENT_DATE)
+              AND month = MONTH(CURRENT_DATE)
+              AND day = DAY(CURRENT_DATE)
             ORDER BY timestamp DESC
             LIMIT 100
           EOT

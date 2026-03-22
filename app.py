@@ -521,6 +521,8 @@ def on_user_status(data):
         if not user or user.get('status') == 'offline':
             return
         old_status = user.get('status', 'offline')
+        if old_status == status:
+            return
         db.update_user_status(uid, status)
         game_logger.log_status_change(uid, old_status, status)
         ip = user.get('public_ip', '') if user else ''
