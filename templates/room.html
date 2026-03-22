@@ -73,7 +73,14 @@
         let currentHost = "{{ room.host }}";
         let isLeaving = false;
 
-        socket.emit('join_waiting', { room_id: ROOM_ID, user_id: MY_USER });
+        socket.on('connect', () => {
+            console.log('[WaitingRoom] SocketIO connected, sid:', socket.id);
+            socket.emit('join_waiting', { room_id: ROOM_ID, user_id: MY_USER });
+        });
+        socket.on('connect_error', (err) => {
+            console.error('[WaitingRoom] SocketIO connect error:', err.message);
+            document.getElementById('waiting-status').textContent = '서버 연결 실패: ' + err.message;
+        });
 
         function renderPlayerList(players, maxP, host) {
             const list = document.getElementById('player-list');
@@ -128,7 +135,7 @@
 
         socket.on('game_started', (data) => {
             isLeaving = true;
-            window.location.href = data.url;
+            window.location.replace(data.url);
         });
 
         function forceStart() {

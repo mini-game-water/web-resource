@@ -346,7 +346,6 @@
         const IS_SPECTATOR = {{ 'true' if is_spectator else 'false' }};
         const ROOM_PLAYERS = {{ room.players | tojson if room else '[]' }};
         const ALLOW_COACHING = false;
-        if (!IS_SPECTATOR) history.replaceState(null, '', location.href);
     </script>
     {% endif %}
 

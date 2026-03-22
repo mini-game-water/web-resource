@@ -106,7 +106,6 @@
         const MY_PLAYER = {{ my_player or 0 }};
         const IS_SPECTATOR = {{ 'true' if is_spectator else 'false' }};
         const ALLOW_COACHING = {{ 'true' if room and room.allow_coaching else 'false' }};
-        if (!IS_SPECTATOR) history.replaceState(null, '', location.href);
     </script>
     {% endif %}
     <script src="{{ url_for('static', filename='js/omok.js') }}"></script>

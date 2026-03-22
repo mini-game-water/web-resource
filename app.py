@@ -17,7 +17,8 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'game-hub-dev-secret-key')
 app.config['WTF_CSRF_CHECK_DEFAULT'] = False
 csrf = CSRFProtect(app)
-socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins='*')
+socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins='*',
+                    logger=True, engineio_logger=True)
 
 
 @app.before_request
@@ -73,6 +74,12 @@ def admin_required(f):
 def client_ip():
     xff = request.headers.get('X-Forwarded-For', '')
     return xff.split(',')[0].strip() if xff else request.remote_addr
+
+
+@app.route('/health')
+def health():
+    return jsonify({'status': 'ok', 'socketio': 'enabled',
+                    'cors': app.config.get('WTF_CSRF_CHECK_DEFAULT', True)})
 
 
 # ──────────────────── Broadcast Helpers ────────────────────
@@ -535,6 +542,11 @@ def force_close_room(room_id):
 
 # ──────────────────── SocketIO ────────────────────
 
+@socketio.on('connect')
+def on_connect():
+    app.logger.info(f'[SocketIO] Client connected: sid={request.sid}')
+
+
 @socketio.on('join_lobby')
 def on_join_lobby(data):
     uid = data['user_id']
@@ -565,6 +577,7 @@ def on_user_status(data):
 def on_join_waiting(data):
     rid = data['room_id']
     uid = data['user_id']
+    app.logger.info(f'[join_waiting] rid={rid} uid={uid} sid={request.sid}')
     join_room(rid)
     sid_info[request.sid] = {'user_id': uid, 'room_id': rid, 'context': 'waiting'}
     waiting_conns.setdefault(rid, set()).add(uid)
@@ -572,6 +585,7 @@ def on_join_waiting(data):
     room = db.get_room(rid)
     max_p = room.get('max_players', 2) if room else 2
     host = room.get('host', '') if room else ''
+    app.logger.info(f'[join_waiting] room={room.get("game") if room else "?"} players={players} waiting={len(waiting_conns[rid])} max_p={max_p}')
     emit('room_update', {'players': players, 'count': len(players), 'max_players': max_p, 'host': host}, room=rid)
     min_to_start = 2 if room and room['game'] in ('poker', 'rummikub') else max_p
     if len(waiting_conns[rid]) >= min_to_start:
