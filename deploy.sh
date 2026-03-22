@@ -13,7 +13,7 @@ docker rm "$CONTAINER" 2>/dev/null || true
 
 # ── Fresh clone ──
 echo ">> Cloning repo..."
-rm -rf "$APP_DIR"
+sudo rm -rf "$APP_DIR"
 cd /home/ec2-user
 git clone "$REPO" app
 cd "$APP_DIR"
