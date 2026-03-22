@@ -1072,12 +1072,17 @@
         const chatToggle = document.getElementById('chat-toggle-btn');
         const chatResize = document.getElementById('chat-resize');
 
+        function escapeHtml(str) {
+            if (typeof str !== 'string') return str;
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+        }
+
         function appendChat(msg) {
             if (!chatMessages) return;
             const div = document.createElement('div');
             div.className = 'chat-msg' + (msg.user_id === MY_USER ? ' chat-mine' : '');
-            const roleTag = msg.role ? ' <span class="chat-role">(' + msg.role + ')</span>' : '';
-            div.innerHTML = '<strong>' + msg.user_id + '</strong>' + roleTag + ' ' + msg.message;
+            const roleTag = msg.role ? ' <span class="chat-role">(' + escapeHtml(msg.role) + ')</span>' : '';
+            div.innerHTML = '<strong>' + escapeHtml(msg.user_id) + '</strong>' + roleTag + ' ' + escapeHtml(msg.message);
             chatMessages.appendChild(div);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }

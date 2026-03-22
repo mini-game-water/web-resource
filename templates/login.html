@@ -23,12 +23,14 @@
             {% endif %}
 
             <form id="login-form" method="POST" action="/login">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="text" name="user_id" placeholder="아이디" required>
                 <input type="password" name="password" placeholder="비밀번호" required>
                 <button type="submit" class="btn btn-primary">로그인</button>
             </form>
 
             <form id="register-form" method="POST" action="/register" style="display:none;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="text" name="user_id" placeholder="아이디" required>
                 <input type="password" name="password" placeholder="비밀번호" required>
                 <input type="text" name="name" placeholder="이름" required>

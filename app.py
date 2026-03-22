@@ -3,7 +3,11 @@ import uuid
 import time
 from functools import wraps
 
+import re
+from markupsafe import escape
+
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask_wtf.csrf import CSRFProtect
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
 import db
@@ -11,7 +15,18 @@ import game_logger
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'game-hub-dev-secret-key')
+csrf = CSRFProtect(app)
 socketio = SocketIO(app, async_mode='gevent')
+
+
+# ──────────────────── XSS Sanitizer ────────────────────
+
+def sanitize(value):
+    """Strip HTML tags and escape special characters for safe output."""
+    if not isinstance(value, str):
+        return value
+    cleaned = re.sub(r'<[^>]*>', '', value)
+    return str(escape(cleaned))
 
 game_logger.init()
 
@@ -102,10 +117,10 @@ def login():
 
 @app.route('/register', methods=['POST'])
 def register():
-    uid = request.form.get('user_id', '').strip()
+    uid = sanitize(request.form.get('user_id', '').strip())
     pw = request.form.get('password', '')
-    name = request.form.get('name', '').strip()
-    email = request.form.get('email', '').strip()
+    name = sanitize(request.form.get('name', '').strip())
+    email = sanitize(request.form.get('email', '').strip())
     if not uid or not pw:
         return render_template('login.html', error='아이디 또는 비밀번호를 확인해 주세요.', show_register=True)
     if not name or not email:
@@ -285,7 +300,7 @@ def create_room():
     allow_coaching = bool(data.get('allow_coaching'))
     db.create_room(
         room_id=rid,
-        name=data.get('name', 'Untitled'),
+        name=sanitize(data.get('name', 'Untitled')),
         game=game,
         password=data.get('password', ''),
         host=session['user_id'],
@@ -346,7 +361,7 @@ def join_game_api(room_id):
 @login_required
 def add_friend():
     data = request.get_json()
-    fid = data.get('friend_id', '').strip()
+    fid = sanitize(data.get('friend_id', '').strip())
     uid = session['user_id']
     if fid == uid:
         return jsonify({'error': '자기 자신은 추가할 수 없습니다.'}), 400
@@ -383,10 +398,10 @@ def update_profile():
     if not user:
         return jsonify({'error': '사용자를 찾을 수 없습니다.'}), 404
 
-    new_id = data.get('user_id', '').strip()
+    new_id = sanitize(data.get('user_id', '').strip())
     new_pw = data.get('pw', '').strip()
-    new_name = data.get('name', '').strip()
-    new_email = data.get('email', '').strip()
+    new_name = sanitize(data.get('name', '').strip())
+    new_email = sanitize(data.get('email', '').strip())
 
     changed = []
     if new_id and new_id != uid:
@@ -446,8 +461,8 @@ def get_notices():
 @admin_required
 def post_notice():
     data = request.get_json()
-    title = (data.get('title') or '').strip()
-    content = (data.get('content') or '').strip()
+    title = sanitize((data.get('title') or '').strip())
+    content = sanitize((data.get('content') or '').strip())
     if not title:
         return jsonify({'error': '제목을 입력하세요.'}), 400
     notice_id = db.create_notice(session['user_id'], title, content)
@@ -466,8 +481,8 @@ def post_notice():
 @admin_required
 def edit_notice(notice_id):
     data = request.get_json()
-    title = (data.get('title') or '').strip()
-    content = (data.get('content') or '').strip()
+    title = sanitize((data.get('title') or '').strip())
+    content = sanitize((data.get('content') or '').strip())
     if not title:
         return jsonify({'error': '제목을 입력하세요.'}), 400
     db.update_notice(notice_id, title, content)
@@ -733,7 +748,7 @@ def on_coaching_clear(data):
 def on_game_chat(data):
     rid = data.get('room_id')
     uid = data.get('user_id')
-    message = (data.get('message') or '').strip()
+    message = sanitize((data.get('message') or '').strip())
     if not rid or not uid or not message:
         return
     # Limit message length

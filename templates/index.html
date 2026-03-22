@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Game Hub</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
@@ -301,6 +302,12 @@
 
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <script>
+        const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
+        const CSRF_HEADERS = { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN };
+        function escapeHtml(str) {
+            if (typeof str !== 'string') return str;
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+        }
         const MY_USER = "{{ user_id }}";
         const MY_IP = "{{ user.get('public_ip', '') }}";
         const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
@@ -414,16 +421,16 @@
                 }
                 const meta = isSpectate
                     ? `<span>관전: ${r.spectator_count || 0}명</span><span>${r.player_count}/${r.max_players}명</span>`
-                    : `<span>호스트: ${r.host}</span><span>${r.player_count}/${r.max_players}명</span>`;
-                const badge = isSpectate ? 'LIVE' : r.game.toUpperCase();
+                    : `<span>호스트: ${escapeHtml(r.host)}</span><span>${r.player_count}/${r.max_players}명</span>`;
+                const badge = isSpectate ? 'LIVE' : escapeHtml(r.game.toUpperCase());
                 const badgeClass = isSpectate ? 'room-game-badge room-live-badge' : 'room-game-badge';
-                const adminBtn = IS_ADMIN ? `<button class="btn btn-danger btn-sm" onclick="forceCloseRoom('${r.id}')">강제종료</button>` : '';
+                const adminBtn = IS_ADMIN ? `<button class="btn btn-danger btn-sm" onclick="forceCloseRoom('${escapeHtml(r.id)}')">강제종료</button>` : '';
                 return `
                 <div class="room-item">
                     <div class="room-info-row">
                         <span class="${badgeClass}">${badge}</span>
-                        <span class="room-game-badge">${r.game.toUpperCase()}</span>
-                        <span class="room-name">${r.name}</span>
+                        <span class="room-game-badge">${escapeHtml(r.game.toUpperCase())}</span>
+                        <span class="room-name">${escapeHtml(r.name)}</span>
                         ${r.password ? '<span class="room-lock">&#128274;</span>' : ''}
                     </div>
                     <div class="room-meta">${meta}</div>
@@ -445,7 +452,7 @@
             }
             const res = await fetch('/api/rooms/' + roomId + '/join-game', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: CSRF_HEADERS,
                 body: JSON.stringify({ password })
             });
             const data = await res.json();
@@ -464,7 +471,7 @@
             }
             const res = await fetch('/api/rooms/' + roomId + '/join-game', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: CSRF_HEADERS,
                 body: JSON.stringify({ password })
             });
             const data = await res.json();
@@ -479,7 +486,7 @@
             if (!confirm('이 방을 강제 종료하시겠습니까?')) return;
             const res = await fetch('/api/rooms/' + roomId + '/force-close', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: CSRF_HEADERS
             });
             const data = await res.json();
             if (!data.ok) alert(data.error || '강제 종료 실패');
@@ -608,7 +615,7 @@
             const allow_coaching = document.getElementById('allow-coaching').checked;
             const res = await fetch('/api/rooms', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: CSRF_HEADERS,
                 body: JSON.stringify({ game, name, password, max_players, allow_spectate, allow_coaching })
             });
             const data = await res.json();
@@ -623,7 +630,7 @@
             }
             const res = await fetch('/api/rooms/' + roomId + '/join', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: CSRF_HEADERS,
                 body: JSON.stringify({})
             });
             const data = await res.json();
@@ -635,7 +642,7 @@
             const pw = document.getElementById('join-password').value;
             const res = await fetch('/api/rooms/' + pendingJoinRoomId + '/join', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: CSRF_HEADERS,
                 body: JSON.stringify({ password: pw })
             });
             const data = await res.json();
@@ -650,7 +657,7 @@
             if (!fid) return;
             const res = await fetch('/api/friends/add', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: CSRF_HEADERS,
                 body: JSON.stringify({ friend_id: fid })
             });
             const data = await res.json();
@@ -679,7 +686,7 @@
             };
             const res = await fetch('/api/profile', {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: CSRF_HEADERS,
                 body: JSON.stringify(body)
             });
             const data = await res.json();
@@ -730,13 +737,13 @@
             if (editId) {
                 res = await fetch('/api/notices/' + editId, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: CSRF_HEADERS,
                     body: JSON.stringify({ title, content })
                 });
             } else {
                 res = await fetch('/api/notices', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: CSRF_HEADERS,
                     body: JSON.stringify({ title, content })
                 });
             }
@@ -762,14 +769,15 @@
         }
 
         function renderNotice(n) {
+            const safeId = escapeHtml(n.notice_id);
             const adminBtns = IS_ADMIN ? `<div class="notice-actions">
-                <button class="notice-edit-btn" onclick="editNotice('${n.notice_id}', this)">수정</button>
-                <button class="notice-delete-btn" onclick="deleteNotice('${n.notice_id}')">&times;</button>
+                <button class="notice-edit-btn" onclick="editNotice('${safeId}', this)">수정</button>
+                <button class="notice-delete-btn" onclick="deleteNotice('${safeId}')">&times;</button>
             </div>` : '';
-            return `<div class="notice-item" data-id="${n.notice_id}">
-                <div class="notice-title">${n.title}</div>
-                <div class="notice-body">${n.content}</div>
-                <div class="notice-meta">${n.author} &middot; ${formatTime(n.created_at)}</div>
+            return `<div class="notice-item" data-id="${safeId}">
+                <div class="notice-title">${escapeHtml(n.title)}</div>
+                <div class="notice-body">${escapeHtml(n.content)}</div>
+                <div class="notice-meta">${escapeHtml(n.author)} &middot; ${formatTime(n.created_at)}</div>
                 ${adminBtns}
             </div>`;
         }
