@@ -1333,8 +1333,9 @@
 
     // ── Start / Restart ──
     startBtn.addEventListener('click', () => {
-        if (isMultiplayer && !gameReady && !isSpectator) return;
+        if (isMultiplayer && (!gameReady || !isHost)) return;
         initGame();
+        if (isMultiplayer && isHost) broadcastState();
     });
 
     restartBtn.addEventListener('click', () => {
@@ -1395,8 +1396,10 @@
                 if (el) el.textContent = '게임 시작!';
                 setTimeout(() => { if (el) el.style.display = 'none'; }, 1000);
 
-                if (!gameRunning) {
-                    startBtn.click();
+                // Only host initializes game; non-host waits for state broadcast
+                if (isHost && !gameRunning) {
+                    initGame();
+                    broadcastState();
                 }
             });
 

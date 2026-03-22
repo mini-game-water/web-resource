@@ -905,13 +905,14 @@
 
     // Start button
     startBtn.addEventListener('click', () => {
-        if (isMultiplayer && !gameReady) return;
+        if (isMultiplayer && (!gameReady || !isHost)) return;
         initGame();
         if (isHost) broadcastState();
     });
 
     // Restart button
     restartBtn.addEventListener('click', () => {
+        if (isMultiplayer && !isHost) return;
         gameOverOverlay.classList.remove('active');
         initGame();
         if (isHost) broadcastState();
@@ -1001,9 +1002,10 @@
                 if (el) el.textContent = '게임 시작!';
                 setTimeout(() => { if (el) el.style.display = 'none'; }, 1000);
 
-                // Auto-start the game when ready
-                if (!gameRunning) {
-                    startBtn.click();
+                // Only host initializes game; non-host waits for state broadcast
+                if (isHost && !gameRunning) {
+                    initGame();
+                    broadcastState();
                 }
             });
 

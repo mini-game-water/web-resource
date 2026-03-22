@@ -1785,7 +1785,8 @@
                 const el = document.getElementById('mp-status');
                 if (el) el.textContent = '게임 시작!';
                 setTimeout(() => { if (el) el.style.display = 'none'; }, 1000);
-                if (!gameRunning) {
+                // Only host initializes game; non-host waits for state broadcast
+                if (isHost && !gameRunning) {
                     startBtn.click();
                 }
             });
