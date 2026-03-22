@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bang! - Game Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .bang-table-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 1rem auto;
+        }
+        .bang-table {
+            position: relative;
+            width: 900px;
+            height: 560px;
+            background: radial-gradient(ellipse at center, #c8a96e 0%, #a38050 60%, #7a5c30 100%);
+            border-radius: 280px / 280px;
+            border: 10px solid #5c3a1e;
+            box-shadow: 0 0 0 5px #3d2510, 0 8px 32px rgba(0,0,0,0.5), inset 0 0 60px rgba(0,0,0,0.2);
+            overflow: visible;
+        }
+        .bang-center-info {
+            position: absolute;
+            top: 38%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+            z-index: 10;
+            text-align: center;
+        }
+        .deck-discard {
+            position: absolute;
+            top: 52%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 16px;
+            z-index: 10;
+            align-items: center;
+        }
+        .deck-pile, .discard-pile {
+            width: 65px;
+            height: 90px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            cursor: default;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+        }
+        .deck-pile {
+            background: linear-gradient(135deg, #8b4513 0%, #a0522d 50%, #8b4513 100%);
+            color: #ffd700;
+            border: 2px solid #daa520;
+        }
+        .discard-pile {
+            background: #fff;
+            color: #333;
+            border: 2px solid #ccc;
+            min-height: 90px;
+        }
+        .discard-pile .discard-card-name {
+            font-size: 0.65rem;
+            text-align: center;
+            word-break: break-word;
+        }
+        /* Player seats */
+        .bang-seat {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+        .bang-seat.targetable:hover {
+            filter: brightness(1.2) drop-shadow(0 0 8px #ffd700);
+        }
+        .bang-seat.seat-0 { bottom: -40px; left: 50%; transform: translateX(-50%); }
+        .bang-seat.seat-1 { bottom: 8%; left: 8%; }
+        .bang-seat.seat-2 { top: 25%; left: -10px; }
+        .bang-seat.seat-3 { top: -10px; left: 25%; }
+        .bang-seat.seat-4 { top: -10px; right: 25%; }
+        .bang-seat.seat-5 { top: 25%; right: -10px; }
+        .bang-seat.seat-6 { bottom: 8%; right: 8%; }
+        .bang-player-info {
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 0.78rem;
+            min-width: 100px;
+            white-space: nowrap;
+        }
+        .bang-player-info.active-turn {
+            box-shadow: 0 0 12px 3px #ffd700;
+            border: 2px solid #ffd700;
+        }
+        .bang-player-info.dead {
+            opacity: 0.3;
+        }
+        .bang-player-info .bp-name {
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+        .bang-player-info .bp-role-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: bold;
+            margin-left: 4px;
+        }
+        .role-sheriff { background: #ffd700; color: #333; }
+        .role-deputy { background: #4a90d9; color: #fff; }
+        .role-outlaw { background: #c0392b; color: #fff; }
+        .role-renegade { background: #8e44ad; color: #fff; }
+        .bp-hp {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+        .bp-equipment {
+            font-size: 0.6rem;
+            color: #aee;
+            max-width: 110px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .bp-hand-count {
+            font-size: 0.65rem;
+            color: #ccc;
+        }
+        .bang-seat.my-seat .bang-player-info {
+            font-size: 0.9rem;
+            padding: 6px 16px;
+            min-width: 120px;
+        }
+        /* My hand at bottom */
+        .my-hand-area {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            min-height: 100px;
+        }
+        /* Bang card styling */
+        .bang-card {
+            width: 65px;
+            height: 90px;
+            border-radius: 6px;
+            border: 2px solid #999;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            font-size: 0.65rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+            user-select: none;
+            position: relative;
+        }
+        .bang-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.35);
+        }
+        .bang-card .card-icon {
+            font-size: 1.4rem;
+            margin-bottom: 2px;
+        }
+        .bang-card .card-title {
+            font-size: 0.55rem;
+            line-height: 1.1;
+            word-break: keep-all;
+        }
+        .bang-card .card-suit-rank {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 0.5rem;
+            color: #888;
+        }
+        /* Card type colors */
+        .bang-card.type-attack { border-color: #c0392b; background: #fff0f0; }
+        .bang-card.type-defense { border-color: #27ae60; background: #f0fff0; }
+        .bang-card.type-heal { border-color: #e67e22; background: #fff8f0; }
+        .bang-card.type-draw { border-color: #2980b9; background: #f0f8ff; }
+        .bang-card.type-action { border-color: #8e44ad; background: #f8f0ff; }
+        .bang-card.type-equipment { border-color: #f39c12; background: #fffcf0; }
+        .bang-card.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .bang-card.disabled:hover {
+            transform: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+        }
+        /* Action area */
+        .action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 0.6rem;
+            flex-wrap: wrap;
+        }
+        .action-bar .btn {
+            min-width: 80px;
+            font-size: 0.85rem;
+            padding: 7px 14px;
+        }
+        .btn-end-turn { background: #27ae60; color: #fff; }
+        .btn-end-turn:hover { background: #2ecc71; }
+        .btn-discard-mode { background: #e67e22; color: #fff; }
+        .btn-discard-mode:hover { background: #f39c12; }
+        .action-bar.hidden { display: none; }
+        /* Round info */
+        .round-info {
+            text-align: center;
+            color: #9a8b78;
+            font-size: 0.85rem;
+            margin-top: 0.4rem;
+        }
+        /* Result banner */
+        .bang-result {
+            position: absolute;
+            top: 22%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.88);
+            color: #ffd700;
+            padding: 14px 32px;
+            border-radius: 14px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            z-index: 30;
+            text-align: center;
+            display: none;
+            border: 2px solid #ffd700;
+        }
+        .bang-result.visible { display: block; animation: fadeInBangResult 0.3s ease; }
+        @keyframes fadeInBangResult {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        /* Target selection highlight */
+        .target-prompt {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: #ffd700;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            z-index: 30;
+            display: none;
+        }
+        .target-prompt.visible { display: block; }
+        /* Multiplayer status */
+        .mp-status {
+            text-align: center;
+            color: #c4aa82;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        /* Draw check overlay */
+        .draw-check-overlay {
+            position: absolute;
+            top: 35%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: #fff;
+            padding: 18px 30px;
+            border-radius: 12px;
+            z-index: 40;
+            text-align: center;
+            font-size: 1rem;
+            display: none;
+        }
+        .draw-check-overlay.visible { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .draw-check-card {
+            width: 65px;
+            height: 90px;
+            background: #fff;
+            border-radius: 6px;
+            border: 2px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .draw-check-card.red { color: #d32f2f; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Game Hub</a>
+        {% if not room_id %}
+        <div class="nav-links">
+            <a href="/tetris">Tetris</a>
+            <a href="/omok">Omok</a>
+            <a href="/chess">Chess</a>
+            <a href="/yacht">Yacht</a>
+            <a href="/poker">Poker</a>
+            <a href="/bang">Bang!</a>
+        </div>
+        {% endif %}
+    </nav>
+    {% if room_id %}
+    <a href="/" class="btn btn-lobby-back" id="lobby-back-btn">로비로</a>
+    {% endif %}
+
+    <div class="game-container">
+        <h1>Bang! (뱅!)</h1>
+
+        {% if room_id %}
+        <div class="mp-status" id="mp-status">{% if is_spectator %}관전 모드{% else %}상대방 연결 대기 중...{% endif %}</div>
+        {% endif %}
+
+        <div class="bang-table-wrap">
+            <div class="bang-table" id="bang-table">
+                <div class="bang-center-info" id="bang-center-info">게임을 시작하세요</div>
+                <div class="deck-discard" id="deck-discard">
+                    <div class="deck-pile" id="deck-pile">덱<br><span id="deck-count">0</span></div>
+                    <div class="discard-pile" id="discard-pile"><span class="discard-card-name" id="discard-top"></span></div>
+                </div>
+                <div class="bang-result" id="bang-result"></div>
+                <div class="target-prompt" id="target-prompt">대상을 선택하세요</div>
+                <div class="draw-check-overlay" id="draw-check-overlay"></div>
+                <!-- Seats generated by JS -->
+            </div>
+        </div>
+
+        <div class="my-hand-area" id="my-hand-area"></div>
+
+        <div class="action-bar hidden" id="action-bar">
+            <button class="btn btn-end-turn" id="btn-end-turn">턴 종료</button>
+            <button class="btn btn-discard-mode" id="btn-discard-mode" style="display:none;">카드 버리기</button>
+        </div>
+
+        <div class="round-info" id="round-info">게임을 시작하세요</div>
+
+        <div class="game-controls" style="margin-top: 0.8rem;">
+            <button class="btn" id="start-btn">게임 시작</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="game-over-overlay">
+        <div class="overlay-content">
+            <h2 id="game-over-title">게임 종료</h2>
+            <p id="game-over-msg"></p>
+            <button class="btn" id="restart-btn">다시 시작</button>
+        </div>
+    </div>
+
+    {% if room_id %}
+    <div class="participants-panel" id="participants-panel">
+        <h4>참가자</h4>
+        <div id="participants-list"></div>
+    </div>
+    <div class="game-chat" id="game-chat">
+        <div class="chat-header" id="chat-header">
+            <span class="chat-title">채팅</span>
+            <div class="chat-controls">
+                <label class="chat-opacity-label" title="투명도">
+                    <input type="range" id="chat-opacity" min="20" max="100" value="100" class="chat-opacity-slider">
+                </label>
+                <button class="chat-toggle-btn" id="chat-toggle-btn" title="최소화">−</button>
+            </div>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-wrap">
+                <input type="text" id="chat-input" placeholder="메시지 입력..." maxlength="200" autocomplete="off">
+                <button class="btn btn-primary btn-chat-send" id="chat-send">전송</button>
+            </div>
+        </div>
+        <div class="chat-resize-handle" id="chat-resize"></div>
+    </div>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        const ROOM_ID = "{{ room_id }}";
+        const MY_USER = "{{ user_id }}";
+        const MY_PLAYER = {{ my_player or 0 }};
+        const IS_SPECTATOR = {{ 'true' if is_spectator else 'false' }};
+        const ROOM_PLAYERS = {{ room.players | tojson if room else '[]' }};
+        const ALLOW_COACHING = false;
+    </script>
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='js/bang.js') }}"></script>
+
+<!-- Rules Panel -->
+<div class="game-help-panel" id="game-help-panel">
+    <div class="game-help-header" id="game-help-toggle">
+        <span>게임 규칙</span>
+        <button class="game-help-btn">−</button>
+    </div>
+    <div class="game-help-body" id="game-help-body">
+        <p><strong>뱅! (Bang!) 기본 규칙</strong></p>
+        <ul>
+            <li>4~7명이 참여하는 서부 총격전 카드 게임입니다.</li>
+            <li>역할: <strong>보안관</strong>(공개), <strong>부관</strong>(숨김), <strong>무법자</strong>(숨김), <strong>배신자</strong>(숨김)</li>
+            <li>보안관은 무법자와 배신자를 제거해야 하고, 무법자는 보안관을 제거해야 합니다.</li>
+            <li>배신자는 최후의 1인이 되어야 승리합니다.</li>
+        </ul>
+        <p><strong>턴 진행</strong></p>
+        <ol>
+            <li>카드 2장 뽑기</li>
+            <li>원하는 만큼 카드 사용 (뱅!은 턴당 1회)</li>
+            <li>HP보다 많은 카드를 가지고 있으면 버리기</li>
+        </ol>
+        <p><strong>주요 카드</strong></p>
+        <ul>
+            <li><strong>뱅!</strong> — 사거리 내 플레이어 공격</li>
+            <li><strong>빗나감!</strong> — 뱅! 회피</li>
+            <li><strong>맥주</strong> — HP 1 회복</li>
+            <li><strong>빼앗기!</strong> — 거리 1인 플레이어의 카드 훔치기</li>
+            <li><strong>총알 빼기</strong> — 아무 플레이어의 카드 버리게 하기</li>
+            <li><strong>역마차</strong> — 카드 2장 뽑기</li>
+            <li><strong>우물</strong> — 카드 3장 뽑기</li>
+            <li><strong>인디언</strong> — 모든 상대가 뱅! 내거나 1 피해</li>
+            <li><strong>개틀링</strong> — 모든 상대가 빗나감! 내거나 1 피해</li>
+            <li><strong>결투</strong> — 대상과 뱅! 교환, 못 내면 1 피해</li>
+            <li><strong>통</strong> — 장착: 피격시 "draw!" 하트면 회피</li>
+            <li><strong>머스탱</strong> — 장착: 다른 사람이 나를 +1 거리로 봄</li>
+            <li><strong>조준경</strong> — 장착: 다른 사람을 -1 거리로 봄</li>
+            <li><strong>감옥</strong> — 대상에게 장착: 턴 시작시 "draw!" 하트면 탈출</li>
+            <li><strong>다이너마이트</strong> — 턴마다 이동, 스페이드 2~9면 3 피해</li>
+        </ul>
+        <p><strong>승리 조건</strong></p>
+        <ul>
+            <li><strong>보안관 + 부관</strong>: 모든 무법자와 배신자 제거</li>
+            <li><strong>무법자</strong>: 보안관 제거</li>
+            <li><strong>배신자</strong>: 최후의 생존자</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+(function() {
+    function setupToggle(toggleId, bodyId) {
+        const toggle = document.getElementById(toggleId);
+        const body = document.getElementById(bodyId);
+        if (!toggle || !body) return;
+        const btn = toggle.querySelector('.game-help-btn');
+        toggle.addEventListener('click', () => {
+            if (body.style.display === 'none') {
+                body.style.display = '';
+                btn.textContent = '−';
+            } else {
+                body.style.display = 'none';
+                btn.textContent = '+';
+            }
+        });
+    }
+    setupToggle('game-help-toggle', 'game-help-body');
+})();
+</script>
+</body>
+</html>

@@ -238,6 +238,30 @@ def poker():
     return _game_route('poker.html')
 
 
+@app.route('/rummikub')
+@login_required
+def rummikub():
+    return _game_route('rummikub.html')
+
+
+@app.route('/bang')
+@login_required
+def bang():
+    return _game_route('bang.html')
+
+
+@app.route('/splendor')
+@login_required
+def splendor():
+    return _game_route('splendor.html')
+
+
+@app.route('/halligalli')
+@login_required
+def halligalli():
+    return _game_route('halligalli.html')
+
+
 # ──────────────────── Room API ────────────────────
 
 @app.route('/api/rooms', methods=['POST'])
@@ -457,6 +481,26 @@ def remove_notice(notice_id):
     return jsonify({'ok': True})
 
 
+# ──────────────────── Admin Force-Close ────────────────────
+
+@app.route('/api/rooms/<room_id>/force-close', methods=['POST'])
+@admin_required
+def force_close_room(room_id):
+    room = db.get_room(room_id)
+    if not room:
+        return jsonify({'error': '방을 찾을 수 없습니다.'}), 404
+    socketio.emit('room_force_closed', {'message': '관리자에 의해 방이 강제 종료되었습니다.'}, room=room_id)
+    game_logger.log_room_delete(room_id, reason='admin_force_close')
+    db.delete_room(room_id)
+    game_conns.pop(room_id, None)
+    game_chats.pop(room_id, None)
+    game_states.pop(room_id, None)
+    spectator_conns.pop(room_id, None)
+    waiting_conns.pop(room_id, None)
+    broadcast_rooms()
+    return jsonify({'ok': True})
+
+
 # ──────────────────── SocketIO ────────────────────
 
 @socketio.on('join_lobby')
@@ -495,7 +539,7 @@ def on_join_waiting(data):
     max_p = room.get('max_players', 2) if room else 2
     host = room.get('host', '') if room else ''
     emit('room_update', {'players': players, 'count': len(players), 'max_players': max_p, 'host': host}, room=rid)
-    min_to_start = 1 if room and room['game'] == 'poker' else max_p
+    min_to_start = 1 if room and room['game'] in ('poker', 'rummikub') else max_p
     if len(waiting_conns[rid]) >= min_to_start:
         if room and room['status'] == 'waiting':
             db.set_room_status(rid, 'playing')
@@ -516,7 +560,7 @@ def on_force_start(data):
     if room.get('host') != uid:
         return
     players = room.get('players', [])
-    min_start = 1 if room.get('game') == 'poker' else 2
+    min_start = 1 if room.get('game') in ('poker', 'rummikub') else 2
     if len(players) < min_start:
         return
     db.set_room_status(rid, 'playing')
@@ -815,9 +859,15 @@ def on_disconnect():
             game_logger.log_room_leave(rid, uid, reason='disconnect_game')
             emit('opponent_disconnected', {'user_id': uid}, room=rid)
 
-            # Tetris multi-player: treat disconnect as elimination
             room = db.get_room(rid)
-            if room and room['game'] == 'tetris' and room.get('max_players', 2) > 2:
+
+            # Poker: emit player_left so host can handle fold + removal
+            if room and room.get('game') == 'poker':
+                db.remove_player_from_room(rid, uid)
+                emit('poker_player_left', {'user_id': uid}, room=rid)
+
+            # Tetris multi-player: treat disconnect as elimination
+            elif room and room['game'] == 'tetris' and room.get('max_players', 2) > 2:
                 gs = game_states.setdefault(rid, {'players': {}, 'eliminated': set()})
                 if 'eliminated' not in gs:
                     gs['eliminated'] = set()

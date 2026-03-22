@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rummikub - Game Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .rummikub-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.5rem auto;
+            max-width: 1100px;
+        }
+        /* Table area — where played sets go */
+        .rummikub-table {
+            width: 100%;
+            min-height: 260px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: radial-gradient(ellipse at center, #2a6e35 0%, #1a5528 60%, #0f3d18 100%);
+            border-radius: 18px;
+            border: 6px solid #5c3a1e;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 0 40px rgba(0,0,0,0.25);
+            padding: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-content: flex-start;
+            position: relative;
+        }
+        .table-empty-msg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255,255,255,0.25);
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+        /* A set/run group on the table */
+        .table-set {
+            display: flex;
+            gap: 3px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 5px 6px;
+            min-height: 62px;
+            align-items: center;
+            position: relative;
+        }
+        .table-set.drop-hover {
+            box-shadow: 0 0 8px 2px #ffd700;
+        }
+        .table-set.invalid {
+            box-shadow: 0 0 8px 2px #e74c3c;
+        }
+        /* New set drop zone */
+        .new-set-zone {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 80px;
+            min-height: 62px;
+            border: 2px dashed rgba(255,255,255,0.25);
+            border-radius: 8px;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.85rem;
+            cursor: default;
+        }
+        .new-set-zone.drop-hover {
+            border-color: #ffd700;
+            color: #ffd700;
+            background: rgba(255,215,0,0.08);
+        }
+        /* Tile styling */
+        .rk-tile {
+            width: 40px;
+            height: 55px;
+            background: linear-gradient(to bottom, #fff 0%, #f0ece4 100%);
+            border: 2px solid #bbb;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.15rem;
+            cursor: grab;
+            user-select: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: relative;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .rk-tile:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .rk-tile.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+        .rk-tile.selected {
+            border-color: #ffd700;
+            box-shadow: 0 0 8px 2px rgba(255,215,0,0.6);
+            transform: translateY(-4px);
+        }
+        .rk-tile .tile-number {
+            line-height: 1;
+        }
+        .rk-tile .tile-color-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-top: 2px;
+        }
+        .rk-tile.color-red .tile-number { color: #d32f2f; }
+        .rk-tile.color-red .tile-color-dot { background: #d32f2f; }
+        .rk-tile.color-blue .tile-number { color: #1565c0; }
+        .rk-tile.color-blue .tile-color-dot { background: #1565c0; }
+        .rk-tile.color-yellow .tile-number { color: #f9a825; }
+        .rk-tile.color-yellow .tile-color-dot { background: #f9a825; }
+        .rk-tile.color-black .tile-number { color: #222; }
+        .rk-tile.color-black .tile-color-dot { background: #222; }
+        .rk-tile.joker {
+            background: linear-gradient(135deg, #fff 0%, #e8f5e9 50%, #fff 100%);
+            border-color: #888;
+        }
+        .rk-tile.joker .tile-number {
+            font-size: 0.75rem;
+            color: #666;
+        }
+        /* Player rack */
+        .rack-area {
+            width: 100%;
+            background: rgba(163, 139, 109, 0.15);
+            border: 2px solid #c4aa82;
+            border-radius: 12px;
+            padding: 10px 14px;
+            min-height: 80px;
+        }
+        .rack-label {
+            font-size: 0.8rem;
+            color: #9a8b78;
+            margin-bottom: 6px;
+        }
+        .rack-tiles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            min-height: 55px;
+            align-items: center;
+        }
+        .rack-tiles.drop-hover {
+            background: rgba(255,215,0,0.08);
+            border-radius: 6px;
+        }
+        /* Other players' racks (hidden tiles) */
+        .opponents-area {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+        .opponent-rack {
+            background: rgba(0,0,0,0.05);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 6px 12px;
+            text-align: center;
+            min-width: 120px;
+        }
+        .opponent-rack.active-turn {
+            border-color: #ffd700;
+            box-shadow: 0 0 8px 2px rgba(255,215,0,0.4);
+        }
+        .opponent-name {
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: #5a4e42;
+            margin-bottom: 4px;
+        }
+        .opponent-tile-count {
+            font-size: 0.8rem;
+            color: #9a8b78;
+        }
+        .opponent-tile-backs {
+            display: flex;
+            gap: 2px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+        .tile-back-mini {
+            width: 16px;
+            height: 22px;
+            background: linear-gradient(135deg, #1a3a8a 0%, #2255bb 50%, #1a3a8a 100%);
+            border: 1px solid #fff;
+            border-radius: 3px;
+        }
+        /* Controls */
+        .rk-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .rk-controls .btn {
+            min-width: 80px;
+            font-size: 0.9rem;
+            padding: 8px 16px;
+        }
+        .btn-play { background: #27ae60; color: #fff; }
+        .btn-play:hover { background: #2ecc71; }
+        .btn-draw { background: #2980b9; color: #fff; }
+        .btn-draw:hover { background: #3498db; }
+        .btn-undo { background: #e67e22; color: #fff; }
+        .btn-undo:hover { background: #f39c12; }
+        .btn-sort { background: rgba(196, 170, 130, 0.3); color: #7a6a55; }
+        .btn-sort:hover { background: rgba(196, 170, 130, 0.5); }
+        .rk-controls.hidden { display: none; }
+        /* Turn info */
+        .turn-info {
+            text-align: center;
+            color: #9a8b78;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-top: 0.3rem;
+            min-height: 1.3em;
+        }
+        /* Tile pool count */
+        .pool-info {
+            text-align: center;
+            color: #c4aa82;
+            font-size: 0.85rem;
+            margin-top: 0.2rem;
+        }
+        /* Multiplayer status */
+        .mp-status {
+            text-align: center;
+            color: #c4aa82;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        /* Initial meld indicator */
+        .initial-meld-info {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #c0392b;
+            margin-top: 0.2rem;
+            min-height: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Game Hub</a>
+        {% if not room_id %}
+        <div class="nav-links">
+            <a href="/tetris">Tetris</a>
+            <a href="/omok">Omok</a>
+            <a href="/chess">Chess</a>
+            <a href="/yacht">Yacht</a>
+            <a href="/poker">Poker</a>
+            <a href="/rummikub">Rummikub</a>
+        </div>
+        {% endif %}
+    </nav>
+    {% if room_id %}
+    <a href="/" class="btn btn-lobby-back" id="lobby-back-btn">로비로</a>
+    {% endif %}
+
+    <div class="game-container">
+        <h1>Rummikub (루미큐브)</h1>
+
+        {% if room_id %}
+        <div class="mp-status" id="mp-status">{% if is_spectator %}관전 모드{% else %}상대방 연결 대기 중...{% endif %}</div>
+        {% endif %}
+
+        <div class="rummikub-wrap" id="rummikub-wrap">
+            <div class="opponents-area" id="opponents-area"></div>
+            <div class="rummikub-table" id="rummikub-table">
+                <span class="table-empty-msg" id="table-empty-msg">테이블에 타일을 놓으세요</span>
+            </div>
+            <div class="turn-info" id="turn-info">게임을 시작하세요</div>
+            <div class="pool-info" id="pool-info"></div>
+            <div class="initial-meld-info" id="initial-meld-info"></div>
+            <div class="rack-area" id="rack-area">
+                <div class="rack-label">내 타일</div>
+                <div class="rack-tiles" id="rack-tiles"></div>
+            </div>
+            <div class="rk-controls" id="rk-controls">
+                <button class="btn btn-sort" id="btn-sort-num">숫자 정렬</button>
+                <button class="btn btn-sort" id="btn-sort-color">색상 정렬</button>
+                <button class="btn btn-undo" id="btn-undo">되돌리기</button>
+                <button class="btn btn-draw" id="btn-draw">타일 뽑기</button>
+                <button class="btn btn-play" id="btn-play">턴 종료</button>
+            </div>
+        </div>
+
+        <div class="game-controls" style="margin-top: 0.8rem;">
+            <button class="btn" id="start-btn">게임 시작</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="game-over-overlay">
+        <div class="overlay-content">
+            <h2 id="game-over-title">게임 종료</h2>
+            <p id="game-over-msg"></p>
+            <button class="btn" id="restart-btn">다시 시작</button>
+        </div>
+    </div>
+
+    {% if room_id %}
+    <div class="participants-panel" id="participants-panel">
+        <h4>참가자</h4>
+        <div id="participants-list"></div>
+    </div>
+    <div class="game-chat" id="game-chat">
+        <div class="chat-header" id="chat-header">
+            <span class="chat-title">채팅</span>
+            <div class="chat-controls">
+                <label class="chat-opacity-label" title="투명도">
+                    <input type="range" id="chat-opacity" min="20" max="100" value="100" class="chat-opacity-slider">
+                </label>
+                <button class="chat-toggle-btn" id="chat-toggle-btn" title="최소화">−</button>
+            </div>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-wrap">
+                <input type="text" id="chat-input" placeholder="메시지 입력..." maxlength="200" autocomplete="off">
+                <button class="btn btn-primary btn-chat-send" id="chat-send">전송</button>
+            </div>
+        </div>
+        <div class="chat-resize-handle" id="chat-resize"></div>
+    </div>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        const ROOM_ID = "{{ room_id }}";
+        const MY_USER = "{{ user_id }}";
+        const MY_PLAYER = {{ my_player or 0 }};
+        const IS_SPECTATOR = {{ 'true' if is_spectator else 'false' }};
+        const ROOM_PLAYERS = {{ room.players | tojson if room else '[]' }};
+        const ALLOW_COACHING = false;
+    </script>
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='js/rummikub.js') }}"></script>
+
+<!-- Game Rules Panel -->
+<div class="game-help-panel" id="game-help-panel">
+    <div class="game-help-header" id="game-help-toggle">
+        <span>게임 규칙</span>
+        <button class="game-help-btn">−</button>
+    </div>
+    <div class="game-help-body" id="game-help-body">
+        <p><strong>루미큐브 기본 규칙</strong></p>
+        <ul>
+            <li>총 <strong>106개의 타일</strong>: 숫자 1~13 × 4색(빨강, 파랑, 노랑, 검정) × 2세트 + 조커 2개</li>
+            <li>각 플레이어에게 <strong>14개의 타일</strong>이 배분됩니다.</li>
+            <li>가장 먼저 <strong>모든 타일을 내려놓는</strong> 플레이어가 승리합니다.</li>
+        </ul>
+        <p><strong>유효한 조합</strong></p>
+        <ul>
+            <li><strong>그룹 (세트)</strong>: 같은 숫자, 다른 색상 3~4장</li>
+            <li><strong>런 (연속)</strong>: 같은 색상, 연속 숫자 3장 이상</li>
+            <li><strong>조커</strong>: 어떤 타일이든 대체 가능</li>
+        </ul>
+        <p><strong>게임 진행</strong></p>
+        <ol>
+            <li>자신의 턴에 유효한 조합을 테이블에 내려놓거나 타일을 1장 뽑습니다.</li>
+            <li><strong>첫 등록</strong>은 합계 <strong>30점 이상</strong>이어야 합니다.</li>
+            <li>첫 등록 후에는 테이블의 기존 조합을 재배열할 수 있습니다.</li>
+            <li>턴 종료 시 테이블의 모든 조합이 유효해야 합니다.</li>
+        </ol>
+        <p><strong>조작법</strong></p>
+        <ul>
+            <li>타일을 <strong>클릭</strong>하여 선택한 뒤 테이블이나 랙으로 이동</li>
+            <li><strong>드래그 앤 드롭</strong>으로도 이동 가능</li>
+            <li><strong>되돌리기</strong>: 이번 턴의 변경사항을 취소</li>
+            <li><strong>숫자/색상 정렬</strong>: 랙의 타일을 정렬</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+(function() {
+    function setupToggle(toggleId, bodyId) {
+        const toggle = document.getElementById(toggleId);
+        const body = document.getElementById(bodyId);
+        if (!toggle || !body) return;
+        const btn = toggle.querySelector('.game-help-btn');
+        toggle.addEventListener('click', () => {
+            if (body.style.display === 'none') {
+                body.style.display = '';
+                btn.textContent = '−';
+            } else {
+                body.style.display = 'none';
+                btn.textContent = '+';
+            }
+        });
+    }
+    setupToggle('game-help-toggle', 'game-help-body');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Splendor - Game Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .splendor-board {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        /* ── Nobles Row ── */
+        .nobles-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+        .noble-tile {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #f5e6d3, #e8d5c4);
+            border: 3px solid #a38b6d;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: default;
+            position: relative;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .noble-tile .noble-points {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #5a4e42;
+            margin-bottom: 2px;
+        }
+        .noble-tile .noble-reqs {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .noble-tile .noble-req {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+        }
+        .noble-tile .noble-crown {
+            position: absolute;
+            top: -8px;
+            right: -4px;
+            font-size: 0.9rem;
+        }
+
+        /* ── Card Rows (Tiers) ── */
+        .card-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .card-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tier-deck {
+            width: 100px;
+            height: 140px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            position: relative;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        .tier-deck .deck-count {
+            font-size: 0.75rem;
+            margin-top: 4px;
+            opacity: 0.8;
+        }
+        .tier-deck.tier-1 { background: linear-gradient(135deg, #4CAF50, #388E3C); }
+        .tier-deck.tier-2 { background: linear-gradient(135deg, #FFC107, #FF9800); }
+        .tier-deck.tier-3 { background: linear-gradient(135deg, #2196F3, #1565C0); }
+
+        .dev-card {
+            width: 100px;
+            height: 140px;
+            background: #fff;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+            transition: transform 0.15s, box-shadow 0.15s;
+            overflow: hidden;
+        }
+        .dev-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+        .dev-card.affordable {
+            border-color: #4CAF50;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+        }
+        .dev-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 6px 2px;
+        }
+        .dev-card .card-points {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #5a4e42;
+            min-width: 20px;
+            text-align: center;
+        }
+        .dev-card .card-bonus {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(0,0,0,0.15);
+        }
+        .dev-card .card-cost {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 4px 6px;
+            margin-top: auto;
+        }
+        .dev-card .cost-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .dev-card .cost-gem {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            color: #fff;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.4);
+        }
+        .dev-card .card-tier-stripe {
+            height: 6px;
+            width: 100%;
+        }
+        .dev-card .card-empty-body {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .dev-card.empty-slot {
+            border: 2px dashed #ddd;
+            background: rgba(0,0,0,0.02);
+            cursor: default;
+        }
+        .dev-card.empty-slot:hover {
+            transform: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        }
+
+        /* ── Gem Tokens ── */
+        .gems-area {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 6px 0;
+        }
+        .gem-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .gem-stack:hover { transform: scale(1.1); }
+        .gem-stack.selected { transform: scale(1.15); }
+        .gem-stack.selected .gem-token { box-shadow: 0 0 10px 3px rgba(255,215,0,0.6); }
+        .gem-stack.disabled { opacity: 0.4; cursor: not-allowed; }
+        .gem-stack.disabled:hover { transform: none; }
+        .gem-token {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            border: 3px solid rgba(255,255,255,0.4);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .gem-label {
+            font-size: 0.7rem;
+            color: #7a6a55;
+            text-align: center;
+        }
+
+        /* Gem colors */
+        .gem-white  { background: #bbb; border-color: #999; color: #333; text-shadow: none; }
+        .gem-blue   { background: #2196F3; }
+        .gem-green  { background: #4CAF50; }
+        .gem-red    { background: #F44336; }
+        .gem-black  { background: #424242; }
+        .gem-gold   { background: #FFD700; border-color: #DAA520; color: #333; text-shadow: none; }
+
+        /* ── Action Bar ── */
+        .action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 8px 0;
+            flex-wrap: wrap;
+        }
+        .action-bar .btn { min-width: 100px; font-size: 0.9rem; }
+        .action-bar .btn-take   { background: #27ae60; color: #fff; border-color: #27ae60; }
+        .action-bar .btn-take:hover { background: #2ecc71; }
+        .action-bar .btn-reserve { background: #f39c12; color: #fff; border-color: #f39c12; }
+        .action-bar .btn-reserve:hover { background: #f1c40f; }
+        .action-bar .btn-cancel { background: #c0392b; color: #fff; border-color: #c0392b; }
+        .action-bar .btn-cancel:hover { background: #e74c3c; }
+        .action-bar.hidden { display: none; }
+
+        /* ── Gem selection info ── */
+        .gem-selection-info {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #9a8b78;
+            min-height: 1.2em;
+        }
+
+        /* ── Player Panels ── */
+        .players-area {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+        .player-panel {
+            background: rgba(163, 139, 109, 0.08);
+            border: 2px solid #e6ddd3;
+            border-radius: 10px;
+            padding: 8px 12px;
+            min-width: 200px;
+            flex: 1;
+            max-width: 260px;
+        }
+        .player-panel.active-turn {
+            border-color: #FFD700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+        .player-panel.is-me {
+            background: rgba(163, 139, 109, 0.15);
+        }
+        .player-panel .panel-name {
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: #5a4e42;
+            margin-bottom: 4px;
+        }
+        .player-panel .panel-name .prestige-badge {
+            display: inline-block;
+            background: #a38b6d;
+            color: #fff;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            margin-left: 6px;
+        }
+        .player-panel .panel-gems {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin: 4px 0;
+        }
+        .player-panel .panel-gem {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.4);
+        }
+        .player-panel .panel-bonuses {
+            display: flex;
+            gap: 4px;
+            margin: 4px 0;
+        }
+        .player-panel .panel-bonus {
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.4);
+            border: 1px solid rgba(0,0,0,0.15);
+        }
+        .player-panel .panel-reserved {
+            font-size: 0.75rem;
+            color: #9a8b78;
+        }
+        .player-panel .panel-nobles {
+            font-size: 0.75rem;
+            color: #a38b6d;
+        }
+
+        /* ── Reserved Cards Area ── */
+        .reserved-area {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 6px 0;
+        }
+        .reserved-area .dev-card {
+            width: 90px;
+            height: 126px;
+        }
+
+        /* ── Turn Info ── */
+        .turn-info {
+            text-align: center;
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #a38b6d;
+            min-height: 1.5em;
+        }
+
+        /* ── Token Return Modal ── */
+        .token-return-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .token-return-overlay.hidden { display: none; }
+        .token-return-modal {
+            background: #faf6f0;
+            border-radius: 12px;
+            padding: 20px 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .token-return-modal h3 {
+            color: #5a4e42;
+            margin-bottom: 10px;
+        }
+        .token-return-gems {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 12px 0;
+        }
+        .token-return-gems .gem-stack { cursor: pointer; }
+
+        /* ── Noble Choice Modal ── */
+        .noble-choice-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .noble-choice-overlay.hidden { display: none; }
+        .noble-choice-modal {
+            background: #faf6f0;
+            border-radius: 12px;
+            padding: 20px 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .noble-choice-tiles {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 12px 0;
+        }
+        .noble-choice-tiles .noble-tile { cursor: pointer; }
+        .noble-choice-tiles .noble-tile:hover {
+            border-color: #FFD700;
+            box-shadow: 0 0 10px rgba(255,215,0,0.4);
+        }
+
+        /* Multiplayer status */
+        .mp-status {
+            text-align: center;
+            color: #c4aa82;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Game Hub</a>
+        {% if not room_id %}
+        <div class="nav-links">
+            <a href="/tetris">Tetris</a>
+            <a href="/omok">Omok</a>
+            <a href="/chess">Chess</a>
+            <a href="/yacht">Yacht</a>
+            <a href="/poker">Poker</a>
+            <a href="/splendor">Splendor</a>
+        </div>
+        {% endif %}
+    </nav>
+    {% if room_id %}
+    <a href="/" class="btn btn-lobby-back" id="lobby-back-btn">로비로</a>
+    {% endif %}
+
+    <div class="game-container">
+        <h1>Splendor (스플랜더)</h1>
+
+        {% if room_id %}
+        <div class="mp-status" id="mp-status">{% if is_spectator %}관전 모드{% else %}상대방 연결 대기 중...{% endif %}</div>
+        {% endif %}
+
+        <div id="splendor-board" class="splendor-board">
+            <div class="turn-info" id="turn-info">게임을 시작하세요</div>
+            <div class="nobles-row" id="nobles-row"></div>
+            <div class="card-rows" id="card-rows"></div>
+            <div class="gems-area" id="gems-area"></div>
+            <div class="gem-selection-info" id="gem-selection-info"></div>
+            <div class="action-bar hidden" id="action-bar">
+                <button class="btn btn-take" id="btn-take-gems">보석 가져오기</button>
+                <button class="btn btn-cancel" id="btn-cancel">취소</button>
+            </div>
+            <div class="reserved-area" id="reserved-area"></div>
+            <div class="players-area" id="players-area"></div>
+        </div>
+
+        <div class="game-controls" style="margin-top: 0.8rem;">
+            <button class="btn" id="start-btn">게임 시작</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="game-over-overlay">
+        <div class="overlay-content">
+            <h2 id="game-over-title">게임 종료</h2>
+            <p id="game-over-msg"></p>
+            <button class="btn" id="restart-btn">다시 시작</button>
+        </div>
+    </div>
+
+    <!-- Token Return Modal -->
+    <div class="token-return-overlay hidden" id="token-return-overlay">
+        <div class="token-return-modal">
+            <h3>보석 반환 (10개 초과)</h3>
+            <p id="token-return-info">반환할 보석을 클릭하세요</p>
+            <div class="token-return-gems" id="token-return-gems"></div>
+            <button class="btn btn-primary" id="btn-confirm-return">확인</button>
+        </div>
+    </div>
+
+    <!-- Noble Choice Modal -->
+    <div class="noble-choice-overlay hidden" id="noble-choice-overlay">
+        <div class="noble-choice-modal">
+            <h3>귀족 선택</h3>
+            <p>방문할 귀족을 선택하세요</p>
+            <div class="noble-choice-tiles" id="noble-choice-tiles"></div>
+        </div>
+    </div>
+
+    {% if room_id %}
+    <div class="participants-panel" id="participants-panel">
+        <h4>참가자</h4>
+        <div id="participants-list"></div>
+    </div>
+    <div class="game-chat" id="game-chat">
+        <div class="chat-header" id="chat-header">
+            <span class="chat-title">채팅</span>
+            <div class="chat-controls">
+                <label class="chat-opacity-label" title="투명도">
+                    <input type="range" id="chat-opacity" min="20" max="100" value="100" class="chat-opacity-slider">
+                </label>
+                <button class="chat-toggle-btn" id="chat-toggle-btn" title="최소화">−</button>
+            </div>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-wrap">
+                <input type="text" id="chat-input" placeholder="메시지 입력..." maxlength="200" autocomplete="off">
+                <button class="btn btn-primary btn-chat-send" id="chat-send">전송</button>
+            </div>
+        </div>
+        <div class="chat-resize-handle" id="chat-resize"></div>
+    </div>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        const ROOM_ID = "{{ room_id }}";
+        const MY_USER = "{{ user_id }}";
+        const MY_PLAYER = {{ my_player or 0 }};
+        const IS_SPECTATOR = {{ 'true' if is_spectator else 'false' }};
+        const ROOM_PLAYERS = {{ room.players | tojson if room else '[]' }};
+        const ALLOW_COACHING = false;
+    </script>
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='js/splendor.js') }}"></script>
+
+<!-- Game Rules Panel -->
+<div class="game-help-panel" id="game-help-panel">
+    <div class="game-help-header" id="game-help-toggle">
+        <span>게임 규칙</span>
+        <button class="game-help-btn">−</button>
+    </div>
+    <div class="game-help-body" id="game-help-body">
+        <p><strong>스플랜더 기본 규칙</strong></p>
+        <ul>
+            <li>2~4명의 플레이어가 보석 상인이 되어 가장 먼저 <strong>15점</strong>을 달성하세요.</li>
+            <li>보석 5종류: 다이아몬드(흰), 사파이어(파), 에메랄드(녹), 루비(빨), 오닉스(흑) + 황금(조커)</li>
+        </ul>
+        <p><strong>턴 액션 (하나만 선택)</strong></p>
+        <ol>
+            <li><strong>보석 3개 가져오기</strong> — 서로 다른 색 보석 3개를 가져옵니다.</li>
+            <li><strong>같은 색 보석 2개</strong> — 해당 색이 4개 이상 남아있을 때만 가능합니다.</li>
+            <li><strong>카드 예약</strong> — 카드 1장을 손에 가져오고 황금 토큰 1개를 받습니다. (최대 3장)</li>
+            <li><strong>카드 구매</strong> — 테이블 또는 예약한 카드를 보석으로 구매합니다.</li>
+        </ol>
+        <p><strong>보너스와 귀족</strong></p>
+        <ul>
+            <li>구매한 카드의 보너스 보석은 이후 카드 구매 시 <strong>영구 할인</strong>됩니다.</li>
+            <li>필요한 보너스를 충족하면 <strong>귀족이 자동 방문</strong>합니다 (3점).</li>
+            <li>보석 토큰은 최대 <strong>10개</strong>까지 보유 가능합니다.</li>
+        </ul>
+        <p><strong>게임 종료</strong></p>
+        <ul>
+            <li>누군가 <strong>15점 이상</strong>에 도달하면 해당 라운드를 마지막까지 진행합니다.</li>
+            <li>동점 시 구매한 카드 수가 <strong>적은</strong> 플레이어가 승리합니다.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+(function() {
+    function setupToggle(toggleId, bodyId) {
+        const toggle = document.getElementById(toggleId);
+        const body = document.getElementById(bodyId);
+        if (!toggle || !body) return;
+        const btn = toggle.querySelector('.game-help-btn');
+        toggle.addEventListener('click', () => {
+            if (body.style.display === 'none') {
+                body.style.display = '';
+                btn.textContent = '−';
+            } else {
+                body.style.display = 'none';
+                btn.textContent = '+';
+            }
+        });
+    }
+    setupToggle('game-help-toggle', 'game-help-body');
+})();
+</script>
+</body>
+</html>

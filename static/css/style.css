@@ -83,6 +83,22 @@ body {
     color: #fff;
 }
 
+.btn-danger {
+    background: #e74c3c;
+    color: #fff;
+    border-color: #e74c3c;
+}
+.btn-danger:hover {
+    background: #c0392b;
+    color: #fff;
+}
+
+.room-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
 .btn-coaching-clear {
     background: #e74c3c;
     color: #fff;

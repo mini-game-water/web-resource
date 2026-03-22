@@ -32,6 +32,7 @@
     let isHost = false;
 
     let pendingJoins = [];
+    let pendingLeaves = [];
 
     if (isMultiplayer) {
         PLAYER_NAMES = roomPlayers.slice();
@@ -776,6 +777,27 @@
             updatePlayerInfo();
         }
 
+        // Process pending leaves — remove players who left
+        if (pendingLeaves.length > 0 && (isHost || !isMultiplayer)) {
+            for (const uid of pendingLeaves) {
+                const idx = PLAYER_NAMES.indexOf(uid);
+                if (idx !== -1 && uid !== DEALER_NAME) {
+                    PLAYER_NAMES.splice(idx, 1);
+                    players.splice(idx, 1);
+                    disconnectedPlayers.splice(idx, 1);
+                    NUM_PLAYERS = PLAYER_NAMES.length;
+                    if (dealerIndex >= idx && dealerIndex > 0) dealerIndex--;
+                }
+            }
+            pendingLeaves = [];
+            if (isMultiplayer) {
+                myIndex = PLAYER_NAMES.indexOf(myUser);
+            }
+            initArrays();
+            createSeats(PLAYER_NAMES, isSpectator ? 0 : myIndex);
+            updatePlayerInfo();
+        }
+
         if (checkGameOver()) return;
 
         handInProgress = true;
@@ -1432,6 +1454,34 @@
                 if (data.user_id && !pendingJoins.includes(data.user_id)) {
                     pendingJoins.push(data.user_id);
                 }
+            });
+
+            // Player left poker room — fold + mark for removal
+            socket.on('poker_player_left', (data) => {
+                const leftUser = data.user_id;
+                const leftIdx = PLAYER_NAMES.indexOf(leftUser);
+                if (leftIdx === -1) return;
+
+                disconnectedPlayers[leftIdx] = true;
+
+                // If it's the disconnected player's turn and host is waiting, auto-fold
+                if (isHost && handInProgress && currentPlayerIndex === leftIdx && _remoteActionResolve) {
+                    executePlayerAction('fold', 0, leftIdx).then(() => {
+                        if (_remoteActionResolve) _remoteActionResolve({ action: 'fold' });
+                    });
+                }
+
+                // Mark for removal after current hand ends
+                if (!pendingLeaves) pendingLeaves = [];
+                if (!pendingLeaves.includes(leftUser)) {
+                    pendingLeaves.push(leftUser);
+                }
+            });
+
+            // Admin force-closed room
+            socket.on('room_force_closed', (data) => {
+                alert(data.message || '관리자에 의해 방이 강제 종료되었습니다.');
+                window.location.href = '/';
             });
         }
     }

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halli Galli - Game Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .hg-table-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 1rem auto;
+        }
+        .hg-table {
+            position: relative;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(ellipse at center, #4a7c3a 0%, #2d6b28 60%, #1a4f18 100%);
+            border-radius: 50%;
+            border: 10px solid #5c3a1e;
+            box-shadow: 0 0 0 5px #3d2510, 0 8px 32px rgba(0,0,0,0.5), inset 0 0 60px rgba(0,0,0,0.3);
+            overflow: visible;
+        }
+        /* Bell button in center */
+        .bell-area {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            text-align: center;
+        }
+        .bell-btn {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, #ffd700 0%, #daa520 50%, #b8860b 100%);
+            border: 4px solid #8b6914;
+            cursor: pointer;
+            font-size: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4), inset 0 2px 8px rgba(255,255,255,0.3);
+            transition: transform 0.1s, box-shadow 0.1s;
+            user-select: none;
+        }
+        .bell-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5), inset 0 2px 8px rgba(255,255,255,0.3);
+        }
+        .bell-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.4), inset 0 2px 8px rgba(255,255,255,0.3);
+        }
+        .bell-btn.pulse {
+            animation: bellPulse 0.8s ease-in-out infinite;
+        }
+        @keyframes bellPulse {
+            0%, 100% { box-shadow: 0 6px 20px rgba(0,0,0,0.4), 0 0 0 0 rgba(255,215,0,0.4); }
+            50% { box-shadow: 0 6px 20px rgba(0,0,0,0.4), 0 0 0 15px rgba(255,215,0,0); }
+        }
+        .bell-btn.ring-correct {
+            animation: bellCorrect 0.5s ease;
+        }
+        @keyframes bellCorrect {
+            0% { transform: rotate(0deg); }
+            20% { transform: rotate(-15deg); }
+            40% { transform: rotate(15deg); }
+            60% { transform: rotate(-10deg); }
+            80% { transform: rotate(10deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .bell-btn.ring-wrong {
+            animation: bellWrong 0.4s ease;
+            background: radial-gradient(circle at 40% 35%, #ff6b6b 0%, #cc3333 50%, #992222 100%);
+        }
+        @keyframes bellWrong {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        .bell-label {
+            color: #ffd700;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-top: 6px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+        }
+        /* Fruit count display */
+        .fruit-counts {
+            position: absolute;
+            top: 32%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 12px;
+            z-index: 15;
+        }
+        .fruit-count-item {
+            background: rgba(0,0,0,0.5);
+            padding: 4px 10px;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-align: center;
+        }
+        .fruit-count-item.highlight-five {
+            background: rgba(255,215,0,0.7);
+            color: #333;
+            box-shadow: 0 0 10px rgba(255,215,0,0.6);
+        }
+        /* Player seats around the circle */
+        .player-seat {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+        }
+        /* Positions for 2-6 players around circle */
+        .player-seat.seat-0 { bottom: -45px; left: 50%; transform: translateX(-50%); }
+        .player-seat.seat-1 { top: -45px; left: 50%; transform: translateX(-50%); }
+        .player-seat.seat-2 { top: 50%; left: -30px; transform: translateY(-50%); }
+        .player-seat.seat-3 { top: 50%; right: -30px; transform: translateY(-50%); }
+        .player-seat.seat-4 { bottom: 15%; left: 2%; }
+        .player-seat.seat-5 { bottom: 15%; right: 2%; }
+        .player-info {
+            background: rgba(0,0,0,0.65);
+            color: #fff;
+            padding: 4px 14px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 0.82rem;
+            min-width: 90px;
+            white-space: nowrap;
+        }
+        .player-info.active-turn {
+            box-shadow: 0 0 12px 3px #ffd700;
+            border: 2px solid #ffd700;
+        }
+        .player-info.eliminated {
+            opacity: 0.25;
+        }
+        .player-info .player-name {
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .player-info .player-cards-count {
+            color: #8cf;
+            font-size: 0.85rem;
+        }
+        .player-info .player-action {
+            color: #8f8;
+            font-size: 0.72rem;
+            min-height: 1em;
+        }
+        .player-seat.my-seat .player-info {
+            font-size: 0.95rem;
+            padding: 6px 18px;
+            min-width: 110px;
+        }
+        .player-seat.my-seat .player-info .player-name {
+            font-size: 1.05rem;
+        }
+        /* Card areas per player */
+        .player-card-area {
+            display: flex;
+            gap: 8px;
+            margin: 6px 0;
+            align-items: center;
+        }
+        /* Card styles */
+        .hg-card {
+            width: 70px;
+            height: 100px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .hg-card.face-down {
+            background: linear-gradient(135deg, #1a3a8a 0%, #2255bb 50%, #1a3a8a 100%);
+            border: 2px solid #fff;
+        }
+        .hg-card.face-down .card-back-pattern {
+            width: 100%;
+            height: 100%;
+            border-radius: 6px;
+            background:
+                repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.08) 4px, rgba(255,255,255,0.08) 8px),
+                repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(255,255,255,0.08) 4px, rgba(255,255,255,0.08) 8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .hg-card.face-down .card-back-logo {
+            width: 28px;
+            height: 28px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        .hg-card.fruit-banana { background: linear-gradient(135deg, #fff9c4, #ffeb3b); border: 2px solid #f9a825; }
+        .hg-card.fruit-strawberry { background: linear-gradient(135deg, #ffcdd2, #ef5350); border: 2px solid #c62828; }
+        .hg-card.fruit-lime { background: linear-gradient(135deg, #c8e6c9, #66bb6a); border: 2px solid #2e7d32; }
+        .hg-card.fruit-plum { background: linear-gradient(135deg, #e1bee7, #ab47bc); border: 2px solid #6a1b9a; }
+        .hg-card .card-emoji {
+            font-size: 1.6rem;
+            line-height: 1;
+        }
+        .hg-card .card-count {
+            font-size: 1rem;
+            margin-top: 2px;
+            color: #333;
+        }
+        .hg-card.mini {
+            width: 50px;
+            height: 70px;
+        }
+        .hg-card.mini .card-emoji {
+            font-size: 1.1rem;
+        }
+        .hg-card.mini .card-count {
+            font-size: 0.8rem;
+        }
+        /* Deck stack effect */
+        .deck-stack {
+            position: relative;
+            width: 54px;
+            height: 74px;
+        }
+        .deck-stack .hg-card.mini {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .deck-stack .deck-shadow-1 { top: 2px; left: 2px; opacity: 0.5; }
+        .deck-stack .deck-shadow-2 { top: 4px; left: 4px; opacity: 0.3; }
+        .deck-count-label {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border-radius: 6px;
+            z-index: 5;
+        }
+        /* Card flip animation */
+        .hg-card.flipping {
+            animation: cardFlip 0.4s ease;
+        }
+        @keyframes cardFlip {
+            0% { transform: rotateY(0deg) scale(1); }
+            50% { transform: rotateY(90deg) scale(1.1); }
+            100% { transform: rotateY(0deg) scale(1); }
+        }
+        /* Collect animation */
+        .hg-card.collecting {
+            animation: collectCard 0.5s ease forwards;
+        }
+        @keyframes collectCard {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.3) translateY(50px); opacity: 0; }
+        }
+        /* Turn timer */
+        .turn-timer {
+            position: absolute;
+            top: 68%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffd700;
+            font-size: 1.4rem;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+            z-index: 15;
+        }
+        /* Status messages */
+        .hg-status {
+            text-align: center;
+            color: #ffd700;
+            font-size: 1rem;
+            font-weight: bold;
+            position: absolute;
+            bottom: 38%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 15;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+            white-space: nowrap;
+        }
+        /* Multiplayer status */
+        .mp-status {
+            text-align: center;
+            color: #c4aa82;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        /* Round info */
+        .round-info {
+            text-align: center;
+            color: #9a8b78;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Game Hub</a>
+        {% if not room_id %}
+        <div class="nav-links">
+            <a href="/tetris">Tetris</a>
+            <a href="/omok">Omok</a>
+            <a href="/chess">Chess</a>
+            <a href="/yacht">Yacht</a>
+            <a href="/poker">Poker</a>
+            <a href="/halligalli">Halli Galli</a>
+        </div>
+        {% endif %}
+    </nav>
+    {% if room_id %}
+    <a href="/" class="btn btn-lobby-back" id="lobby-back-btn">로비로</a>
+    {% endif %}
+
+    <div class="game-container">
+        <h1>Halli Galli (할리갈리)</h1>
+
+        {% if room_id %}
+        <div class="mp-status" id="mp-status">{% if is_spectator %}관전 모드{% else %}상대방 연결 대기 중...{% endif %}</div>
+        {% endif %}
+
+        <div class="hg-table-wrap">
+            <div class="hg-table" id="hg-table">
+                <div class="fruit-counts" id="fruit-counts"></div>
+                <div class="bell-area">
+                    <button class="bell-btn" id="bell-btn">🔔</button>
+                    <div class="bell-label">벨 치기!</div>
+                </div>
+                <div class="turn-timer" id="turn-timer"></div>
+                <div class="hg-status" id="hg-status"></div>
+                <!-- Seats generated by JS -->
+            </div>
+        </div>
+
+        <div class="round-info" id="round-info">게임을 시작하세요</div>
+
+        <div class="game-controls" style="margin-top: 0.8rem;">
+            <button class="btn" id="start-btn">게임 시작</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="game-over-overlay">
+        <div class="overlay-content">
+            <h2 id="game-over-title">게임 종료</h2>
+            <p id="game-over-msg"></p>
+            <button class="btn" id="restart-btn">다시 시작</button>
+        </div>
+    </div>
+
+    {% if room_id %}
+    <div class="participants-panel" id="participants-panel">
+        <h4>참가자</h4>
+        <div id="participants-list"></div>
+    </div>
+    <div class="game-chat" id="game-chat">
+        <div class="chat-header" id="chat-header">
+            <span class="chat-title">채팅</span>
+            <div class="chat-controls">
+                <label class="chat-opacity-label" title="투명도">
+                    <input type="range" id="chat-opacity" min="20" max="100" value="100" class="chat-opacity-slider">
+                </label>
+                <button class="chat-toggle-btn" id="chat-toggle-btn" title="최소화">−</button>
+            </div>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-wrap">
+                <input type="text" id="chat-input" placeholder="메시지 입력..." maxlength="200" autocomplete="off">
+                <button class="btn btn-primary btn-chat-send" id="chat-send">전송</button>
+            </div>
+        </div>
+        <div class="chat-resize-handle" id="chat-resize"></div>
+    </div>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        const ROOM_ID = "{{ room_id }}";
+        const MY_USER = "{{ user_id }}";
+        const MY_PLAYER = {{ my_player or 0 }};
+        const IS_SPECTATOR = {{ 'true' if is_spectator else 'false' }};
+        const ROOM_PLAYERS = {{ room.players | tojson if room else '[]' }};
+        const ALLOW_COACHING = false;
+    </script>
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='js/halligalli.js') }}"></script>
+
+<!-- Game Rules Panel -->
+<div class="game-help-panel" id="game-help-panel">
+    <div class="game-help-header" id="game-help-toggle">
+        <span>게임 규칙</span>
+        <button class="game-help-btn">−</button>
+    </div>
+    <div class="game-help-body" id="game-help-body">
+        <p><strong>할리갈리 기본 규칙</strong></p>
+        <ul>
+            <li>2~6명의 플레이어가 참여할 수 있습니다.</li>
+            <li>56장의 과일 카드 (바나나, 딸기, 라임, 자두 각 14장)가 사용됩니다.</li>
+            <li>카드를 균등하게 나눠 가진 뒤, 뒷면이 보이도록 쌓아둡니다.</li>
+        </ul>
+        <p><strong>게임 진행</strong></p>
+        <ol>
+            <li>차례가 되면 자신의 덱에서 카드를 <strong>한 장 뒤집어</strong> 버린 카드 더미 위에 놓습니다.</li>
+            <li>모든 플레이어의 버린 카드 더미 위에 보이는 과일 중, <strong>같은 종류의 과일이 정확히 5개</strong>가 되면 벨을 치세요!</li>
+            <li><strong>정확히 5개일 때만</strong> 벨을 칠 수 있습니다. (예: 바나나 2 + 바나나 3 = 5)</li>
+        </ol>
+        <p><strong>벨 치기</strong></p>
+        <ul>
+            <li><strong>정답:</strong> 가장 먼저 벨을 친 플레이어가 모든 버린 카드 더미를 가져갑니다.</li>
+            <li><strong>오답:</strong> 잘못 벨을 치면 다른 각 플레이어에게 카드 1장씩을 줘야 합니다.</li>
+        </ul>
+        <p><strong>승리 조건</strong></p>
+        <ul>
+            <li>카드가 없으면 탈락합니다.</li>
+            <li>마지막까지 카드를 가지고 있는 플레이어가 승리합니다!</li>
+        </ul>
+        <p><strong>과일 카드 구성</strong></p>
+        <ul>
+            <li>🍌 <strong>바나나</strong> — 노란색 카드</li>
+            <li>🍓 <strong>딸기</strong> — 빨간색 카드</li>
+            <li>🍋 <strong>라임</strong> — 초록색 카드</li>
+            <li>🫐 <strong>자두</strong> — 보라색 카드</li>
+            <li>각 과일: 1개×5장, 2개×3장, 3개×3장, 4개×2장, 5개×1장 = 14장</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+(function() {
+    function setupToggle(toggleId, bodyId) {
+        const toggle = document.getElementById(toggleId);
+        const body = document.getElementById(bodyId);
+        if (!toggle || !body) return;
+        const btn = toggle.querySelector('.game-help-btn');
+        toggle.addEventListener('click', () => {
+            if (body.style.display === 'none') {
+                body.style.display = '';
+                btn.textContent = '−';
+            } else {
+                body.style.display = 'none';
+                btn.textContent = '+';
+            }
+        });
+    }
+    setupToggle('game-help-toggle', 'game-help-body');
+})();
+</script>
+</body>
+</html>

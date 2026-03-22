@@ -56,6 +56,34 @@
                         <span class="game-list-desc">텍사스 홀덤 포커. AI 딜러와 대결하세요!</span>
                     </div>
                 </a>
+                <a href="/rummikub" class="game-list-item">
+                    <div class="game-list-icon">🀄</div>
+                    <div class="game-list-info">
+                        <span class="game-list-name">Rummikub</span>
+                        <span class="game-list-desc">루미큐브! 타일을 조합하여 가장 먼저 모든 타일을 내려놓으세요.</span>
+                    </div>
+                </a>
+                <a href="/bang" class="game-list-item">
+                    <div class="game-list-icon">💥</div>
+                    <div class="game-list-info">
+                        <span class="game-list-name">Bang!</span>
+                        <span class="game-list-desc">서부 총잡이 카드 게임! 역할을 숨기고 상대를 쓰러뜨리세요.</span>
+                    </div>
+                </a>
+                <a href="/splendor" class="game-list-item">
+                    <div class="game-list-icon">💎</div>
+                    <div class="game-list-info">
+                        <span class="game-list-name">Splendor</span>
+                        <span class="game-list-desc">보석 상인이 되어 카드를 모으고 15점을 먼저 달성하세요!</span>
+                    </div>
+                </a>
+                <a href="/halligalli" class="game-list-item">
+                    <div class="game-list-icon">🔔</div>
+                    <div class="game-list-info">
+                        <span class="game-list-name">Halli Galli</span>
+                        <span class="game-list-desc">과일이 5개가 되면 종을 울려라! 빠른 반응 카드 게임.</span>
+                    </div>
+                </a>
             </div>
 
             <section class="room-section">
@@ -70,6 +98,10 @@
                     <button class="filter-tab" data-game="chess">Chess</button>
                     <button class="filter-tab" data-game="yacht">Yacht</button>
                     <button class="filter-tab" data-game="poker">Poker</button>
+                    <button class="filter-tab" data-game="rummikub">Rummikub</button>
+                    <button class="filter-tab" data-game="bang">Bang!</button>
+                    <button class="filter-tab" data-game="splendor">Splendor</button>
+                    <button class="filter-tab" data-game="halligalli">Halli Galli</button>
                 </div>
                 <div class="room-list" id="room-list"></div>
                 <div class="room-load-more" id="room-load-more" style="display:none;">
@@ -158,6 +190,10 @@
                     <label><input type="radio" name="game" value="chess"> Chess</label>
                     <label><input type="radio" name="game" value="yacht"> Yacht Dice</label>
                     <label><input type="radio" name="game" value="poker"> Poker</label>
+                    <label><input type="radio" name="game" value="rummikub"> Rummikub</label>
+                    <label><input type="radio" name="game" value="bang"> Bang!</label>
+                    <label><input type="radio" name="game" value="splendor"> Splendor</label>
+                    <label><input type="radio" name="game" value="halligalli"> Halli Galli</label>
                 </div>
                 <div id="max-players-row">
                     <label id="max-players-label">최대 인원</label>
@@ -310,6 +346,18 @@
             } else if (game === 'poker') {
                 row.style.display = '';
                 sel.innerHTML = '<option value="2">2명</option><option value="3">3명</option><option value="4">4명</option><option value="5">5명</option><option value="6">6명</option>';
+            } else if (game === 'rummikub') {
+                row.style.display = '';
+                sel.innerHTML = '<option value="2">2명</option><option value="3">3명</option><option value="4">4명</option>';
+            } else if (game === 'bang') {
+                row.style.display = '';
+                sel.innerHTML = '<option value="4">4명</option><option value="5">5명</option><option value="6">6명</option><option value="7">7명</option>';
+            } else if (game === 'splendor') {
+                row.style.display = '';
+                sel.innerHTML = '<option value="2">2명</option><option value="3">3명</option><option value="4">4명</option>';
+            } else if (game === 'halligalli') {
+                row.style.display = '';
+                sel.innerHTML = '<option value="2">2명</option><option value="3">3명</option><option value="4">4명</option><option value="5">5명</option><option value="6">6명</option>';
             } else {
                 row.style.display = 'none';
             }
@@ -318,7 +366,7 @@
             const game = document.querySelector('input[name="game"]:checked').value;
             const spectateChecked = document.getElementById('allow-spectate').checked;
             const coachingCheckbox = document.getElementById('allow-coaching');
-            const noCoachingGames = ['tetris', 'poker', 'yacht'];
+            const noCoachingGames = ['tetris', 'poker', 'yacht', 'rummikub', 'bang', 'splendor', 'halligalli'];
 
             if (noCoachingGames.includes(game)) {
                 coachingCheckbox.disabled = true;
@@ -357,6 +405,9 @@
                     if (r.game === 'poker' && r.player_count < r.max_players) {
                         actionBtn += ` <button class="btn btn-join" onclick="joinPokerGame('${r.id}', ${r.password})">참여</button>`;
                     }
+                    if (r.game === 'rummikub' && r.player_count < r.max_players) {
+                        actionBtn += ` <button class="btn btn-join" onclick="joinLiveGame('${r.id}', '${r.game}', ${r.password})">참여</button>`;
+                    }
                 } else {
                     actionBtn = `<button class="btn btn-join" onclick="joinRoom('${r.id}', ${r.password})">참가</button>`;
                 }
@@ -365,6 +416,7 @@
                     : `<span>호스트: ${r.host}</span><span>${r.player_count}/${r.max_players}명</span>`;
                 const badge = isSpectate ? 'LIVE' : r.game.toUpperCase();
                 const badgeClass = isSpectate ? 'room-game-badge room-live-badge' : 'room-game-badge';
+                const adminBtn = IS_ADMIN ? `<button class="btn btn-danger btn-sm" onclick="forceCloseRoom('${r.id}')">강제종료</button>` : '';
                 return `
                 <div class="room-item">
                     <div class="room-info-row">
@@ -374,7 +426,7 @@
                         ${r.password ? '<span class="room-lock">&#128274;</span>' : ''}
                     </div>
                     <div class="room-meta">${meta}</div>
-                    ${actionBtn}
+                    <div class="room-actions">${actionBtn} ${adminBtn}</div>
                 </div>`;
             }).join('');
             loadMore.style.display = (end < filtered.length) ? '' : 'none';
@@ -401,6 +453,35 @@
             } else {
                 alert(data.error || '참여할 수 없습니다.');
             }
+        }
+
+        async function joinLiveGame(roomId, game, hasPassword) {
+            let password = '';
+            if (hasPassword) {
+                password = prompt('비밀번호를 입력하세요:');
+                if (password === null) return;
+            }
+            const res = await fetch('/api/rooms/' + roomId + '/join-game', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            const data = await res.json();
+            if (data.room_id) {
+                window.location.href = '/' + game + '?room_id=' + data.room_id;
+            } else {
+                alert(data.error || '참여할 수 없습니다.');
+            }
+        }
+
+        async function forceCloseRoom(roomId) {
+            if (!confirm('이 방을 강제 종료하시겠습니까?')) return;
+            const res = await fetch('/api/rooms/' + roomId + '/force-close', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (!data.ok) alert(data.error || '강제 종료 실패');
         }
 
         document.getElementById('load-more-btn').addEventListener('click', () => {
@@ -521,7 +602,7 @@
             const game = document.querySelector('input[name="game"]:checked').value;
             const name = document.getElementById('room-name').value;
             const password = document.getElementById('room-password').value;
-            const max_players = ['tetris', 'yacht', 'poker'].includes(game) ? parseInt(document.getElementById('max-players').value) : 2;
+            const max_players = ['tetris', 'yacht', 'poker', 'rummikub', 'bang', 'splendor', 'halligalli'].includes(game) ? parseInt(document.getElementById('max-players').value) : 2;
             const allow_spectate = document.getElementById('allow-spectate').checked;
             const allow_coaching = document.getElementById('allow-coaching').checked;
             const res = await fetch('/api/rooms', {

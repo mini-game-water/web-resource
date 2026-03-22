@@ -64,11 +64,11 @@ resource "aws_glue_catalog_table" "user_activity" {
     "projection.day.type"       = "integer"
     "projection.day.range"      = "1,31"
     "projection.day.digits"     = "2"
-    "storage.location.template" = "s3://${aws_s3_bucket.logs.id}/year=$${year}/month=$${month}/day=$${day}/"
+    "storage.location.template" = "s3://${aws_s3_bucket.logs.id}/user_activity/year=$${year}/month=$${month}/day=$${day}/"
   }
 
   storage_descriptor {
-    location      = "s3://${aws_s3_bucket.logs.id}/"
+    location      = "s3://${aws_s3_bucket.logs.id}/user_activity/"
     input_format  = "org.apache.hadoop.mapred.TextInputFormat"
     output_format = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
 
@@ -153,11 +153,11 @@ resource "aws_glue_catalog_table" "room_activity" {
     "projection.day.type"       = "integer"
     "projection.day.range"      = "1,31"
     "projection.day.digits"     = "2"
-    "storage.location.template" = "s3://${aws_s3_bucket.logs.id}/year=$${year}/month=$${month}/day=$${day}/"
+    "storage.location.template" = "s3://${aws_s3_bucket.logs.id}/room_activity/year=$${year}/month=$${month}/day=$${day}/"
   }
 
   storage_descriptor {
-    location      = "s3://${aws_s3_bucket.logs.id}/"
+    location      = "s3://${aws_s3_bucket.logs.id}/room_activity/"
     input_format  = "org.apache.hadoop.mapred.TextInputFormat"
     output_format = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
 
@@ -270,11 +270,11 @@ resource "aws_glue_catalog_table" "game_activity" {
     "projection.day.type"       = "integer"
     "projection.day.range"      = "1,31"
     "projection.day.digits"     = "2"
-    "storage.location.template" = "s3://${aws_s3_bucket.logs.id}/year=$${year}/month=$${month}/day=$${day}/"
+    "storage.location.template" = "s3://${aws_s3_bucket.logs.id}/game_activity/year=$${year}/month=$${month}/day=$${day}/"
   }
 
   storage_descriptor {
-    location      = "s3://${aws_s3_bucket.logs.id}/"
+    location      = "s3://${aws_s3_bucket.logs.id}/game_activity/"
     input_format  = "org.apache.hadoop.mapred.TextInputFormat"
     output_format = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
 
@@ -383,11 +383,11 @@ resource "aws_glue_catalog_table" "chat_activity" {
     "projection.day.type"       = "integer"
     "projection.day.range"      = "1,31"
     "projection.day.digits"     = "2"
-    "storage.location.template" = "s3://${aws_s3_bucket.logs.id}/year=$${year}/month=$${month}/day=$${day}/"
+    "storage.location.template" = "s3://${aws_s3_bucket.logs.id}/chat_activity/year=$${year}/month=$${month}/day=$${day}/"
   }
 
   storage_descriptor {
-    location      = "s3://${aws_s3_bucket.logs.id}/"
+    location      = "s3://${aws_s3_bucket.logs.id}/chat_activity/"
     input_format  = "org.apache.hadoop.mapred.TextInputFormat"
     output_format = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
 
@@ -468,11 +468,11 @@ resource "aws_glue_catalog_table" "friend_activity" {
     "projection.day.type"       = "integer"
     "projection.day.range"      = "1,31"
     "projection.day.digits"     = "2"
-    "storage.location.template" = "s3://${aws_s3_bucket.logs.id}/year=$${year}/month=$${month}/day=$${day}/"
+    "storage.location.template" = "s3://${aws_s3_bucket.logs.id}/friend_activity/year=$${year}/month=$${month}/day=$${day}/"
   }
 
   storage_descriptor {
-    location      = "s3://${aws_s3_bucket.logs.id}/"
+    location      = "s3://${aws_s3_bucket.logs.id}/friend_activity/"
     input_format  = "org.apache.hadoop.mapred.TextInputFormat"
     output_format = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
 
@@ -561,11 +561,11 @@ resource "aws_glue_catalog_table" "spectate_activity" {
     "projection.day.type"       = "integer"
     "projection.day.range"      = "1,31"
     "projection.day.digits"     = "2"
-    "storage.location.template" = "s3://${aws_s3_bucket.logs.id}/year=$${year}/month=$${month}/day=$${day}/"
+    "storage.location.template" = "s3://${aws_s3_bucket.logs.id}/spectate_activity/year=$${year}/month=$${month}/day=$${day}/"
   }
 
   storage_descriptor {
-    location      = "s3://${aws_s3_bucket.logs.id}/"
+    location      = "s3://${aws_s3_bucket.logs.id}/spectate_activity/"
     input_format  = "org.apache.hadoop.mapred.TextInputFormat"
     output_format = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
 
