@@ -1468,8 +1468,10 @@ body {
     font-size: 1.1rem;
     color: #9a8b78;
     cursor: pointer;
-    padding: 0 0.2rem;
+    padding: 4px 8px;
     line-height: 1;
+    position: relative;
+    z-index: 2;
 }
 
 .chat-toggle-btn:hover {

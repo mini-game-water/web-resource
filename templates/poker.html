@@ -379,7 +379,7 @@
             <p id="game-over-msg"></p>
             {% if room_id %}
             <div class="overlay-buttons" style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
-                <a href="/poker?room_id={{ room_id }}&spectate=1" class="btn">관전으로 전환</a>
+                <button class="btn" onclick="fetch('/api/rooms').then(r=>r.json()).then(d=>{if(d.find(r=>r.id==='{{ room_id }}')){location.href='/poker?room_id={{ room_id }}&spectate=1'}else{alert('방이 이미 종료되었습니다.');location.href='/'}})">관전으로 전환</button>
                 <a href="/" class="btn">로비로 이동</a>
             </div>
             {% else %}
@@ -420,6 +420,7 @@
         const IS_SPECTATOR = {{ 'true' if is_spectator else 'false' }};
         const ROOM_PLAYERS = {{ room.players | tojson if room else '[]' }};
         const ALLOW_COACHING = false;
+        if (!IS_SPECTATOR) history.replaceState(null, '', location.href);
     </script>
     {% endif %}
 

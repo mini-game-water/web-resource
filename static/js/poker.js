@@ -1257,7 +1257,7 @@
         if (gameRunning) return;
         if (isSpectator) return;
 
-        if (isMultiplayer && !gameReady) return;
+        if (isMultiplayer && (!gameReady || !isHost)) return;
 
         gameRunning = true;
         gameOver = false;
@@ -1397,8 +1397,8 @@
                 // If game is already running (mid-game join), notify others
                 if (gameRunning) {
                     socket.emit('poker_join_request', { room_id: ROOM_ID, user_id: MY_USER });
-                } else {
-                    // Auto-start the game when ready
+                } else if (isHost) {
+                    // Only host initializes game; non-host waits for state broadcast
                     startBtn.click();
                 }
             });
