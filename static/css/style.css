@@ -364,8 +364,7 @@ body {
     margin: 0 auto;
     gap: 2rem;
     padding: 0 2rem;
-    height: calc(100vh - 60px);
-    overflow: hidden;
+    min-height: calc(100vh - 60px - 80px);
 }
 
 .index-layout .dashboard {
@@ -460,8 +459,6 @@ body {
     padding-top: 2rem;
     display: flex;
     flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
 }
 
 .friends-sidebar h3 {
@@ -1794,4 +1791,37 @@ body {
 .notice-modal input:focus,
 .notice-modal textarea:focus {
     border-color: #c4aa82;
+}
+
+/* ===== Footer ===== */
+.site-footer {
+    background: #3d3429;
+    color: #c4b9a8;
+    padding: 1.5rem 2rem;
+    text-align: center;
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+.site-footer a {
+    color: #e8d5b5;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.site-footer a:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.footer-links {
+    margin-top: 0.4rem;
+}
+
+.footer-links a {
+    margin: 0 0.6rem;
+}
+
+.footer-divider {
+    color: #6b5e50;
 }
