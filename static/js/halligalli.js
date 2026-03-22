@@ -67,6 +67,7 @@
     let aiTimerId = null;
     let lastAction = '';       // display text
     let collectingAnimation = false;
+    let turnFlipped = false;   // prevent multiple flips per turn
 
     // ── DOM Elements ──
     const hgTable = document.getElementById('hg-table');
@@ -373,6 +374,7 @@
     function nextTurn() {
         if (!gameRunning) return;
         clearTurnTimer();
+        turnFlipped = false;
 
         let next = (currentTurn + 1) % NUM_PLAYERS;
         let attempts = 0;
@@ -469,6 +471,7 @@
     function flipCard(playerIdx) {
         if (!gameRunning || collectingAnimation) return;
         if (players[playerIdx].eliminated) return;
+        if (playerIdx === currentTurn && turnFlipped) return; // already flipped this turn
         if (players[playerIdx].deck.length === 0) {
             if (players[playerIdx].discard.length > 0) {
                 reshuffleDiscard(playerIdx);
@@ -481,6 +484,8 @@
         }
 
         clearTurnTimer();
+
+        turnFlipped = true;
 
         // Take top card from deck and put on discard
         const card = players[playerIdx].deck.pop();
@@ -753,7 +758,8 @@
             gameRunning: gameRunning,
             gameOver: gameOver,
             bellLocked: bellLocked,
-            collectingAnimation: collectingAnimation
+            collectingAnimation: collectingAnimation,
+            turnFlipped: turnFlipped
         };
     }
 
@@ -773,6 +779,7 @@
         gameOver = state.gameOver || false;
         bellLocked = state.bellLocked || false;
         collectingAnimation = state.collectingAnimation || false;
+        turnFlipped = state.turnFlipped || false;
 
         // Update NUM_PLAYERS if needed
         if (players.length !== NUM_PLAYERS) {

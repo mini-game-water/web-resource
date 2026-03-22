@@ -303,7 +303,12 @@
         <div class="overlay-content">
             <h2>게임 종료!</h2>
             <p id="final-score-text">최종 점수: <span id="final-score">0</span></p>
-            {% if not room_id %}
+            {% if room_id %}
+            <div class="overlay-buttons" style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
+                <a href="/yacht?room_id={{ room_id }}&spectate=1" class="btn">관전으로 전환</a>
+                <a href="/" class="btn">로비로 이동</a>
+            </div>
+            {% else %}
             <button class="btn" id="restart-btn">다시 시작</button>
             {% endif %}
         </div>

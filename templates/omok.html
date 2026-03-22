@@ -45,7 +45,10 @@
         <div class="overlay-content">
             <h2 id="win-message">Winner!</h2>
             {% if room_id %}
-            <a href="/" class="btn">로비로 돌아가기</a>
+            <div class="overlay-buttons" style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
+                <a href="/omok?room_id={{ room_id }}&spectate=1" class="btn">관전으로 전환</a>
+                <a href="/" class="btn">로비로 이동</a>
+            </div>
             {% else %}
             <button class="btn" id="overlay-restart-btn">Play Again</button>
             {% endif %}
