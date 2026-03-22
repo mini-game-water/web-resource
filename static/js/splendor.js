@@ -837,7 +837,7 @@
         btnConfirmReturn.style.display = tokensToReturn > 0 ? 'none' : '';
     }
 
-    btnConfirmReturn.addEventListener('click', () => {
+    if (btnConfirmReturn) btnConfirmReturn.addEventListener('click', () => {
         tokenReturnOverlay.classList.add('hidden');
         if (returnCallback) {
             const cb = returnCallback;
@@ -1062,7 +1062,7 @@
         });
     }
 
-    btnTakeGems.addEventListener('click', () => {
+    if (btnTakeGems) btnTakeGems.addEventListener('click', () => {
         if (!isMyTurn()) return;
 
         // Validate selection
@@ -1100,7 +1100,7 @@
         });
     });
 
-    btnCancel.addEventListener('click', () => {
+    if (btnCancel) btnCancel.addEventListener('click', () => {
         clearSelection();
     });
 
@@ -1332,13 +1332,13 @@
     }
 
     // ── Start / Restart ──
-    startBtn.addEventListener('click', () => {
+    if (startBtn) startBtn.addEventListener('click', () => {
         if (isMultiplayer && (!gameReady || !isHost)) return;
         initGame();
         if (isMultiplayer && isHost) broadcastState();
     });
 
-    restartBtn.addEventListener('click', () => {
+    if (restartBtn) restartBtn.addEventListener('click', () => {
         overlay.classList.remove('active');
         if (isMultiplayer && !isHost) return;
         initGame();

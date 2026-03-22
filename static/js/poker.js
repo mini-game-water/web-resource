@@ -1183,7 +1183,7 @@
     }
 
     // ── Event Handlers ──
-    btnFold.addEventListener('click', async () => {
+    if (btnFold) btnFold.addEventListener('click', async () => {
         if (currentPlayerIndex !== myIndex) return;
         if (isSpectator) return;
 
@@ -1203,7 +1203,7 @@
         }
     });
 
-    btnCheck.addEventListener('click', async () => {
+    if (btnCheck) btnCheck.addEventListener('click', async () => {
         if (currentPlayerIndex !== myIndex) return;
         if (isSpectator) return;
 
@@ -1228,7 +1228,7 @@
         }
     });
 
-    btnRaise.addEventListener('click', async () => {
+    if (btnRaise) btnRaise.addEventListener('click', async () => {
         if (currentPlayerIndex !== myIndex) return;
         if (isSpectator) return;
 
@@ -1249,11 +1249,11 @@
         }
     });
 
-    raiseSlider.addEventListener('input', () => {
+    if (raiseSlider) raiseSlider.addEventListener('input', () => {
         raiseAmountEl.textContent = raiseSlider.value;
     });
 
-    startBtn.addEventListener('click', () => {
+    if (startBtn) startBtn.addEventListener('click', () => {
         if (gameRunning) return;
         if (isSpectator) return;
 
@@ -1274,7 +1274,7 @@
         }
     });
 
-    restartBtn.addEventListener('click', () => {
+    if (restartBtn) restartBtn.addEventListener('click', () => {
         if (isMultiplayer) {
             // In multiplayer, redirect home after game over
             window.location.href = '/';

@@ -834,7 +834,7 @@
     // ── Event Handlers ──
 
     // Bell button click
-    bellBtn.addEventListener('click', () => {
+    if (bellBtn) bellBtn.addEventListener('click', () => {
         if (!gameRunning || bellLocked || collectingAnimation || isSpectator) return;
 
         if (isMultiplayer) {
@@ -904,14 +904,14 @@
     });
 
     // Start button
-    startBtn.addEventListener('click', () => {
+    if (startBtn) startBtn.addEventListener('click', () => {
         if (isMultiplayer && (!gameReady || !isHost)) return;
         initGame();
         if (isHost) broadcastState();
     });
 
     // Restart button
-    restartBtn.addEventListener('click', () => {
+    if (restartBtn) restartBtn.addEventListener('click', () => {
         if (isMultiplayer && !isHost) return;
         gameOverOverlay.classList.remove('active');
         initGame();

@@ -1197,13 +1197,13 @@
     //  BUTTON EVENT HANDLERS
     // ══════════════════════════════════════════════════
 
-    btnPlay.addEventListener('click', () => playTurn());
-    btnDraw.addEventListener('click', () => drawTile());
-    btnUndo.addEventListener('click', () => undoTurn());
-    btnSortNum.addEventListener('click', () => sortRackByNumber());
-    btnSortColor.addEventListener('click', () => sortRackByColor());
+    if (btnPlay) btnPlay.addEventListener('click', () => playTurn());
+    if (btnDraw) btnDraw.addEventListener('click', () => drawTile());
+    if (btnUndo) btnUndo.addEventListener('click', () => undoTurn());
+    if (btnSortNum) btnSortNum.addEventListener('click', () => sortRackByNumber());
+    if (btnSortColor) btnSortColor.addEventListener('click', () => sortRackByColor());
 
-    startBtn.addEventListener('click', () => {
+    if (startBtn) startBtn.addEventListener('click', () => {
         if (!isHost && isMultiplayer) return;
         overlay.classList.remove('active');
         initGame();
@@ -1212,7 +1212,7 @@
         }
     });
 
-    restartBtn.addEventListener('click', () => {
+    if (restartBtn) restartBtn.addEventListener('click', () => {
         overlay.classList.remove('active');
         if (!isHost && isMultiplayer) return;
         initGame();

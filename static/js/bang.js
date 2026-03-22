@@ -1632,19 +1632,19 @@
     }
 
     // ── Event Listeners ──
-    startBtn.addEventListener('click', () => {
+    if (startBtn) startBtn.addEventListener('click', () => {
         if (isHost || !isMultiplayer) startGame();
     });
 
-    restartBtn.addEventListener('click', () => {
+    if (restartBtn) restartBtn.addEventListener('click', () => {
         gameOverOverlay.classList.remove('active');
         gameOver = false;
         gameRunning = false;
         startGame();
     });
 
-    btnEndTurn.addEventListener('click', onEndTurn);
-    btnDiscardMode.addEventListener('click', onDiscardMode);
+    if (btnEndTurn) btnEndTurn.addEventListener('click', onEndTurn);
+    if (btnDiscardMode) btnDiscardMode.addEventListener('click', onDiscardMode);
 
     // Cancel targeting with Escape
     document.addEventListener('keydown', (e) => {
