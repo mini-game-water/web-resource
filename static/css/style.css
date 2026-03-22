@@ -1173,32 +1173,27 @@ body {
 }
 
 /* ===== Room Filter Tabs ===== */
-.room-filter-tabs {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-}
-
-.filter-tab {
-    padding: 0.4rem 1rem;
-    border: 1px solid #c4aa82;
-    background: #e6ddd3;
+.room-filter-select {
+    padding: 0.5rem 1rem;
+    border: 1px solid #e6ddd3;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: #fff;
     color: #5a4e42;
-    border-radius: 6px;
+    outline: none;
+    margin-bottom: 1rem;
     cursor: pointer;
-    font-size: 0.85rem;
-    transition: background 0.2s, color 0.2s;
 }
 
-.filter-tab:hover {
-    background: #c4aa82;
-    color: white;
+.room-filter-select:focus {
+    border-color: #c4aa82;
 }
 
-.filter-tab.active {
-    background: #a38b6d;
-    color: white;
-    border-color: #a38b6d;
+.game-players {
+    font-size: 0.75rem;
+    color: #a38b6d;
+    font-weight: normal;
+    margin-left: 0.3rem;
 }
 
 /* ===== Friend Controls ===== */

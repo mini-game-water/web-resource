@@ -24,63 +24,63 @@
                 <a href="/tetris" class="game-list-item">
                     <div class="game-list-icon">T</div>
                     <div class="game-list-info">
-                        <span class="game-list-name">Tetris</span>
+                        <span class="game-list-name">Tetris <span class="game-players">1~8</span></span>
                         <span class="game-list-desc">클래식 블록 쌓기 게임. 줄을 완성하여 점수를 획득하세요!</span>
                     </div>
                 </a>
                 <a href="/omok" class="game-list-item">
                     <div class="game-list-icon">O</div>
                     <div class="game-list-info">
-                        <span class="game-list-name">Omok</span>
+                        <span class="game-list-name">Omok <span class="game-players">2</span></span>
                         <span class="game-list-desc">15x15 보드에서 2인 대전. 먼저 5개를 연속으로 놓으면 승리!</span>
                     </div>
                 </a>
                 <a href="/chess" class="game-list-item">
                     <div class="game-list-icon">C</div>
                     <div class="game-list-info">
-                        <span class="game-list-name">Chess</span>
+                        <span class="game-list-name">Chess <span class="game-players">2</span></span>
                         <span class="game-list-desc">전략의 정수, 체스. 상대의 킹을 체크메이트 하세요!</span>
                     </div>
                 </a>
                 <a href="/yacht" class="game-list-item">
                     <div class="game-list-icon">🎲</div>
                     <div class="game-list-info">
-                        <span class="game-list-name">Yacht Dice</span>
+                        <span class="game-list-name">Yacht Dice <span class="game-players">1~4</span></span>
                         <span class="game-list-desc">5개의 주사위로 최고 조합을 만드세요! 전략적 주사위 게임.</span>
                     </div>
                 </a>
                 <a href="/poker" class="game-list-item">
                     <div class="game-list-icon">🃏</div>
                     <div class="game-list-info">
-                        <span class="game-list-name">Poker</span>
+                        <span class="game-list-name">Poker <span class="game-players">2~6</span></span>
                         <span class="game-list-desc">텍사스 홀덤 포커. AI 딜러와 대결하세요!</span>
                     </div>
                 </a>
                 <a href="/rummikub" class="game-list-item">
                     <div class="game-list-icon">🀄</div>
                     <div class="game-list-info">
-                        <span class="game-list-name">Rummikub</span>
+                        <span class="game-list-name">Rummikub <span class="game-players">2~4</span></span>
                         <span class="game-list-desc">루미큐브! 타일을 조합하여 가장 먼저 모든 타일을 내려놓으세요.</span>
                     </div>
                 </a>
                 <a href="/bang" class="game-list-item">
                     <div class="game-list-icon">💥</div>
                     <div class="game-list-info">
-                        <span class="game-list-name">Bang!</span>
+                        <span class="game-list-name">Bang! <span class="game-players">2~4</span></span>
                         <span class="game-list-desc">서부 총잡이 카드 게임! 역할을 숨기고 상대를 쓰러뜨리세요.</span>
                     </div>
                 </a>
                 <a href="/splendor" class="game-list-item">
                     <div class="game-list-icon">💎</div>
                     <div class="game-list-info">
-                        <span class="game-list-name">Splendor</span>
+                        <span class="game-list-name">Splendor <span class="game-players">2~4</span></span>
                         <span class="game-list-desc">보석 상인이 되어 카드를 모으고 15점을 먼저 달성하세요!</span>
                     </div>
                 </a>
                 <a href="/halligalli" class="game-list-item">
                     <div class="game-list-icon">🔔</div>
                     <div class="game-list-info">
-                        <span class="game-list-name">Halli Galli</span>
+                        <span class="game-list-name">Halli Galli <span class="game-players">2~4</span></span>
                         <span class="game-list-desc">과일이 5개가 되면 종을 울려라! 빠른 반응 카드 게임.</span>
                     </div>
                 </a>
@@ -91,18 +91,18 @@
                     <h2>대전 방 목록</h2>
                     <button class="btn btn-primary" id="create-room-btn">방 만들기</button>
                 </div>
-                <div class="room-filter-tabs">
-                    <button class="filter-tab active" data-game="all">전체</button>
-                    <button class="filter-tab" data-game="tetris">Tetris</button>
-                    <button class="filter-tab" data-game="omok">Omok</button>
-                    <button class="filter-tab" data-game="chess">Chess</button>
-                    <button class="filter-tab" data-game="yacht">Yacht</button>
-                    <button class="filter-tab" data-game="poker">Poker</button>
-                    <button class="filter-tab" data-game="rummikub">Rummikub</button>
-                    <button class="filter-tab" data-game="bang">Bang!</button>
-                    <button class="filter-tab" data-game="splendor">Splendor</button>
-                    <button class="filter-tab" data-game="halligalli">Halli Galli</button>
-                </div>
+                <select class="room-filter-select" id="room-filter">
+                    <option value="all">전체</option>
+                    <option value="tetris">Tetris</option>
+                    <option value="omok">Omok</option>
+                    <option value="chess">Chess</option>
+                    <option value="yacht">Yacht</option>
+                    <option value="poker">Poker</option>
+                    <option value="rummikub">Rummikub</option>
+                    <option value="bang">Bang!</option>
+                    <option value="splendor">Splendor</option>
+                    <option value="halligalli">Halli Galli</option>
+                </select>
                 <div class="room-list" id="room-list"></div>
                 <div class="room-load-more" id="room-load-more" style="display:none;">
                     <button class="btn" id="load-more-btn">더 보기</button>
@@ -305,7 +305,9 @@
         const MY_IP = "{{ user.get('public_ip', '') }}";
         const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
         const socket = io();
-        socket.emit('join_lobby', { user_id: MY_USER });
+        socket.on('connect', () => {
+            socket.emit('join_lobby', { user_id: MY_USER });
+        });
 
         // ── Visibility / focus detection ──
         let isLoggingOut = false;
@@ -330,15 +332,11 @@
         let activeGameFilter = 'all';
         let roomPage = 0;
 
-        // ── Room filter tabs ──
-        document.querySelectorAll('.filter-tab').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                activeGameFilter = btn.dataset.game;
-                roomPage = 0;
-                renderRooms();
-            });
+        // ── Room filter dropdown ──
+        document.getElementById('room-filter').addEventListener('change', function() {
+            activeGameFilter = this.value;
+            roomPage = 0;
+            renderRooms();
         });
 
         // ── Create room modal: show/hide options ──
@@ -358,15 +356,9 @@
             } else if (game === 'rummikub') {
                 row.style.display = '';
                 sel.innerHTML = '<option value="2">2명</option><option value="3">3명</option><option value="4">4명</option>';
-            } else if (game === 'bang') {
-                row.style.display = '';
-                sel.innerHTML = '<option value="4">4명</option><option value="5">5명</option><option value="6">6명</option><option value="7">7명</option>';
-            } else if (game === 'splendor') {
+            } else if (game === 'bang' || game === 'splendor' || game === 'halligalli') {
                 row.style.display = '';
                 sel.innerHTML = '<option value="2">2명</option><option value="3">3명</option><option value="4">4명</option>';
-            } else if (game === 'halligalli') {
-                row.style.display = '';
-                sel.innerHTML = '<option value="2">2명</option><option value="3">3명</option><option value="4">4명</option><option value="5">5명</option><option value="6">6명</option>';
             } else {
                 row.style.display = 'none';
             }

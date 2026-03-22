@@ -108,6 +108,8 @@ def register():
     email = request.form.get('email', '').strip()
     if not uid or not pw:
         return render_template('login.html', error='아이디 또는 비밀번호를 확인해 주세요.', show_register=True)
+    if not name or not email:
+        return render_template('login.html', error='이름과 이메일은 필수 입력 항목입니다.', show_register=True)
     if not db.create_user(uid, pw, name=name, email=email):
         return render_template('login.html', error='이미 존재하는 아이디입니다.', show_register=True)
     game_logger.log_register(uid)

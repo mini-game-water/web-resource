@@ -99,6 +99,12 @@ resource "aws_grafana_workspace" "gamehub" {
   role_arn                 = aws_iam_role.grafana.arn
   data_sources             = ["ATHENA"]
 
+  configuration = jsonencode({
+    plugins = {
+      pluginAdminEnabled = true
+    }
+  })
+
   tags = { Name = "gamehub-grafana" }
 }
 
@@ -144,7 +150,9 @@ resource "grafana_data_source" "athena" {
   name = "GameHub Athena"
 
   json_data_encoded = jsonencode({
+    authType       = "default"
     defaultRegion  = var.aws_region
+    region         = var.aws_region
     catalog        = "AwsDataCatalog"
     database       = aws_glue_catalog_database.gamehub.name
     workgroup      = aws_athena_workgroup.gamehub.name
@@ -153,6 +161,15 @@ resource "grafana_data_source" "athena" {
 }
 
 # ──────────────── Grafana Dashboard ────────────────
+
+locals {
+  athena_conn = {
+    region  = var.aws_region
+    catalog = "AwsDataCatalog"
+    database = aws_glue_catalog_database.gamehub.name
+  }
+  athena_ds = { type = "grafana-athena-datasource", uid = grafana_data_source.athena.uid }
+}
 
 resource "grafana_dashboard" "gamehub_logs" {
   config_json = jsonencode({
@@ -170,10 +187,11 @@ resource "grafana_dashboard" "gamehub_logs" {
         title      = "All Events Stream"
         type       = "table"
         gridPos    = { h = 10, w = 24, x = 0, y = 0 }
-        datasource = { type = "grafana-athena-datasource", uid = grafana_data_source.athena.uid }
+        datasource = local.athena_ds
         targets = [{
+          connectionArgs = local.athena_conn
           rawSQL = <<-EOT
-            SELECT timestamp, category, event_type, user_id, room_id
+            SELECT timestamp, category, event_type, user_id, CAST(NULL AS VARCHAR) AS room_id
             FROM user_activity
             WHERE year = YEAR(CURRENT_DATE)
               AND month = MONTH(CURRENT_DATE)
@@ -211,7 +229,7 @@ resource "grafana_dashboard" "gamehub_logs" {
             ORDER BY timestamp DESC
             LIMIT 200
           EOT
-          format = "table"
+          format = 0
         }]
       },
       {
@@ -219,8 +237,9 @@ resource "grafana_dashboard" "gamehub_logs" {
         title      = "Login / Logout / Register"
         type       = "table"
         gridPos    = { h = 8, w = 12, x = 0, y = 10 }
-        datasource = { type = "grafana-athena-datasource", uid = grafana_data_source.athena.uid }
+        datasource = local.athena_ds
         targets = [{
+          connectionArgs = local.athena_conn
           rawSQL = <<-EOT
             SELECT timestamp, event_type, user_id, ip
             FROM user_activity
@@ -231,7 +250,7 @@ resource "grafana_dashboard" "gamehub_logs" {
             ORDER BY timestamp DESC
             LIMIT 50
           EOT
-          format = "table"
+          format = 0
         }]
       },
       {
@@ -239,7 +258,7 @@ resource "grafana_dashboard" "gamehub_logs" {
         title      = "Events per Minute"
         type       = "timeseries"
         gridPos    = { h = 8, w = 12, x = 12, y = 10 }
-        datasource = { type = "grafana-athena-datasource", uid = grafana_data_source.athena.uid }
+        datasource = local.athena_ds
         fieldConfig = {
           defaults = {
             custom = {
@@ -249,6 +268,7 @@ resource "grafana_dashboard" "gamehub_logs" {
           }
         }
         targets = [{
+          connectionArgs = local.athena_conn
           rawSQL = <<-EOT
             SELECT
               date_trunc('minute', from_iso8601_timestamp(timestamp)) AS time,
@@ -261,7 +281,7 @@ resource "grafana_dashboard" "gamehub_logs" {
             GROUP BY 1, 2
             ORDER BY 1
           EOT
-          format = "table"
+          format = 0
         }]
       },
       {
@@ -269,8 +289,9 @@ resource "grafana_dashboard" "gamehub_logs" {
         title      = "Room Activity"
         type       = "table"
         gridPos    = { h = 8, w = 12, x = 0, y = 18 }
-        datasource = { type = "grafana-athena-datasource", uid = grafana_data_source.athena.uid }
+        datasource = local.athena_ds
         targets = [{
+          connectionArgs = local.athena_conn
           rawSQL = <<-EOT
             SELECT timestamp, event_type, room_id, user_id, game, host
             FROM room_activity
@@ -280,7 +301,7 @@ resource "grafana_dashboard" "gamehub_logs" {
             ORDER BY timestamp DESC
             LIMIT 50
           EOT
-          format = "table"
+          format = 0
         }]
       },
       {
@@ -288,8 +309,9 @@ resource "grafana_dashboard" "gamehub_logs" {
         title      = "Game Activity"
         type       = "table"
         gridPos    = { h = 8, w = 12, x = 12, y = 18 }
-        datasource = { type = "grafana-athena-datasource", uid = grafana_data_source.athena.uid }
+        datasource = local.athena_ds
         targets = [{
+          connectionArgs = local.athena_conn
           rawSQL = <<-EOT
             SELECT timestamp, event_type, room_id, user_id, game, winner, loser
             FROM game_activity
@@ -299,7 +321,7 @@ resource "grafana_dashboard" "gamehub_logs" {
             ORDER BY timestamp DESC
             LIMIT 50
           EOT
-          format = "table"
+          format = 0
         }]
       },
       {
@@ -307,8 +329,9 @@ resource "grafana_dashboard" "gamehub_logs" {
         title      = "Chat Messages"
         type       = "table"
         gridPos    = { h = 8, w = 24, x = 0, y = 26 }
-        datasource = { type = "grafana-athena-datasource", uid = grafana_data_source.athena.uid }
+        datasource = local.athena_ds
         targets = [{
+          connectionArgs = local.athena_conn
           rawSQL = <<-EOT
             SELECT timestamp, room_id, user_id, role, message
             FROM chat_activity
@@ -318,7 +341,7 @@ resource "grafana_dashboard" "gamehub_logs" {
             ORDER BY timestamp DESC
             LIMIT 100
           EOT
-          format = "table"
+          format = 0
         }]
       }
     ]
