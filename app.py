@@ -15,8 +15,17 @@ import game_logger
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'game-hub-dev-secret-key')
+app.config['WTF_CSRF_CHECK_DEFAULT'] = False
 csrf = CSRFProtect(app)
-socketio = SocketIO(app, async_mode='gevent')
+socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins='*')
+
+
+@app.before_request
+def csrf_protect_non_socketio():
+    """Apply CSRF protection to all routes except Socket.IO polling transport."""
+    if request.path.startswith('/socket.io'):
+        return
+    csrf.protect()
 
 
 # ──────────────────── XSS Sanitizer ────────────────────
