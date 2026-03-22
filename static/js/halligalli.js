@@ -850,16 +850,18 @@
         }
     });
 
-    // Keyboard shortcut: space bar to ring bell
+    // Keyboard shortcuts: Space = flip card, Enter = ring bell
     document.addEventListener('keydown', (e) => {
         if (isSpectator) return;
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-        if (e.code === 'Space' || e.key === ' ') {
+        // Enter to ring bell
+        if (e.key === 'Enter') {
             e.preventDefault();
             bellBtn.click();
         }
-        // 'F' to flip card (if it's your turn)
-        if ((e.key === 'f' || e.key === 'F') && gameRunning && !collectingAnimation) {
+        // Space to flip card (if it's your turn)
+        if ((e.code === 'Space' || e.key === ' ') && gameRunning && !collectingAnimation) {
+            e.preventDefault();
             if (currentTurn === myIndex && !players[myIndex].eliminated) {
                 if (isMultiplayer && !isHost) {
                     emitFlip();

@@ -174,9 +174,9 @@
         }
         /* Card styles */
         .hg-card {
-            width: 70px;
-            height: 100px;
-            border-radius: 8px;
+            width: 90px;
+            height: 130px;
+            border-radius: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -203,15 +203,15 @@
             justify-content: center;
         }
         .hg-card.face-down .card-back-logo {
-            width: 28px;
-            height: 28px;
+            width: 36px;
+            height: 36px;
             border: 2px solid rgba(255,255,255,0.4);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: rgba(255,255,255,0.5);
-            font-size: 0.7rem;
+            font-size: 0.85rem;
             font-weight: bold;
         }
         .hg-card.fruit-banana { background: linear-gradient(135deg, #fff9c4, #ffeb3b); border: 2px solid #f9a825; }
@@ -219,29 +219,29 @@
         .hg-card.fruit-lime { background: linear-gradient(135deg, #c8e6c9, #66bb6a); border: 2px solid #2e7d32; }
         .hg-card.fruit-plum { background: linear-gradient(135deg, #e1bee7, #ab47bc); border: 2px solid #6a1b9a; }
         .hg-card .card-emoji {
-            font-size: 1.6rem;
+            font-size: 2rem;
             line-height: 1;
         }
         .hg-card .card-count {
-            font-size: 1rem;
-            margin-top: 2px;
+            font-size: 1.2rem;
+            margin-top: 4px;
             color: #333;
         }
         .hg-card.mini {
-            width: 50px;
-            height: 70px;
+            width: 64px;
+            height: 90px;
         }
         .hg-card.mini .card-emoji {
-            font-size: 1.1rem;
+            font-size: 1.4rem;
         }
         .hg-card.mini .card-count {
-            font-size: 0.8rem;
+            font-size: 0.95rem;
         }
         /* Deck stack effect */
         .deck-stack {
             position: relative;
-            width: 54px;
-            height: 74px;
+            width: 68px;
+            height: 94px;
         }
         .deck-stack .hg-card.mini {
             position: absolute;
@@ -351,7 +351,7 @@
                 <div class="fruit-counts" id="fruit-counts"></div>
                 <div class="bell-area">
                     <button class="bell-btn" id="bell-btn">🔔</button>
-                    <div class="bell-label">벨 치기!</div>
+                    <div class="bell-label">벨 치기! (Enter)</div>
                 </div>
                 <div class="turn-timer" id="turn-timer"></div>
                 <div class="hg-status" id="hg-status"></div>
@@ -440,6 +440,29 @@
             <li>카드가 없으면 탈락합니다.</li>
             <li>마지막까지 카드를 가지고 있는 플레이어가 승리합니다!</li>
         </ul>
+        <p><strong>조작법</strong></p>
+        <table style="width:100%; border-collapse:collapse; margin-bottom:12px;">
+            <thead>
+                <tr style="background:#e8ddd0;">
+                    <th style="padding:6px 10px; text-align:left; border:1px solid #c4aa82;">키</th>
+                    <th style="padding:6px 10px; text-align:left; border:1px solid #c4aa82;">동작</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding:6px 10px; border:1px solid #c4aa82;"><kbd style="background:#f0ebe4; padding:2px 8px; border-radius:4px; border:1px solid #c4aa82; font-weight:bold;">Space</kbd></td>
+                    <td style="padding:6px 10px; border:1px solid #c4aa82;">카드 뒤집기 (내 턴일 때)</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 10px; border:1px solid #c4aa82;"><kbd style="background:#f0ebe4; padding:2px 8px; border-radius:4px; border:1px solid #c4aa82; font-weight:bold;">Enter</kbd></td>
+                    <td style="padding:6px 10px; border:1px solid #c4aa82;">벨 치기</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 10px; border:1px solid #c4aa82;">🖱️ 클릭</td>
+                    <td style="padding:6px 10px; border:1px solid #c4aa82;">덱 카드 클릭으로 뒤집기 / 벨 버튼 클릭</td>
+                </tr>
+            </tbody>
+        </table>
         <p><strong>과일 카드 구성</strong></p>
         <ul>
             <li>🍌 <strong>바나나</strong> — 노란색 카드</li>
