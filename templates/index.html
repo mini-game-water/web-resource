@@ -597,7 +597,15 @@
         }
 
         // ── Room actions ──
+        const ROOM_COLORS = ['Red', 'Blue', 'Green', 'Yellow', 'Purple', 'Orange', 'Pink', 'Cyan', 'Lime', 'Gold', 'Silver', 'Coral', 'Violet', 'Teal', 'Indigo', 'Crimson', 'Amber', 'Mint', 'Peach', 'Sky'];
+        const ROOM_FRUITS = ['Apple', 'Banana', 'Cherry', 'Grape', 'Lemon', 'Mango', 'Orange', 'Peach', 'Melon', 'Berry', 'Kiwi', 'Plum', 'Pear', 'Fig', 'Lime', 'Coconut', 'Papaya', 'Guava', 'Tomato', 'Olive'];
+        function randomRoomName() {
+            return ROOM_COLORS[Math.floor(Math.random() * ROOM_COLORS.length)] + ' ' + ROOM_FRUITS[Math.floor(Math.random() * ROOM_FRUITS.length)];
+        }
+
         document.getElementById('create-room-btn').addEventListener('click', () => {
+            const nameInput = document.getElementById('room-name');
+            if (!nameInput.value.trim()) nameInput.value = randomRoomName();
             document.getElementById('create-room-overlay').classList.add('active');
         });
 

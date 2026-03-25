@@ -1831,6 +1831,14 @@
                 if (gameOver || isSpectator) return;
             });
 
+            socket.on('game_winner', (data) => {
+                gameOver = true;
+                gameRunning = false;
+                const msg = data.winner === myUser ? '승리! 상대방이 나갔습니다.' : data.winner + '님이 승리했습니다.';
+                if (gameOverMsg) gameOverMsg.textContent = msg;
+                if (gameOverOverlay) gameOverOverlay.classList.add('active');
+            });
+
             socket.on('opponent_game_over', () => {
                 if (gameOver || isSpectator) return;
             });
@@ -1924,22 +1932,28 @@
 
         // Resize
         if (chatResize) {
-            let resizing = false, startW = 0, startH = 0, startX = 0, startY = 0;
+            let resizing = false, startX, startY, startW, startH, startLeft, startTop;
             chatResize.addEventListener('mousedown', (e) => {
+                e.preventDefault();
                 resizing = true;
                 const rect = chatBox.getBoundingClientRect();
-                startW = rect.width;
-                startH = rect.height;
-                startX = e.clientX;
-                startY = e.clientY;
-                e.preventDefault();
+                startX = e.clientX; startY = e.clientY;
+                startW = rect.width; startH = rect.height;
+                startLeft = rect.left; startTop = rect.top;
+                chatBox.style.transition = 'none';
             });
             document.addEventListener('mousemove', (e) => {
                 if (!resizing) return;
-                const newW = Math.max(250, startW + (e.clientX - startX));
-                const newH = Math.max(200, startH + (e.clientY - startY));
+                const dxR = startX - e.clientX;
+                const dyR = startY - e.clientY;
+                const newW = Math.max(220, startW + dxR);
+                const newH = Math.max(120, startH + dyR);
                 chatBox.style.width = newW + 'px';
                 chatBox.style.height = newH + 'px';
+                chatBox.style.left = (startLeft - (newW - startW)) + 'px';
+                chatBox.style.top = (startTop - (newH - startH)) + 'px';
+                chatBox.style.right = 'auto';
+                chatBox.style.bottom = 'auto';
             });
             document.addEventListener('mouseup', () => { resizing = false; });
         }

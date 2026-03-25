@@ -929,8 +929,15 @@ def on_disconnect():
                     destroy_game_room(rid)
                     return
 
+            # Any game: if only 1 player remains, they win
+            if len(game_conns.get(rid, set())) == 1:
+                winner = next(iter(game_conns[rid]))
+                emit('game_winner', {'winner': winner}, room=rid)
+                destroy_game_room(rid)
+                return
+
             # Destroy room when all players leave
-            if not game_conns[rid]:
+            if not game_conns.get(rid, set()):
                 destroy_game_room(rid)
             else:
                 broadcast_participants(rid)

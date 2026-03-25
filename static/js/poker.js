@@ -1449,6 +1449,14 @@
             socket.on('opponent_disconnected', handleDisconnect);
             socket.on('opponent_game_over', handleDisconnect);
 
+            socket.on('game_winner', (data) => {
+                gameOver = true;
+                gameRunning = false;
+                const msg = data.winner === myUser ? '승리! 상대방이 나갔습니다.' : data.winner + '님이 승리했습니다.';
+                if (gameOverMsg) gameOverMsg.textContent = msg;
+                if (overlay) overlay.classList.add('active');
+            });
+
             // Mid-game join for poker
             socket.on('poker_player_joined', (data) => {
                 if (data.user_id && !pendingJoins.includes(data.user_id)) {

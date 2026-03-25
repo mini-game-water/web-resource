@@ -1421,6 +1421,14 @@
                 if (gameOver || isSpectator) return;
             });
 
+            socket.on('game_winner', (data) => {
+                gameOver = true;
+                gameRunning = false;
+                const msg = data.winner === myUser ? '승리! 상대방이 나갔습니다.' : data.winner + '님이 승리했습니다.';
+                if (gameOverMsg) gameOverMsg.textContent = msg;
+                if (overlay) overlay.classList.add('active');
+            });
+
             socket.on('room_force_closed', (data) => {
                 alert(data.message || '관리자에 의해 방이 강제 종료되었습니다.');
                 window.location.href = '/';
