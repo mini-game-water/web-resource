@@ -1822,3 +1822,66 @@ body {
 .footer-divider {
     color: #6b5e50;
 }
+
+/* ===== AdSense Ad Containers ===== */
+.ad-container {
+    text-align: center;
+    overflow: hidden;
+    background: transparent;
+}
+
+/* Leaderboard ad (between game list and room list on index) */
+.ad-leaderboard {
+    margin: 1.2rem auto;
+    max-width: 728px;
+    min-height: 90px;
+}
+
+/* Sidebar rectangle ad (index friends sidebar) */
+.ad-sidebar-unit {
+    margin: 1rem 0;
+    min-height: 250px;
+}
+
+/* Footer ad (index, below content) */
+.ad-footer {
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    max-width: 728px;
+    min-height: 90px;
+}
+
+/* Waiting room ad (room.html, below waiting layout) */
+.ad-waiting-room {
+    margin: 0 auto 1rem;
+    padding: 0 2rem;
+    max-width: 728px;
+    min-height: 90px;
+}
+
+/* Game page top ad (above game-container, all 9 game pages) */
+.ad-game-top {
+    margin: 0 auto;
+    padding: 0.5rem 1rem;
+    max-width: 728px;
+    min-height: 90px;
+    /* Ensures 150px+ distance from game canvas per AdSense gaming policy */
+    margin-bottom: 0;
+}
+
+/* Mobile: reduce ad density — hide secondary ads, keep only primary */
+@media (max-width: 768px) {
+    .ad-sidebar-unit {
+        display: none; /* sidebar collapses on mobile, hide its ad */
+    }
+    .ad-footer {
+        display: none; /* reduce density on small screens */
+    }
+    .ad-leaderboard,
+    .ad-waiting-room,
+    .ad-game-top {
+        max-width: 100%;
+        padding: 0.5rem;
+        min-height: 50px;
+    }
+}

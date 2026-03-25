@@ -6,6 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Game Hub</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3328839220107010"
+         crossorigin="anonymous"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -87,6 +89,17 @@
                 </a>
             </div>
 
+            <!-- Ad: leaderboard between game list and room list (above-the-fold, highest CPM) -->
+            <div class="ad-container ad-leaderboard">
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-3328839220107010"
+                     data-ad-slot="1234567890"
+                     data-ad-format="horizontal"
+                     data-full-width-responsive="true"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+
             <section class="room-section">
                 <div class="room-header">
                     <h2>대전 방 목록</h2>
@@ -149,6 +162,17 @@
                 {% endif %}
             </div>
 
+            <!-- Ad: sidebar rectangle (300x250 best fit, high viewability) -->
+            <div class="ad-container ad-sidebar-unit">
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-3328839220107010"
+                     data-ad-slot="1234567891"
+                     data-ad-format="rectangle"
+                     data-full-width-responsive="true"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+
             <!-- Notice Board -->
             <div class="notice-section">
                 <div class="notice-header">
@@ -177,6 +201,17 @@
                 </div>
             </div>
         </aside>
+    </div>
+
+    <!-- Ad: footer leaderboard (below-the-fold, supplementary revenue) -->
+    <div class="ad-container ad-footer">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-3328839220107010"
+             data-ad-slot="1234567892"
+             data-ad-format="horizontal"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
 
     <footer class="site-footer">

@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess - Game Hub</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3328839220107010"
+         crossorigin="anonymous"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -22,6 +24,17 @@
     {% if room_id %}
     <a href="/" class="btn btn-lobby-back" id="lobby-back-btn">로비로</a>
     {% endif %}
+
+    <!-- Ad: game page leaderboard -->
+    <div class="ad-container ad-game-top">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-3328839220107010"
+             data-ad-slot="1234567894"
+             data-ad-format="horizontal"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
 
     <div class="game-container">
         <h1>Chess</h1>
