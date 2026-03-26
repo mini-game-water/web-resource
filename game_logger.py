@@ -151,6 +151,10 @@ def log_profile_update(user_id, fields_changed):
     log('user_activity', 'profile_update', user_id=user_id,
         fields_changed=fields_changed)
 
+def log_page_view(user_id, page, room_id=None, game=None, user_agent=None, referrer=None):
+    log('user_activity', 'page_view', user_id=user_id, page=page,
+        room_id=room_id, game=game, user_agent=user_agent, referrer=referrer)
+
 # Room activity
 def log_room_create(room_id, host, game, max_players, allow_spectate, allow_coaching):
     log('room_activity', 'room_create', room_id=room_id, host=host,

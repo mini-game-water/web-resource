@@ -79,7 +79,44 @@ All games render to `<canvas>` elements. Each JS file is wrapped in an IIFE (`((
 - DynamoDB room items use `room_id` as the key (not `id`). Templates reference `room.room_id`.
 - Game-over overlay variable names differ per game: bang/halligalli use `gameOverOverlay`, others use `overlay`. All use `gameOverMsg` for the message element.
 - Room navigation uses `window.location.replace()` (not `.href`) to avoid polluting browser history.
-- Environment variables: `AWS_REGION`, `USERS_TABLE`, `ROOMS_TABLE`, `SECRET_KEY`.
+- Environment variables: `AWS_REGION`, `USERS_TABLE`, `ROOMS_TABLE`, `SECRET_KEY`, `LOG_BUCKET`, `LOG_FLUSH_INTERVAL`.
+
+## Logging & Observability
+
+**Structured event logging** pipeline: App → S3 (gzipped NDJSON) → Athena (SQL) → Grafana (dashboards).
+
+**Logger (`game_logger.py`)**: Buffers JSON events in memory per category, flushes to S3 every `LOG_FLUSH_INTERVAL` seconds (default 60). Falls back to stdout if `LOG_BUCKET` is not set. Best-effort — never crashes the app on logging failure.
+
+**S3 storage structure**:
+```
+s3://{LOG_BUCKET}/{category}/year=YYYY/month=MM/day=DD/{category}-{suffix}.json.gz
+```
+
+**6 log categories** with their event types and fields:
+
+| Category | Event Types | Key Fields |
+|----------|------------|------------|
+| `user_activity` | `login`, `logout`, `register`, `status_change`, `profile_update`, `page_view` | `user_id`, `ip`, `page`, `game`, `user_agent`, `referrer` |
+| `room_activity` | `room_create`, `room_join`, `room_leave`, `room_delete`, `game_start`, `host_transfer`, `poker_mid_join` | `room_id`, `user_id`, `host`, `game`, `max_players`, `reason` |
+| `game_activity` | `game_move`, `game_over`, `player_eliminated`, `tetris_state`, `poker_hand`, `player_join_game` | `room_id`, `user_id`, `game`, `winner`, `loser`, `scores`, `move_data` |
+| `chat_activity` | `chat_message` | `room_id`, `user_id`, `role`, `message` |
+| `friend_activity` | `friend_add`, `invite_sent`, `invite_response` | `user_id`, `friend_id`, `room_id`, `inviter`, `invitee`, `accepted` |
+| `spectate_activity` | `spectate_join`, `spectate_leave`, `coaching_suggest`, `coaching_clear` | `room_id`, `user_id`, `game` |
+
+Every event includes: `event_id` (UUID), `timestamp` (ISO 8601 UTC), `epoch_ms`, `category`, `event_type`.
+
+**Athena** (`terraform/athena.tf`): 6 Glue catalog external tables with partition projection (year/month/day). JsonSerDe with malformed JSON tolerance. Workgroup: `gamehub`.
+
+**Grafana** (`terraform/grafana.tf`): AWS Managed Grafana workspace (`gamehub-grafana`), SSO auth, Athena data source. Dashboard: "GameHub Analytics Dashboard" with 18 panels:
+- **Row 0 — KPI Stats**: Active users, page views, games played, rooms created, chat messages, new registrations (stat panels)
+- **Row 1 — Time Series**: Events per hour stacked bar chart, logins/logouts line chart
+- **Row 2 — Distribution**: Page views by page (donut), games by type (donut), room event types (horizontal bar)
+- **Row 3 — User Analysis**: Top 15 active users (bar), top winners (bar)
+- **Row 4 — Detail Tables** (collapsed): Recent logins, page views, room activity, game results, chat messages
+
+**S3 lifecycle**: 30 days → STANDARD_IA, 90 days → GLACIER, 365 days → expiration. Athena results expire after 30 days.
+
+**Adding new log events**: Add convenience function in `game_logger.py`, call it from `app.py`, add column to Glue table in `athena.tf` if new fields are introduced, update Grafana dashboard if visualization is needed.
 
 ## Infrastructure (Terraform)
 

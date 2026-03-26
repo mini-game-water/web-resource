@@ -164,6 +164,8 @@ def logout():
 @login_required
 def index():
     uid = session['user_id']
+    game_logger.log_page_view(uid, 'index', user_agent=request.headers.get('User-Agent', ''),
+                              referrer=request.referrer)
     user = db.get_user(uid) or {}
     my_ip = user.get('public_ip', '')
 
@@ -205,6 +207,8 @@ def index():
 @app.route('/room/<room_id>')
 @login_required
 def room_page(room_id):
+    game_logger.log_page_view(session['user_id'], 'room', room_id=room_id,
+                              user_agent=request.headers.get('User-Agent', ''))
     room = db.get_room(room_id)
     if not room:
         return render_template('room_not_found.html'), 404
@@ -235,6 +239,9 @@ def _game_route(template):
     room_id = request.args.get('room_id', '')
     room = db.get_room(room_id) if room_id else None
     is_spectator = request.args.get('spectate') == '1'
+    game_name = template.replace('.html', '')
+    game_logger.log_page_view(session['user_id'], game_name, room_id=room_id or None,
+                              game=game_name, user_agent=request.headers.get('User-Agent', ''))
     my_player = None
     if room_id and not room:
         return render_template('room_not_found.html'), 404

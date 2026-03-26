@@ -119,6 +119,26 @@ resource "aws_glue_catalog_table" "user_activity" {
       name = "fields_changed"
       type = "array<string>"
     }
+    columns {
+      name = "page"
+      type = "string"
+    }
+    columns {
+      name = "room_id"
+      type = "string"
+    }
+    columns {
+      name = "game"
+      type = "string"
+    }
+    columns {
+      name = "user_agent"
+      type = "string"
+    }
+    columns {
+      name = "referrer"
+      type = "string"
+    }
   }
 
   partition_keys {
