@@ -1,0 +1,135 @@
+/* ===== Game Hub Shared Animations ===== */
+
+/* ── Confetti Celebration ── */
+.confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9999;
+    overflow: hidden;
+}
+.confetti-piece {
+    position: absolute;
+    top: -20px;
+    width: 10px;
+    height: 10px;
+    opacity: 0;
+    animation: confetti-fall var(--fall-dur, 2.5s) ease-in forwards;
+    animation-delay: var(--delay, 0s);
+}
+@keyframes confetti-fall {
+    0% { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(100vh) rotate(var(--rot, 720deg)) scale(0.5); }
+}
+
+/* ── Screen Shake ── */
+.game-shake {
+    animation: shake 0.5s ease-in-out;
+}
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10% { transform: translateX(-8px); }
+    20% { transform: translateX(8px); }
+    30% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    50% { transform: translateX(-4px); }
+    60% { transform: translateX(4px); }
+    70% { transform: translateX(-2px); }
+    80% { transform: translateX(2px); }
+}
+
+/* ── Flash Effect (line clear, valid set) ── */
+.flash-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    pointer-events: none;
+    z-index: 100;
+    animation: flash-fade 0.3s ease-out forwards;
+}
+@keyframes flash-fade {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* ── Ripple Effect (stone/piece placement) ── */
+.ripple-effect {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    pointer-events: none;
+    z-index: 100;
+    animation: ripple-expand 0.6s ease-out forwards;
+}
+@keyframes ripple-expand {
+    0% { width: 0; height: 0; opacity: 1; }
+    100% { width: 60px; height: 60px; opacity: 0; margin-top: -30px; margin-left: -30px; }
+}
+
+/* ── Glow Pulse (valid set, check) ── */
+.glow-pulse {
+    animation: glow 0.8s ease-in-out;
+}
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 0 rgba(76, 175, 80, 0); }
+    50% { box-shadow: 0 0 20px rgba(76, 175, 80, 0.6), 0 0 40px rgba(76, 175, 80, 0.3); }
+}
+
+/* ── Sparkle Effect (gem collect) ── */
+.sparkle-effect {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 100;
+    animation: sparkle 0.6s ease-out forwards;
+    animation-delay: var(--delay, 0s);
+}
+@keyframes sparkle {
+    0% { opacity: 1; transform: translate(0, 0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--tx, 20px), var(--ty, -20px)) scale(0); }
+}
+
+/* ── Slide In (card/tile placement) ── */
+.slide-in-right {
+    animation: slide-right 0.3s ease-out;
+}
+@keyframes slide-right {
+    0% { transform: translateX(50px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
+.slide-in-up {
+    animation: slide-up 0.3s ease-out;
+}
+@keyframes slide-up {
+    0% { transform: translateY(30px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+/* ── Bounce In ── */
+.bounce-in {
+    animation: bounce-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes bounce-in {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Damage/Hit flash ── */
+.damage-flash {
+    animation: damage-red 0.4s ease-out;
+}
+@keyframes damage-red {
+    0% { background-color: rgba(255, 0, 0, 0.3); }
+    100% { background-color: transparent; }
+}

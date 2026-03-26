@@ -125,7 +125,6 @@ def login():
             ip = client_ip()
             db.update_user_login(uid, ip)
             game_logger.log_login(uid, ip)
-            broadcast_friend_status(uid, 'online', ip)
             return redirect(url_for('index'))
         error = '아이디 또는 비밀번호가 올바르지 않습니다.'
     return render_template('login.html', error=error)
@@ -154,7 +153,6 @@ def logout():
     if uid:
         db.update_user_logout(uid)
         game_logger.log_logout(uid)
-        broadcast_friend_status(uid, 'offline')
     return redirect(url_for('login'))
 
 
@@ -561,6 +559,9 @@ def on_join_lobby(data):
     lobby_sids[uid] = request.sid
     sid_info[request.sid] = {'user_id': uid, 'room_id': 'lobby', 'context': 'lobby'}
     broadcast_rooms()
+    user = db.get_user(uid)
+    ip = user.get('public_ip', '') if user else ''
+    broadcast_friend_status(uid, 'online', ip)
 
 
 @socketio.on('user_status')
@@ -873,6 +874,7 @@ def on_disconnect():
     if info['context'] == 'lobby':
         if uid in lobby_sids and lobby_sids[uid] == request.sid:
             del lobby_sids[uid]
+        broadcast_friend_status(uid, 'offline')
         leave_room('lobby')
     elif info['context'] == 'waiting':
         leave_room(rid)

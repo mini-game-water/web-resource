@@ -486,6 +486,7 @@
         clearTurnTimer();
 
         turnFlipped = true;
+        if (typeof GameSounds !== 'undefined') GameSounds.play('flip');
 
         // Take top card from deck and put on discard
         const card = players[playerIdx].deck.pop();
@@ -549,6 +550,7 @@
 
         if (correct) {
             // Correct ring! Collect all discard piles
+            if (typeof GameSounds !== 'undefined') GameSounds.play('bell');
             bellBtn.classList.remove('pulse');
             bellBtn.classList.add('ring-correct');
             setTimeout(() => bellBtn.classList.remove('ring-correct'), 500);
@@ -594,6 +596,7 @@
 
         } else {
             // Wrong ring! Penalty: give 1 card to each other player
+            if (typeof GameSounds !== 'undefined') GameSounds.play('buzz');
             bellBtn.classList.remove('pulse');
             bellBtn.classList.add('ring-wrong');
             setTimeout(() => {
@@ -737,6 +740,8 @@
         gameOverTitle.textContent = isMyWin ? '승리!' : '게임 종료';
         gameOverMsg.textContent = `${winnerName} 승리!`;
         gameOverOverlay.classList.add('active');
+        if (typeof GameSounds !== 'undefined') GameSounds.play(isMyWin ? 'win' : 'lose');
+        if (typeof GameAnimations !== 'undefined') { if (isMyWin) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body); }
 
         setRoundInfo('게임 종료');
         updatePlayerCards();
@@ -1070,6 +1075,8 @@
                 const msg = data.winner === myUser ? '승리! 상대방이 나갔습니다.' : data.winner + '님이 승리했습니다.';
                 if (gameOverMsg) gameOverMsg.textContent = msg;
                 if (gameOverOverlay) gameOverOverlay.classList.add('active');
+                if (typeof GameSounds !== 'undefined') GameSounds.play(data.winner === myUser ? 'win' : 'lose');
+                if (typeof GameAnimations !== 'undefined') { if (data.winner === myUser) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body); }
             });
 
             // Admin force-closed room

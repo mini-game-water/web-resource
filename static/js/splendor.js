@@ -632,6 +632,7 @@
         p.bonuses[card.bonus] = (p.bonuses[card.bonus] || 0) + 1;
         p.points += card.pts;
         p.cards.push(card);
+        if (typeof GameSounds !== 'undefined') GameSounds.play('place');
 
         // Remove from table or reserved
         for (let t = 0; t < 3; t++) {
@@ -657,6 +658,7 @@
                 p.gems[color] = (p.gems[color] || 0) + 1;
             }
         });
+        if (typeof GameSounds !== 'undefined') GameSounds.play('chip');
     }
 
     function reserveCard(card, playerIdx) {
@@ -664,6 +666,7 @@
         if (p.reserved.length >= 3) return false;
 
         p.reserved.push(card);
+        if (typeof GameSounds !== 'undefined') GameSounds.play('click');
 
         // Remove from table
         for (let t = 0; t < 3; t++) {
@@ -766,6 +769,14 @@
         gameOverMsg.textContent = msg;
         gameOverMsg.style.whiteSpace = 'pre-line';
         overlay.classList.add('active');
+        if (typeof GameSounds !== 'undefined') {
+            const isMyWin = players.indexOf(winner) === myIndex;
+            GameSounds.play(isMyWin ? 'win' : 'lose');
+        }
+        if (typeof GameAnimations !== 'undefined') {
+            const isMyWin = players.indexOf(winner) === myIndex;
+            if (isMyWin) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body);
+        }
 
         if (isMultiplayer && isHost) {
             broadcastState();
@@ -1427,6 +1438,8 @@
                 const msg = data.winner === myUser ? '승리! 상대방이 나갔습니다.' : data.winner + '님이 승리했습니다.';
                 if (gameOverMsg) gameOverMsg.textContent = msg;
                 if (overlay) overlay.classList.add('active');
+                if (typeof GameSounds !== 'undefined') GameSounds.play(data.winner === myUser ? 'win' : 'lose');
+                if (typeof GameAnimations !== 'undefined') { if (data.winner === myUser) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body); }
             });
 
             socket.on('room_force_closed', (data) => {

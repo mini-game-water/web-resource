@@ -262,6 +262,13 @@
         board[tr][tc] = piece;
         board[fr][fc] = " ";
 
+        // Sound effects for moves and captures
+        if (captured !== " " || (type === "P" && enPassant && tr === enPassant?.row && tc === enPassant?.col)) {
+            if (typeof GameSounds !== 'undefined') GameSounds.play('capture');
+        } else {
+            if (typeof GameSounds !== 'undefined') GameSounds.play('place');
+        }
+
         if (type === "P" && (tr === 0 || tr === 7))
             board[tr][tc] = side === "w" ? "Q" : "q";
 
@@ -283,6 +290,13 @@
         if (capturedIsKing) {
             gameOver = true;
             const winner = side === "w" ? "White" : "Black";
+            if (isMultiplayer && mySide !== null) {
+                if (typeof GameSounds !== 'undefined') GameSounds.play(side === mySide ? 'win' : 'lose');
+                if (typeof GameAnimations !== 'undefined') { if (side === mySide) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body); }
+            } else if (!isMultiplayer) {
+                if (typeof GameSounds !== 'undefined') GameSounds.play('win');
+                if (typeof GameAnimations !== 'undefined') GameAnimations.showConfetti();
+            }
             document.getElementById("status").textContent = `${winner} wins! King captured!`;
             document.getElementById("game-over-message").textContent = `${winner} wins!`;
             document.getElementById("game-over-overlay").classList.add("active");
@@ -318,6 +332,14 @@
             gameOver = true;
             if (inCheck) {
                 const winner = turn === "w" ? "Black" : "White";
+                const winningSide = turn === "w" ? "b" : "w";
+                if (isMultiplayer && mySide !== null) {
+                    if (typeof GameSounds !== 'undefined') GameSounds.play(mySide === winningSide ? 'win' : 'lose');
+                    if (typeof GameAnimations !== 'undefined') { if (mySide === winningSide) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body); }
+                } else if (!isMultiplayer) {
+                    if (typeof GameSounds !== 'undefined') GameSounds.play('win');
+                    if (typeof GameAnimations !== 'undefined') GameAnimations.showConfetti();
+                }
                 document.getElementById("status").textContent = `Checkmate! ${winner} wins!`;
                 document.getElementById("game-over-message").textContent = `Checkmate! ${winner} wins!`;
             } else {
@@ -326,6 +348,7 @@
             }
             document.getElementById("game-over-overlay").classList.add("active");
         } else if (inCheck) {
+            if (typeof GameSounds !== 'undefined') GameSounds.play('check');
             document.getElementById("status").textContent = `${turnName}'s Turn (Check!)${statusSuffix}`;
         } else {
             document.getElementById("status").textContent = `${turnName}'s Turn${statusSuffix}`;
@@ -659,6 +682,8 @@
         function showVictoryByLeave() {
             if (gameOver || isSpectator) return;
             gameOver = true;
+            if (typeof GameSounds !== 'undefined') GameSounds.play('win');
+            if (typeof GameAnimations !== 'undefined') GameAnimations.showConfetti();
             document.getElementById("status").textContent = "승리!";
             document.getElementById("game-over-message").innerHTML = '승리!<br><span class="disconnect-sub">상대방이 나갔습니다!</span>';
             document.getElementById("game-over-overlay").classList.add("active");

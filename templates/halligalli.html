@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Halli Galli - Game Hub</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
     <style>
         .hg-table-wrap {
             display: flex;
@@ -15,6 +16,7 @@
         .hg-table {
             position: relative;
             width: 700px;
+            max-width: 95vw;
             height: 700px;
             background: radial-gradient(ellipse at center, #4a7c3a 0%, #2d6b28 60%, #1a4f18 100%);
             border-radius: 50%;
@@ -319,9 +321,19 @@
             font-size: 0.85rem;
             margin-top: 0.5rem;
         }
+        @media (max-width: 768px) {
+            .hg-table { transform: scale(0.85); transform-origin: top center; }
+            .hg-table-wrap { height: calc(700px * 0.85 + 2rem); }
+        }
+        @media (max-width: 500px) {
+            .hg-table { transform: scale(0.6); transform-origin: top center; }
+            .hg-table-wrap { height: calc(700px * 0.6 + 2rem); }
+        }
     </style>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3328839220107010"
          crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -337,6 +349,8 @@
         </div>
         {% endif %}
     </nav>
+    <button id="sound-toggle" class="sound-toggle-btn" onclick="const m=GameSounds.toggleMute();this.textContent=m?'🔇':'🔊'" title="소리 켜기/끄기"></button>
+    <script>document.getElementById('sound-toggle').textContent=GameSounds.isMuted()?'🔇':'🔊';</script>
     {% if room_id %}
     <a href="/" class="btn btn-lobby-back" id="lobby-back-btn">로비로</a>
     {% endif %}

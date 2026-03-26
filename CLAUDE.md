@@ -80,43 +80,8 @@ All games render to `<canvas>` elements. Each JS file is wrapped in an IIFE (`((
 - Game-over overlay variable names differ per game: bang/halligalli use `gameOverOverlay`, others use `overlay`. All use `gameOverMsg` for the message element.
 - Room navigation uses `window.location.replace()` (not `.href`) to avoid polluting browser history.
 - Environment variables: `AWS_REGION`, `USERS_TABLE`, `ROOMS_TABLE`, `SECRET_KEY`, `LOG_BUCKET`, `LOG_FLUSH_INTERVAL`.
-
-## Logging & Observability
-
-**Structured event logging** pipeline: App → S3 (gzipped NDJSON) → Athena (SQL) → Grafana (dashboards).
-
-**Logger (`game_logger.py`)**: Buffers JSON events in memory per category, flushes to S3 every `LOG_FLUSH_INTERVAL` seconds (default 60). Falls back to stdout if `LOG_BUCKET` is not set. Best-effort — never crashes the app on logging failure.
-
-**S3 storage structure**:
-```
-s3://{LOG_BUCKET}/{category}/year=YYYY/month=MM/day=DD/{category}-{suffix}.json.gz
-```
-
-**6 log categories** with their event types and fields:
-
-| Category | Event Types | Key Fields |
-|----------|------------|------------|
-| `user_activity` | `login`, `logout`, `register`, `status_change`, `profile_update`, `page_view` | `user_id`, `ip`, `page`, `game`, `user_agent`, `referrer` |
-| `room_activity` | `room_create`, `room_join`, `room_leave`, `room_delete`, `game_start`, `host_transfer`, `poker_mid_join` | `room_id`, `user_id`, `host`, `game`, `max_players`, `reason` |
-| `game_activity` | `game_move`, `game_over`, `player_eliminated`, `tetris_state`, `poker_hand`, `player_join_game` | `room_id`, `user_id`, `game`, `winner`, `loser`, `scores`, `move_data` |
-| `chat_activity` | `chat_message` | `room_id`, `user_id`, `role`, `message` |
-| `friend_activity` | `friend_add`, `invite_sent`, `invite_response` | `user_id`, `friend_id`, `room_id`, `inviter`, `invitee`, `accepted` |
-| `spectate_activity` | `spectate_join`, `spectate_leave`, `coaching_suggest`, `coaching_clear` | `room_id`, `user_id`, `game` |
-
-Every event includes: `event_id` (UUID), `timestamp` (ISO 8601 UTC), `epoch_ms`, `category`, `event_type`.
-
-**Athena** (`terraform/athena.tf`): 6 Glue catalog external tables with partition projection (year/month/day). JsonSerDe with malformed JSON tolerance. Workgroup: `gamehub`.
-
-**Grafana** (`terraform/grafana.tf`): AWS Managed Grafana workspace (`gamehub-grafana`), SSO auth, Athena data source. Dashboard: "GameHub Analytics Dashboard" with 18 panels:
-- **Row 0 — KPI Stats**: Active users, page views, games played, rooms created, chat messages, new registrations (stat panels)
-- **Row 1 — Time Series**: Events per hour stacked bar chart, logins/logouts line chart
-- **Row 2 — Distribution**: Page views by page (donut), games by type (donut), room event types (horizontal bar)
-- **Row 3 — User Analysis**: Top 15 active users (bar), top winners (bar)
-- **Row 4 — Detail Tables** (collapsed): Recent logins, page views, room activity, game results, chat messages
-
-**S3 lifecycle**: 30 days → STANDARD_IA, 90 days → GLACIER, 365 days → expiration. Athena results expire after 30 days.
-
-**Adding new log events**: Add convenience function in `game_logger.py`, call it from `app.py`, add column to Glue table in `athena.tf` if new fields are introduced, update Grafana dashboard if visualization is needed.
+- Sound/animation guard pattern: Always use `if (typeof GameSounds !== 'undefined') GameSounds.play('name');` and `if (typeof GameAnimations !== 'undefined') GameAnimations.method();` to avoid errors if scripts aren't loaded.
+- `broadcast_friend_status` must be called from SocketIO handlers (`join_lobby`, `disconnect`), NOT from HTTP routes (`login`, `logout`). HTTP routes fire before the browser connects to SocketIO, so the event reaches the lobby room before the user joins it.
 
 ## Infrastructure (Terraform)
 
@@ -136,40 +101,65 @@ Domain: `jeonmyeonghwan-security.cloud` (Route53 hosted zone). Region: `us-east-
 
 GitHub repo: `https://github.com/mini-game-water/web-resource.git`. Deploy via `deploy.sh` on EC2 — clones repo, builds Docker image, runs container with env vars. `user_data.sh` embeds `deploy.sh` into `/home/ec2-user/deploy.sh` at EC2 provisioning time.
 
-## Known Pitfalls & Checklists
+## Logging & Observability
 
-Past bugs and infrastructure issues that have been resolved. Review these before making changes to avoid repeating them.
+**Structured event logging** pipeline: App → S3 (gzipped NDJSON) → Athena (SQL) → Grafana (dashboards).
+
+**Logger (`game_logger.py`)**: Buffers JSON events in memory per category, flushes to S3 every `LOG_FLUSH_INTERVAL` seconds (default 60). Falls back to stdout if `LOG_BUCKET` is not set. Best-effort — never crashes the app on logging failure.
+
+**S3 storage structure**: `s3://{LOG_BUCKET}/{category}/year=YYYY/month=MM/day=DD/{category}-{suffix}.json.gz`
+
+**6 log categories** with their event types:
+
+| Category | Event Types | Key Fields |
+|----------|------------|------------|
+| `user_activity` | `login`, `logout`, `register`, `status_change`, `profile_update`, `page_view` | `user_id`, `ip`, `page`, `game`, `user_agent`, `referrer` |
+| `room_activity` | `room_create`, `room_join`, `room_leave`, `room_delete`, `game_start`, `host_transfer`, `poker_mid_join` | `room_id`, `user_id`, `host`, `game`, `max_players`, `reason` |
+| `game_activity` | `game_move`, `game_over`, `player_eliminated`, `tetris_state`, `poker_hand`, `player_join_game` | `room_id`, `user_id`, `game`, `winner`, `loser`, `scores`, `move_data` |
+| `chat_activity` | `chat_message` | `room_id`, `user_id`, `role`, `message` |
+| `friend_activity` | `friend_add`, `invite_sent`, `invite_response` | `user_id`, `friend_id`, `room_id`, `inviter`, `invitee`, `accepted` |
+| `spectate_activity` | `spectate_join`, `spectate_leave`, `coaching_suggest`, `coaching_clear` | `room_id`, `user_id`, `game` |
+
+## Sound & Animation System
+
+**Sounds (`static/js/sounds.js`)**: Web Audio API-based procedural sound generation. 12 sounds: `click`, `place`, `capture`, `flip`, `roll`, `bell`, `win`, `lose`, `check`, `chip`, `buzz`, `tick`. Mute state persisted to `localStorage('gamehub_muted')`. Mute toggle button (`.sound-toggle-btn`) on all 9 game pages.
+
+**Animations (`static/css/animations.css` + `static/js/animations.js`)**: CSS keyframe animations triggered via JS. Effects: `showConfetti()` (win), `showShake(el)` (lose/damage), `showFlash(el)`, `showRipple(el, x, y)`, `showGlow(el)`, `showSparkle(el, color)`, `showDamage(el)`, `bounceIn(el)`. All use `pointer-events: none` overlays.
+
+## Known Pitfalls & Checklists
 
 ### Frontend (Game JS files)
 
-- **Always null-check DOM elements** before `.addEventListener()`. Elements inside `{% if %}` / `{% else %}` Jinja blocks (e.g., `restart-btn`, `start-btn`) don't exist in all modes (solo vs multiplayer vs spectator). Calling `.addEventListener()` on `null` crashes the entire IIFE and silently kills SocketIO — making it look like a server bug. The 4 original games had null guards; 5 newer games did not. All 9 now have them.
-- **Chat resize math for NW-resize**: The resize handle is on the top-left corner. Correct formula: `newW = startW + (startX - e.clientX)`, NOT `startW + (e.clientX - startX)`. Must also adjust `left`/`top` position to keep bottom-right anchored. bang.js was the only file with wrong math; now fixed.
-- **Use `window.location.replace()` not `.href`** for game redirects (e.g., waiting room → game page). `.href` adds the waiting room to browser history, requiring 2 back-button presses to exit.
-- **Game-over overlay variable names differ per game**: bang/halligalli use `gameOverOverlay`, others use `overlay`. All use `gameOverMsg`. When adding `game_winner` or similar handlers, use the correct variable for each game.
-- **All 9 games must handle the `game_winner` socket event** — server emits it when only 1 player remains after disconnect. Without this handler, the last player gets stuck in an empty room.
+- **Always null-check DOM elements** before `.addEventListener()`. Elements inside `{% if %}` / `{% else %}` Jinja blocks don't exist in all modes. Calling `.addEventListener()` on `null` crashes the entire IIFE and silently kills SocketIO.
+- **Chat resize math for NW-resize**: `newW = startW + (startX - e.clientX)`, NOT `startW + (e.clientX - startX)`. Must also adjust `left`/`top` position.
+- **Use `window.location.replace()` not `.href`** for game redirects to avoid polluting browser history.
+- **Game-over overlay variable names differ per game**: bang/halligalli use `gameOverOverlay`, others use `overlay`. All use `gameOverMsg`.
+- **All 9 games must handle the `game_winner` socket event** — server emits it when only 1 player remains after disconnect.
 
 ### Backend (app.py / SocketIO)
 
-- **CSRF does NOT apply to SocketIO**: Flask-SocketIO's WSGI middleware intercepts `/socket.io/` before Flask's `before_request` fires. `WTF_CSRF_CHECK_DEFAULT = False` + manual `csrf.protect()` skipping `/socket.io` is the correct pattern.
-- **`cors_allowed_origins='*'`** is required on the SocketIO init when behind ALB/reverse proxy. Without it, `python-engineio` actively rejects connections with 400 "Not an accepted origin".
-- **Disconnect handler must check `game_conns` count**: When `len(game_conns[rid]) == 1` after a disconnect, emit `game_winner` to the remaining player and call `destroy_game_room()`.
+- **CSRF does NOT apply to SocketIO**: `WTF_CSRF_CHECK_DEFAULT = False` + manual `csrf.protect()` skipping `/socket.io` is the correct pattern.
+- **`cors_allowed_origins='*'`** is required on SocketIO init when behind ALB/reverse proxy.
+- **Disconnect handler must check `game_conns` count**: When 1 player remains, emit `game_winner` and call `destroy_game_room()`.
+- **`broadcast_friend_status` timing**: Must be called from SocketIO handlers (`join_lobby`, `disconnect`), NOT from HTTP routes. HTTP routes fire before the browser connects to SocketIO.
 
 ### Templates (HTML)
 
-- **AdSense script must be in `<head>` of ALL 13 templates** for site ownership verification — including `login.html` and `room_not_found.html`, not just game pages.
-- **Ad containers must not be placed inside flex layouts** (e.g., `.waiting-layout`). This breaks the 2-column layout. Place ads outside/below the flex container.
-- **`data-ad-slot` must be a real slot ID** from the AdSense dashboard, not `"auto"`. Placeholder IDs (`1234567890`–`1234567894`) are currently in use and need to be replaced.
+- **AdSense script must be in `<head>` of ALL 13 templates** for site verification — including `login.html` and `room_not_found.html`.
+- **Ad containers must not be inside flex layouts** (e.g., `.waiting-layout`). Place ads outside/below.
+- **`data-ad-slot` must be a real slot ID** from AdSense dashboard, not `"auto"`.
 
 ### Infrastructure (Terraform / AWS)
 
-- **Grafana `grafana-athena-datasource` plugin must be explicitly installed** in the workspace `configuration` block: `plugins = ["grafana-athena-datasource"]`. Without it, Grafana shows "Datasource was not found" even though the data source resource exists in Terraform state. `data_sources = ["ATHENA"]` only grants IAM permissions — it does NOT install the plugin.
-- **Grafana API key has 30-day TTL** (`aws_grafana_workspace_api_key`). If `terraform apply` fails with auth errors on Grafana resources, the key has expired. Taint and recreate: `terraform taint aws_grafana_workspace_api_key.terraform && terraform apply`.
-- **After taining a Grafana data source**, the dashboard must also be re-applied since it references the data source UID. Always target both: `terraform apply -target=grafana_data_source.athena -target=grafana_dashboard.gamehub_logs`.
-- **`user_data.sh` contains Terraform template variables** (`${aws_region}`, `${app_secret_key}`, `${log_bucket}`, `${docker_image}`) that are interpolated at plan/apply time. The embedded `deploy.sh` inside it also uses these variables — do NOT use heredoc with single-quoted delimiter (`'EOF'`) for the deploy script section if you want variable interpolation inside it.
-- **S3 log path structure** must match Glue table partition projection exactly: `{category}/year=YYYY/month=MM/day=DD/`. If `game_logger.py` path format changes, update `storage.location.template` in `athena.tf` to match.
+- **Grafana workspace `configuration` JSON format varies by version**. For Grafana 10.4, the `plugins` block only accepts `pluginAdminEnabled: true` — you CANNOT pre-install plugins (e.g., `grafana-athena-datasource`) via the configuration JSON. Attempting to include a `plugins` list causes `ValidationException: The JSON provided in the configuration property is invalid for the grafanaVersion 10.4`. Instead, set `pluginAdminEnabled = true` and install plugins manually from the Grafana workspace UI after creation.
+- **`grafana-athena-datasource` plugin must be manually installed** in the Grafana workspace UI (Administration > Plugins > Athena). `data_sources = ["ATHENA"]` only grants IAM permissions — it does NOT install the plugin. Without the plugin, Grafana shows "Datasource was not found".
+- **Grafana API key has 30-day TTL** (`aws_grafana_workspace_api_key`). If `terraform apply` fails with auth errors on Grafana resources, taint and recreate: `terraform taint aws_grafana_workspace_api_key.terraform && terraform apply`.
+- **After tainting a Grafana data source**, the dashboard must also be re-applied since it references the data source UID. Always target both: `terraform apply -target=grafana_data_source.athena -target=grafana_dashboard.gamehub_logs`.
+- **`user_data.sh` contains Terraform template variables** (`${aws_region}`, `${app_secret_key}`, `${log_bucket}`, `${docker_image}`) interpolated at plan/apply time. The embedded `deploy.sh` also uses these — do NOT use single-quoted heredoc (`'EOF'`) if you want variable interpolation.
+- **S3 log path structure** must match Glue table partition projection exactly: `{category}/year=YYYY/month=MM/day=DD/`. If `game_logger.py` path format changes, update `storage.location.template` in `athena.tf`.
 
 ### Debugging Multiplayer Issues
 
-- **Check browser console (F12) first** — client-side JS crashes silently prevent SocketIO from connecting, making issues look server-side. `TypeError: Cannot read properties of null` is the most common culprit.
+- **Check browser console (F12) first** — client-side JS crashes silently prevent SocketIO from connecting, making issues look server-side.
 - **Test with regular + incognito windows** to simulate 2 players.
 - **Docker logs show NO SocketIO connections** → the problem is client-side (JS crash before socket connects), not server-side.

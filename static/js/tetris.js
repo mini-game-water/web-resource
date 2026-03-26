@@ -105,6 +105,7 @@
                 if (ny < 0) { endGame(); return; }
                 board[ny][piece.x + c] = piece.type;
             }
+        if (typeof GameSounds !== 'undefined') GameSounds.play('place');
         clearLines();
         spawn();
     }
@@ -120,6 +121,11 @@
             }
         }
         if (cleared > 0) {
+            if (typeof GameSounds !== 'undefined') GameSounds.play('flip');
+            if (typeof GameAnimations !== 'undefined') {
+                const gameContainer = canvas ? canvas.parentElement : document.body;
+                GameAnimations.showFlash(gameContainer);
+            }
             const pts = [0, 100, 300, 500, 800];
             score += pts[cleared] * level;
             lines += cleared;
@@ -146,10 +152,14 @@
             socket.emit('game_over_event', { room_id: ROOM_ID, user_id: MY_USER, loser: MY_USER });
             // For 2-player: show lose immediately. For multi-player: wait for game_winner.
             if (typeof ROOM_PLAYERS !== 'undefined' && ROOM_PLAYERS.length <= 2) {
+                if (typeof GameSounds !== 'undefined') GameSounds.play('lose');
+                if (typeof GameAnimations !== 'undefined') GameAnimations.showShake(document.body);
                 document.getElementById("game-over-title").textContent = "패배!";
                 document.getElementById("game-over-overlay").classList.add("active");
             }
         } else {
+            if (typeof GameSounds !== 'undefined') GameSounds.play('lose');
+            if (typeof GameAnimations !== 'undefined') GameAnimations.showShake(document.body);
             document.getElementById("game-over-overlay").classList.add("active");
         }
     }
@@ -666,8 +676,12 @@
                 if (scoreEl) scoreEl.textContent = score;
                 const titleEl = document.getElementById("game-over-title");
                 if (data.winner === MY_USER) {
+                    if (typeof GameSounds !== 'undefined') GameSounds.play('win');
+                    if (typeof GameAnimations !== 'undefined') GameAnimations.showConfetti();
                     titleEl.textContent = '승리!';
                 } else {
+                    if (typeof GameSounds !== 'undefined') GameSounds.play('lose');
+                    if (typeof GameAnimations !== 'undefined') GameAnimations.showShake(document.body);
                     titleEl.textContent = '패배!';
                 }
                 document.getElementById("game-over-overlay").classList.add("active");
@@ -678,6 +692,8 @@
                 if (gameOver) return;
                 gameOver = true;
                 clearInterval(timer);
+                if (typeof GameSounds !== 'undefined') GameSounds.play('win');
+                if (typeof GameAnimations !== 'undefined') GameAnimations.showConfetti();
                 document.getElementById("final-score").textContent = score;
                 document.getElementById("game-over-title").innerHTML = '승리!';
                 document.getElementById("game-over-overlay").classList.add("active");
@@ -695,6 +711,8 @@
                     if (gameOver) return;
                     gameOver = true;
                     clearInterval(timer);
+                    if (typeof GameSounds !== 'undefined') GameSounds.play('win');
+                    if (typeof GameAnimations !== 'undefined') GameAnimations.showConfetti();
                     document.getElementById("final-score").textContent = score;
                     document.getElementById("game-over-title").innerHTML = '승리!<br><span class="disconnect-sub">상대방이 나갔습니다!</span>';
                     document.getElementById("game-over-overlay").classList.add("active");

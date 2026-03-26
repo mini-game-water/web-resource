@@ -99,11 +99,11 @@ resource "aws_grafana_workspace" "gamehub" {
   role_arn                 = aws_iam_role.grafana.arn
   data_sources             = ["ATHENA"]
 
+  grafana_version = "10.4"
+
   configuration = jsonencode({
-    plugins = {
-      pluginAdminEnabled = true
-      plugins            = ["grafana-athena-datasource"]
-    }
+    plugins            = { pluginAdminEnabled = true }
+    unifiedAlerting    = { enabled = true }
   })
 
   tags = { Name = "gamehub-grafana" }

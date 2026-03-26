@@ -239,6 +239,7 @@
                 const el = createCardElement(card, false, extraClass);
                 el.classList.add(fromLeft ? 'dealing-left' : 'dealing');
                 container.appendChild(el);
+                if (typeof GameSounds !== 'undefined') GameSounds.play('flip');
                 if (faceUp) {
                     setTimeout(() => flipCard(el), 300);
                 }
@@ -701,7 +702,7 @@
         // Update round info
         const phaseNames = {
             'idle': '\uac8c\uc784\uc744 \uc2dc\uc791\ud558\uc138\uc694',
-            'preflop': '\ud504\ub9ac\ud50c\ub7cd \ubca0\ud305',
+            'preflop': '\ud504\ub9ac\ud50c\ub78d \ubca0\ud305',
             'flop': '\ud50c\ub7cd \ubca0\ud305',
             'turn': '\ud134 \ubca0\ud305',
             'river': '\ub9ac\ubc84 \ubca0\ud305',
@@ -837,7 +838,7 @@
         showPlayerAction(bb, 'BB ' + bbAmount);
         roundBet = BIG_BLIND;
 
-        roundInfo.textContent = '\ud504\ub9ac\ud50c\ub7cd - \uce74\ub4dc\ub97c \ubc30\ubd84 \uc911...';
+        roundInfo.textContent = '\ud504\ub9ac\ud50c\ub78d - \uce74\ub4dc\ub97c \ubc30\ubd84 \uc911...';
         updatePlayerInfo();
 
         // Deal hole cards
@@ -871,7 +872,7 @@
         currentPlayerIndex = nextActivePlayer(bb);
         if (currentPlayerIndex === -1) currentPlayerIndex = bb;
 
-        roundInfo.textContent = '\ud504\ub9ac\ud50c\ub7cd \ubca0\ud305';
+        roundInfo.textContent = '\ud504\ub9ac\ud50c\ub78d \ubca0\ud305';
         broadcastState();
         await bettingLoop();
 
@@ -1174,6 +1175,11 @@
 
     function showGameOver(title, msg) {
         gameOver = true;
+        if (typeof GameSounds !== 'undefined') {
+            if (title === '\uc2b9\ub9ac!') GameSounds.play('win');
+            else GameSounds.play('lose');
+        }
+        if (typeof GameAnimations !== 'undefined') { if (title === '\uc2b9\ub9ac!') GameAnimations.showConfetti(); else GameAnimations.showShake(document.body); }
         gameOverTitle.textContent = title;
         gameOverMsg.textContent = msg;
         overlay.style.display = 'flex';
@@ -1186,6 +1192,7 @@
     if (btnFold) btnFold.addEventListener('click', async () => {
         if (currentPlayerIndex !== myIndex) return;
         if (isSpectator) return;
+        if (typeof GameSounds !== 'undefined') GameSounds.play('lose');
 
         if (isMultiplayer && !isHost) {
             // Non-host sends action to host
@@ -1206,6 +1213,7 @@
     if (btnCheck) btnCheck.addEventListener('click', async () => {
         if (currentPlayerIndex !== myIndex) return;
         if (isSpectator) return;
+        if (typeof GameSounds !== 'undefined') GameSounds.play('chip');
 
         const toCall = roundBet - currentBets[myIndex];
 
@@ -1231,6 +1239,7 @@
     if (btnRaise) btnRaise.addEventListener('click', async () => {
         if (currentPlayerIndex !== myIndex) return;
         if (isSpectator) return;
+        if (typeof GameSounds !== 'undefined') GameSounds.play('chip');
 
         const raiseAmount = parseInt(raiseSlider.value);
 
@@ -1452,9 +1461,18 @@
             socket.on('game_winner', (data) => {
                 gameOver = true;
                 gameRunning = false;
-                const msg = data.winner === myUser ? '승리! 상대방이 나갔습니다.' : data.winner + '님이 승리했습니다.';
+                handInProgress = false;
+                if (_remoteActionResolve) {
+                    _remoteActionResolve({ action: 'fold' });
+                    _remoteActionResolve = null;
+                }
+                const isWinner = data.winner === myUser;
+                if (typeof GameSounds !== 'undefined') GameSounds.play(isWinner ? 'win' : 'lose');
+                if (typeof GameAnimations !== 'undefined') { if (isWinner) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body); }
+                const msg = isWinner ? '승리! 상대방이 나갔습니다.' : data.winner + '님이 승리했습니다.';
+                if (gameOverTitle) gameOverTitle.textContent = isWinner ? '승리!' : '게임 종료';
                 if (gameOverMsg) gameOverMsg.textContent = msg;
-                if (overlay) overlay.classList.add('active');
+                if (overlay) overlay.style.display = 'flex';
             });
 
             // Mid-game join for poker
@@ -1471,12 +1489,15 @@
                 if (leftIdx === -1) return;
 
                 disconnectedPlayers[leftIdx] = true;
+                folded[leftIdx] = true;
+
+                // Immediately update UI to show departure
+                updatePlayerInfo();
 
                 // If it's the disconnected player's turn and host is waiting, auto-fold
                 if (isHost && handInProgress && currentPlayerIndex === leftIdx && _remoteActionResolve) {
-                    executePlayerAction('fold', 0, leftIdx).then(() => {
-                        if (_remoteActionResolve) _remoteActionResolve({ action: 'fold' });
-                    });
+                    _remoteActionResolve({ action: 'fold' });
+                    _remoteActionResolve = null;
                 }
 
                 // Mark for removal after current hand ends

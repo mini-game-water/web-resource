@@ -635,6 +635,7 @@
         if (handIndex < 0 || handIndex >= p.hand.length) return;
         const card = p.hand.splice(handIndex, 1)[0];
         addToDiscard(card);
+        if (typeof GameSounds !== 'undefined') GameSounds.play('flip');
 
         addLog(p.name + '이(가) ' + card.name + '을(를) 사용했습니다.' +
             (targetIdx >= 0 ? ' (대상: ' + players[targetIdx].name + ')' : ''));
@@ -1071,6 +1072,7 @@
     function applyDamage(targetIdx, amount, sourceIdx) {
         const target = players[targetIdx];
         target.hp -= amount;
+        if (typeof GameSounds !== 'undefined') GameSounds.play('buzz');
         showTempResult(target.name + ' -' + amount + ' HP!');
         addLog(target.name + '이(가) ' + amount + ' 피해를 입었습니다.');
 
@@ -1195,6 +1197,14 @@
         }
         gameOverOverlay.classList.add('active');
         actionBar.classList.add('hidden');
+        if (typeof GameSounds !== 'undefined') {
+            const myRole = players[myIndex] ? players[myIndex].role : null;
+            GameSounds.play(myRole === winningRole ? 'win' : 'lose');
+        }
+        if (typeof GameAnimations !== 'undefined') {
+            const myRole = players[myIndex] ? players[myIndex].role : null;
+            if (myRole === winningRole) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body);
+        }
 
         if (isMultiplayer && socket) {
             socket.emit('game_over_event', { room_id: ROOM_ID, loser: '' });
@@ -1837,6 +1847,8 @@
                 const msg = data.winner === myUser ? '승리! 상대방이 나갔습니다.' : data.winner + '님이 승리했습니다.';
                 if (gameOverMsg) gameOverMsg.textContent = msg;
                 if (gameOverOverlay) gameOverOverlay.classList.add('active');
+                if (typeof GameSounds !== 'undefined') GameSounds.play(data.winner === myUser ? 'win' : 'lose');
+                if (typeof GameAnimations !== 'undefined') { if (data.winner === myUser) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body); }
             });
 
             socket.on('opponent_game_over', () => {

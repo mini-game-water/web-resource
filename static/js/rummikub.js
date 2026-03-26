@@ -203,6 +203,7 @@
                     selectedTiles.push(tile.id);
                     el.classList.add('selected');
                 }
+                if (typeof GameSounds !== 'undefined') GameSounds.play('click');
             });
         }
 
@@ -441,6 +442,7 @@
         }
 
         selectedTiles = selectedTiles.filter(id => id !== tile.id);
+        if (typeof GameSounds !== 'undefined') GameSounds.play('place');
         renderAll();
     }
 
@@ -460,6 +462,7 @@
 
         tableSets.push(tiles);
         selectedTiles = [];
+        if (typeof GameSounds !== 'undefined') GameSounds.play('place');
         renderAll();
     }
 
@@ -483,6 +486,7 @@
             tableSets[setIdx].push(tile);
         });
         selectedTiles = [];
+        if (typeof GameSounds !== 'undefined') GameSounds.play('place');
         renderAll();
     });
 
@@ -692,6 +696,7 @@
 
         // All table sets must be valid
         if (!validateTable()) {
+            if (typeof GameSounds !== 'undefined') GameSounds.play('buzz');
             alert('테이블의 모든 조합이 유효해야 합니다.');
             return;
         }
@@ -824,6 +829,11 @@
     function showGameOver(winnerIdx) {
         gameRunning = false;
         gameOver = true;
+        if (typeof GameSounds !== 'undefined') {
+            if (winnerIdx === myIndex) GameSounds.play('win');
+            else GameSounds.play('lose');
+        }
+        if (typeof GameAnimations !== 'undefined') { if (winnerIdx === myIndex) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body); }
 
         // Calculate penalty scores (remaining tiles in rack)
         const scores = [];
@@ -856,6 +866,8 @@
     function showGameOverStalemate() {
         gameRunning = false;
         gameOver = true;
+        if (typeof GameSounds !== 'undefined') GameSounds.play('lose');
+        if (typeof GameAnimations !== 'undefined') GameAnimations.showShake(document.body);
 
         // Lowest remaining tile total wins
         let minPenalty = Infinity;
@@ -1348,7 +1360,10 @@
             socket.on('game_winner', (data) => {
                 gameOver = true;
                 gameRunning = false;
-                const msg = data.winner === myUser ? '승리! 상대방이 나갔습니다.' : data.winner + '님이 승리했습니다.';
+                const isWinner = data.winner === myUser;
+                if (typeof GameSounds !== 'undefined') GameSounds.play(isWinner ? 'win' : 'lose');
+                if (typeof GameAnimations !== 'undefined') { if (isWinner) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body); }
+                const msg = isWinner ? '승리! 상대방이 나갔습니다.' : data.winner + '님이 승리했습니다.';
                 if (gameOverMsg) gameOverMsg.textContent = msg;
                 if (overlay) overlay.classList.add('active');
             });

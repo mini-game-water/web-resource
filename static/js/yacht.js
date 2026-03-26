@@ -265,6 +265,7 @@
         if (isSpectator) return;
 
         held[i] = !held[i];
+        if (typeof GameSounds !== 'undefined') GameSounds.play('click');
         updateDiceDisplay();
 
         if (isMultiplayer && socket) {
@@ -643,6 +644,7 @@
 
         rollsLeft--;
         rollBtn.disabled = true;
+        if (typeof GameSounds !== 'undefined') GameSounds.play('roll');
 
         animateRoll(() => {
             hasRolled = true;
@@ -693,6 +695,7 @@
 
             const value = calcScore(catId, dice);
             ps[catId] = value;
+            if (typeof GameSounds !== 'undefined') GameSounds.play('place');
 
             // Broadcast score
             if (socket) {
@@ -708,6 +711,7 @@
             // Solo mode
             if (catId in scores) return;
             scores[catId] = calcScore(catId, dice);
+            if (typeof GameSounds !== 'undefined') GameSounds.play('place');
             turn++;
 
             // Reset for next turn
@@ -779,6 +783,8 @@
 
     function gameOver() {
         gameOverFlag = true;
+        if (typeof GameSounds !== 'undefined') GameSounds.play('win');
+        if (typeof GameAnimations !== 'undefined') GameAnimations.showConfetti();
         const upperSum = CATEGORIES
             .filter(c => c.section === 'upper')
             .reduce((sum, c) => sum + (scores[c.id] || 0), 0);
@@ -807,6 +813,11 @@
         results.sort((a, b) => b.total - a.total);
 
         const winner = results[0];
+        if (typeof GameSounds !== 'undefined') {
+            if (winner.player === MY_USER) GameSounds.play('win');
+            else GameSounds.play('lose');
+        }
+        if (typeof GameAnimations !== 'undefined') { if (winner.player === MY_USER) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body); }
         let html = `<div style="font-size:1.3em;margin-bottom:12px;">게임 종료!</div>`;
         html += `<div style="font-size:1.1em;margin-bottom:8px;">우승: <strong>${winner.player}</strong> (${winner.total}점)</div>`;
         html += `<div style="margin-top:8px;">`;
@@ -983,6 +994,8 @@
             if (gameOverFlag || isSpectator) return;
             gameOverFlag = true;
             rollBtn.disabled = true;
+            if (typeof GameSounds !== 'undefined') GameSounds.play('win');
+            if (typeof GameAnimations !== 'undefined') GameAnimations.showConfetti();
 
             const myTotal = calcTotal(scores[MY_USER] || {});
             finalScore.innerHTML = `<div style="font-size:1.3em;margin-bottom:8px;">승리!</div>`

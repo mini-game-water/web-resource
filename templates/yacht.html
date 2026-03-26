@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yacht Dice - Game Hub</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
     <style>
         .yacht-container {
             display: flex;
@@ -253,6 +254,8 @@
     </style>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3328839220107010"
          crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -267,6 +270,8 @@
         </div>
         {% endif %}
     </nav>
+    <button id="sound-toggle" class="sound-toggle-btn" onclick="const m=GameSounds.toggleMute();this.textContent=m?'🔇':'🔊'" title="소리 켜기/끄기"></button>
+    <script>document.getElementById('sound-toggle').textContent=GameSounds.isMuted()?'🔇':'🔊';</script>
     {% if room_id %}
     <a href="/" class="btn btn-lobby-back" id="lobby-back-btn">로비로</a>
     {% endif %}

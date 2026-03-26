@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poker - Game Hub</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
     <style>
         .poker-table-wrap {
             display: flex;
@@ -15,6 +16,7 @@
         .poker-table {
             position: relative;
             width: 900px;
+            max-width: 95vw;
             height: 520px;
             background: radial-gradient(ellipse at center, #2d7a3a 0%, #1a5c28 60%, #0f3d18 100%);
             border-radius: 260px / 260px;
@@ -321,9 +323,19 @@
             font-weight: bold;
             margin-bottom: 0.5rem;
         }
+        @media (max-width: 960px) {
+            .poker-table { transform: scale(0.85); transform-origin: top center; }
+            .poker-table-wrap { height: calc(520px * 0.85 + 2rem); }
+        }
+        @media (max-width: 600px) {
+            .poker-table { transform: scale(0.55); transform-origin: top center; }
+            .poker-table-wrap { height: calc(520px * 0.55 + 2rem); }
+        }
     </style>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3328839220107010"
          crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -338,6 +350,8 @@
         </div>
         {% endif %}
     </nav>
+    <button id="sound-toggle" class="sound-toggle-btn" onclick="const m=GameSounds.toggleMute();this.textContent=m?'🔇':'🔊'" title="소리 켜기/끄기"></button>
+    <script>document.getElementById('sound-toggle').textContent=GameSounds.isMuted()?'🔇':'🔊';</script>
     {% if room_id %}
     <a href="/" class="btn btn-lobby-back" id="lobby-back-btn">로비로</a>
     {% endif %}

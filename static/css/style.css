@@ -1859,6 +1859,30 @@ body {
     min-height: 90px;
 }
 
+/* Sound toggle button */
+.sound-toggle-btn {
+    position: fixed;
+    top: 60px;
+    right: 16px;
+    z-index: 1000;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(163, 139, 109, 0.85);
+    color: #fff;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transition: background 0.2s;
+    line-height: 40px;
+    text-align: center;
+    padding: 0;
+}
+.sound-toggle-btn:hover {
+    background: rgba(163, 139, 109, 1);
+}
+
 /* Game page top ad (above game-container, all 9 game pages) */
 .ad-game-top {
     margin: 0 auto;

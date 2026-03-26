@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bang! - Game Hub</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
     <style>
         .bang-table-wrap {
             display: flex;
@@ -15,6 +16,7 @@
         .bang-table {
             position: relative;
             width: 900px;
+            max-width: 95vw;
             height: 560px;
             background: radial-gradient(ellipse at center, #c8a96e 0%, #a38050 60%, #7a5c30 100%);
             border-radius: 280px / 280px;
@@ -314,9 +316,19 @@
             color: #333;
         }
         .draw-check-card.red { color: #d32f2f; }
+        @media (max-width: 960px) {
+            .bang-table { transform: scale(0.85); transform-origin: top center; }
+            .bang-table-wrap { height: calc(560px * 0.85 + 2rem); }
+        }
+        @media (max-width: 600px) {
+            .bang-table { transform: scale(0.55); transform-origin: top center; }
+            .bang-table-wrap { height: calc(560px * 0.55 + 2rem); }
+        }
     </style>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3328839220107010"
          crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -332,6 +344,8 @@
         </div>
         {% endif %}
     </nav>
+    <button id="sound-toggle" class="sound-toggle-btn" onclick="const m=GameSounds.toggleMute();this.textContent=m?'🔇':'🔊'" title="소리 켜기/끄기"></button>
+    <script>document.getElementById('sound-toggle').textContent=GameSounds.isMuted()?'🔇':'🔊';</script>
     {% if room_id %}
     <a href="/" class="btn btn-lobby-back" id="lobby-back-btn">로비로</a>
     {% endif %}

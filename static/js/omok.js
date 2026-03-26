@@ -199,6 +199,13 @@
     function handleWin(player) {
         gameOver = true;
         const winner = player === 1 ? "Black (●)" : "White (○)";
+        if (isMultiplayer && myPlayer !== null) {
+            if (typeof GameSounds !== 'undefined') GameSounds.play(player === myPlayer ? 'win' : 'lose');
+            if (typeof GameAnimations !== 'undefined') { if (player === myPlayer) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body); }
+        } else if (!isMultiplayer) {
+            if (typeof GameSounds !== 'undefined') GameSounds.play('win');
+            if (typeof GameAnimations !== 'undefined') GameAnimations.showConfetti();
+        }
         document.getElementById("status").textContent = winner + " Wins!";
         document.getElementById("win-message").textContent = winner + " Wins!";
         document.getElementById("win-overlay").classList.add("active");
@@ -209,6 +216,7 @@
         board[row][col] = player;
         lastMoves[player] = { row, col };
         coachingDots = {}; // Clear coaching on turn change
+        if (typeof GameSounds !== 'undefined') GameSounds.play('place');
         draw();
         if (checkWin(row, col, player)) {
             handleWin(player);
@@ -367,6 +375,8 @@
             if (gameOver || isSpectator) return;
             gameOver = true;
             stopTurnTimer();
+            if (typeof GameSounds !== 'undefined') GameSounds.play('win');
+            if (typeof GameAnimations !== 'undefined') GameAnimations.showConfetti();
             document.getElementById("status").textContent = "승리!";
             document.getElementById("win-message").innerHTML = '승리!<br><span class="disconnect-sub">상대방이 나갔습니다!</span>';
             document.getElementById("win-overlay").classList.add("active");
