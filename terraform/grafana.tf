@@ -102,6 +102,7 @@ resource "aws_grafana_workspace" "gamehub" {
   configuration = jsonencode({
     plugins = {
       pluginAdminEnabled = true
+      plugins            = ["grafana-athena-datasource"]
     }
   })
 
