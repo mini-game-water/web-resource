@@ -134,4 +134,42 @@ Domain: `jeonmyeonghwan-security.cloud` (Route53 hosted zone). Region: `us-east-
 
 ## Deployment
 
-GitHub repo: `https://github.com/mini-game-water/web-resource.git`. Deploy via `deploy.sh` on EC2 — clones repo, builds Docker image, runs container with env vars.
+GitHub repo: `https://github.com/mini-game-water/web-resource.git`. Deploy via `deploy.sh` on EC2 — clones repo, builds Docker image, runs container with env vars. `user_data.sh` embeds `deploy.sh` into `/home/ec2-user/deploy.sh` at EC2 provisioning time.
+
+## Known Pitfalls & Checklists
+
+Past bugs and infrastructure issues that have been resolved. Review these before making changes to avoid repeating them.
+
+### Frontend (Game JS files)
+
+- **Always null-check DOM elements** before `.addEventListener()`. Elements inside `{% if %}` / `{% else %}` Jinja blocks (e.g., `restart-btn`, `start-btn`) don't exist in all modes (solo vs multiplayer vs spectator). Calling `.addEventListener()` on `null` crashes the entire IIFE and silently kills SocketIO — making it look like a server bug. The 4 original games had null guards; 5 newer games did not. All 9 now have them.
+- **Chat resize math for NW-resize**: The resize handle is on the top-left corner. Correct formula: `newW = startW + (startX - e.clientX)`, NOT `startW + (e.clientX - startX)`. Must also adjust `left`/`top` position to keep bottom-right anchored. bang.js was the only file with wrong math; now fixed.
+- **Use `window.location.replace()` not `.href`** for game redirects (e.g., waiting room → game page). `.href` adds the waiting room to browser history, requiring 2 back-button presses to exit.
+- **Game-over overlay variable names differ per game**: bang/halligalli use `gameOverOverlay`, others use `overlay`. All use `gameOverMsg`. When adding `game_winner` or similar handlers, use the correct variable for each game.
+- **All 9 games must handle the `game_winner` socket event** — server emits it when only 1 player remains after disconnect. Without this handler, the last player gets stuck in an empty room.
+
+### Backend (app.py / SocketIO)
+
+- **CSRF does NOT apply to SocketIO**: Flask-SocketIO's WSGI middleware intercepts `/socket.io/` before Flask's `before_request` fires. `WTF_CSRF_CHECK_DEFAULT = False` + manual `csrf.protect()` skipping `/socket.io` is the correct pattern.
+- **`cors_allowed_origins='*'`** is required on the SocketIO init when behind ALB/reverse proxy. Without it, `python-engineio` actively rejects connections with 400 "Not an accepted origin".
+- **Disconnect handler must check `game_conns` count**: When `len(game_conns[rid]) == 1` after a disconnect, emit `game_winner` to the remaining player and call `destroy_game_room()`.
+
+### Templates (HTML)
+
+- **AdSense script must be in `<head>` of ALL 13 templates** for site ownership verification — including `login.html` and `room_not_found.html`, not just game pages.
+- **Ad containers must not be placed inside flex layouts** (e.g., `.waiting-layout`). This breaks the 2-column layout. Place ads outside/below the flex container.
+- **`data-ad-slot` must be a real slot ID** from the AdSense dashboard, not `"auto"`. Placeholder IDs (`1234567890`–`1234567894`) are currently in use and need to be replaced.
+
+### Infrastructure (Terraform / AWS)
+
+- **Grafana `grafana-athena-datasource` plugin must be explicitly installed** in the workspace `configuration` block: `plugins = ["grafana-athena-datasource"]`. Without it, Grafana shows "Datasource was not found" even though the data source resource exists in Terraform state. `data_sources = ["ATHENA"]` only grants IAM permissions — it does NOT install the plugin.
+- **Grafana API key has 30-day TTL** (`aws_grafana_workspace_api_key`). If `terraform apply` fails with auth errors on Grafana resources, the key has expired. Taint and recreate: `terraform taint aws_grafana_workspace_api_key.terraform && terraform apply`.
+- **After taining a Grafana data source**, the dashboard must also be re-applied since it references the data source UID. Always target both: `terraform apply -target=grafana_data_source.athena -target=grafana_dashboard.gamehub_logs`.
+- **`user_data.sh` contains Terraform template variables** (`${aws_region}`, `${app_secret_key}`, `${log_bucket}`, `${docker_image}`) that are interpolated at plan/apply time. The embedded `deploy.sh` inside it also uses these variables — do NOT use heredoc with single-quoted delimiter (`'EOF'`) for the deploy script section if you want variable interpolation inside it.
+- **S3 log path structure** must match Glue table partition projection exactly: `{category}/year=YYYY/month=MM/day=DD/`. If `game_logger.py` path format changes, update `storage.location.template` in `athena.tf` to match.
+
+### Debugging Multiplayer Issues
+
+- **Check browser console (F12) first** — client-side JS crashes silently prevent SocketIO from connecting, making issues look server-side. `TypeError: Cannot read properties of null` is the most common culprit.
+- **Test with regular + incognito windows** to simulate 2 players.
+- **Docker logs show NO SocketIO connections** → the problem is client-side (JS crash before socket connects), not server-side.
