@@ -168,18 +168,19 @@ def batch_get_users(user_ids):
 
 # ──────────────────── Notice Operations ────────────────────
 
-def create_notice(author, title, content):
+def create_notice(author, title, content, image_url=''):
     notice_id = uuid.uuid4().hex[:8]
     now = int(time.time())
-    _notices_table.put_item(
-        Item={
-            'notice_id': notice_id,
-            'author': author,
-            'title': title,
-            'content': content,
-            'created_at': now,
-        }
-    )
+    item = {
+        'notice_id': notice_id,
+        'author': author,
+        'title': title,
+        'content': content,
+        'created_at': now,
+    }
+    if image_url:
+        item['image_url'] = image_url
+    _notices_table.put_item(Item=item)
     return notice_id
 
 
@@ -193,11 +194,16 @@ def list_notices():
     return [_convert_decimals(item) for item in items]
 
 
-def update_notice(notice_id, title, content):
+def update_notice(notice_id, title, content, image_url=None):
+    expr = 'SET title = :t, content = :c'
+    vals = {':t': title, ':c': content}
+    if image_url is not None:
+        expr += ', image_url = :img'
+        vals[':img'] = image_url
     _notices_table.update_item(
         Key={'notice_id': notice_id},
-        UpdateExpression='SET title = :t, content = :c',
-        ExpressionAttributeValues={':t': title, ':c': content},
+        UpdateExpression=expr,
+        ExpressionAttributeValues=vals,
     )
 
 

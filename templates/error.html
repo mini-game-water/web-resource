@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ error_code }} - Game Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3328839220107010"
+         crossorigin="anonymous"></script>
+    <style>
+        .error-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            text-align: center;
+            padding: 2rem;
+        }
+        .error-code {
+            font-size: 6rem;
+            font-weight: 800;
+            color: #a38b6d;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+        .error-title {
+            font-size: 1.5rem;
+            color: #5c4a32;
+            margin-bottom: 1rem;
+        }
+        .error-desc {
+            color: #7a6b5a;
+            margin-bottom: 2rem;
+            max-width: 400px;
+        }
+        .error-home-btn {
+            display: inline-block;
+            padding: 12px 32px;
+            background: #a38b6d;
+            color: #fff;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .error-home-btn:hover {
+            background: #8a7259;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Game Hub</a>
+    </nav>
+    <div class="error-page">
+        <div class="error-code">{{ error_code }}</div>
+        <div class="error-title">{{ error_title }}</div>
+        <div class="error-desc">{{ error_desc }}</div>
+        <a href="/" class="error-home-btn">메인페이지로 이동</a>
+    </div>
+</body>
+</html>

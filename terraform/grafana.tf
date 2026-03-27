@@ -102,8 +102,8 @@ resource "aws_grafana_workspace" "gamehub" {
   grafana_version = "10.4"
 
   configuration = jsonencode({
-    plugins            = { pluginAdminEnabled = true }
-    unifiedAlerting    = { enabled = true }
+    plugins         = { pluginAdminEnabled = true }
+    unifiedAlerting = { enabled = true }
   })
 
   tags = { Name = "gamehub-grafana" }
@@ -174,8 +174,8 @@ locals {
 
 resource "grafana_dashboard" "gamehub_logs" {
   config_json = jsonencode({
-    title       = "GameHub Analytics Dashboard"
-    description = "Real-time user analytics & event monitoring for GameHub"
+    title       = "GameHub 분석 대시보드"
+    description = "GameHub 실시간 사용자 분석 및 이벤트 모니터링"
     editable    = true
     time = {
       from = "now-24h"
@@ -189,7 +189,7 @@ resource "grafana_dashboard" "gamehub_logs" {
         {
           name    = "date_filter"
           type    = "custom"
-          label   = "Date"
+          label   = "날짜"
           current = { text = "Today", value = "today" }
           options = [
             { text = "Today", value = "today", selected = true }
@@ -215,7 +215,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ── Active Users Today (stat) ──
       {
         id         = 1
-        title      = "Active Users Today"
+        title      = "오늘의 활성 사용자"
         type       = "stat"
         gridPos    = { h = 4, w = 4, x = 0, y = 1 }
         datasource = local.athena_ds
@@ -249,7 +249,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ── Total Page Views (stat) ──
       {
         id         = 2
-        title      = "Page Views Today"
+        title      = "오늘의 페이지 조회"
         type       = "stat"
         gridPos    = { h = 4, w = 4, x = 4, y = 1 }
         datasource = local.athena_ds
@@ -281,7 +281,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ── Games Played Today (stat) ──
       {
         id         = 3
-        title      = "Games Played Today"
+        title      = "오늘의 게임 실행"
         type       = "stat"
         gridPos    = { h = 4, w = 4, x = 8, y = 1 }
         datasource = local.athena_ds
@@ -313,7 +313,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ── Rooms Created Today (stat) ──
       {
         id         = 4
-        title      = "Rooms Created"
+        title      = "생성된 방"
         type       = "stat"
         gridPos    = { h = 4, w = 4, x = 12, y = 1 }
         datasource = local.athena_ds
@@ -345,7 +345,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ── Chat Messages Today (stat) ──
       {
         id         = 5
-        title      = "Chat Messages"
+        title      = "채팅 메시지"
         type       = "stat"
         gridPos    = { h = 4, w = 4, x = 16, y = 1 }
         datasource = local.athena_ds
@@ -376,7 +376,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ── New Registrations (stat) ──
       {
         id         = 6
-        title      = "New Registrations"
+        title      = "신규 가입자"
         type       = "stat"
         gridPos    = { h = 4, w = 4, x = 20, y = 1 }
         datasource = local.athena_ds
@@ -410,7 +410,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ════════════════════════════════════════════════
       {
         id      = 101
-        title   = "Activity Over Time"
+        title   = "시간별 활동 추이"
         type    = "row"
         gridPos = { h = 1, w = 24, x = 0, y = 5 }
         panels  = []
@@ -419,7 +419,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ── Events per Hour (stacked bar - all categories) ──
       {
         id         = 7
-        title      = "Events per Hour (by Category)"
+        title      = "시간별 이벤트 (카테고리별)"
         type       = "timeseries"
         gridPos    = { h = 8, w = 12, x = 0, y = 6 }
         datasource = local.athena_ds
@@ -470,7 +470,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ── Logins per Hour (line chart) ──
       {
         id         = 8
-        title      = "Logins & Logouts per Hour"
+        title      = "시간별 로그인/로그아웃"
         type       = "timeseries"
         gridPos    = { h = 8, w = 12, x = 12, y = 6 }
         datasource = local.athena_ds
@@ -510,7 +510,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ════════════════════════════════════════════════
       {
         id      = 102
-        title   = "Distribution Analysis"
+        title   = "분포 분석"
         type    = "row"
         gridPos = { h = 1, w = 24, x = 0, y = 14 }
         panels  = []
@@ -519,7 +519,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ── Page Views by Page (pie chart) ──
       {
         id         = 9
-        title      = "Page Views by Page"
+        title      = "페이지별 조회수"
         type       = "piechart"
         gridPos    = { h = 8, w = 8, x = 0, y = 15 }
         datasource = local.athena_ds
@@ -549,7 +549,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ── Games Popularity (pie chart) ──
       {
         id         = 10
-        title      = "Games Played by Type"
+        title      = "게임 종류별 실행 횟수"
         type       = "piechart"
         gridPos    = { h = 8, w = 8, x = 8, y = 15 }
         datasource = local.athena_ds
@@ -579,7 +579,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ── Room Events Distribution (bar chart) ──
       {
         id         = 11
-        title      = "Room Event Types"
+        title      = "방 이벤트 유형"
         type       = "barchart"
         gridPos    = { h = 8, w = 8, x = 16, y = 15 }
         datasource = local.athena_ds
@@ -613,7 +613,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ════════════════════════════════════════════════
       {
         id      = 103
-        title   = "User Analysis"
+        title   = "사용자 분석"
         type    = "row"
         gridPos = { h = 1, w = 24, x = 0, y = 23 }
         panels  = []
@@ -622,7 +622,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ── Top Active Users (bar chart) ──
       {
         id         = 12
-        title      = "Top 15 Active Users (by Events)"
+        title      = "활동량 상위 15명"
         type       = "barchart"
         gridPos    = { h = 8, w = 12, x = 0, y = 24 }
         datasource = local.athena_ds
@@ -665,7 +665,7 @@ resource "grafana_dashboard" "gamehub_logs" {
       # ── Top Winners (bar chart) ──
       {
         id         = 13
-        title      = "Top Winners Today"
+        title      = "오늘의 승리 랭킹"
         type       = "barchart"
         gridPos    = { h = 8, w = 12, x = 12, y = 24 }
         datasource = local.athena_ds
@@ -698,22 +698,139 @@ resource "grafana_dashboard" "gamehub_logs" {
       },
 
       # ════════════════════════════════════════════════
-      # ROW 4: Detailed activity tables
+      # ROW 4: New requested panels
+      # ════════════════════════════════════════════════
+      {
+        id      = 105
+        title   = "게임 통계"
+        type    = "row"
+        gridPos = { h = 1, w = 24, x = 0, y = 32 }
+        panels  = []
+      },
+
+      # ── 시간별 게임 실행 그래프 (timeseries) ──
+      {
+        id         = 19
+        title      = "시간별 게임 실행 그래프"
+        type       = "timeseries"
+        gridPos    = { h = 8, w = 8, x = 0, y = 33 }
+        datasource = local.athena_ds
+        fieldConfig = {
+          defaults = {
+            custom = {
+              drawStyle   = "line"
+              lineWidth   = 2
+              fillOpacity = 30
+              pointSize   = 5
+              showPoints  = "auto"
+            }
+          }
+        }
+        options = { tooltip = { mode = "multi", sort = "desc" } }
+        targets = [{
+          connectionArgs = local.athena_conn
+          rawSQL         = <<-EOT
+            SELECT
+              date_trunc('hour', from_iso8601_timestamp(timestamp)) AS time,
+              COUNT(*) AS game_count
+            FROM room_activity
+            WHERE year = YEAR(CURRENT_DATE)
+              AND month = MONTH(CURRENT_DATE)
+              AND day = DAY(CURRENT_DATE)
+              AND event_type = 'game_start'
+            GROUP BY 1
+            ORDER BY 1
+          EOT
+          format         = 0
+        }]
+      },
+
+      # ── 게임 종류별 게임 실행 횟수 (bar chart) ──
+      {
+        id         = 20
+        title      = "게임 종류별 실행 횟수 (막대)"
+        type       = "barchart"
+        gridPos    = { h = 8, w = 8, x = 8, y = 33 }
+        datasource = local.athena_ds
+        options = {
+          orientation = "horizontal"
+          legend      = { displayMode = "hidden" }
+          tooltip     = { mode = "single" }
+        }
+        fieldConfig = {
+          defaults = {
+            color = { mode = "palette-classic" }
+          }
+        }
+        targets = [{
+          connectionArgs = local.athena_conn
+          rawSQL         = <<-EOT
+            SELECT game, COUNT(*) AS game_count
+            FROM room_activity
+            WHERE year = YEAR(CURRENT_DATE)
+              AND month = MONTH(CURRENT_DATE)
+              AND day = DAY(CURRENT_DATE)
+              AND event_type = 'game_start'
+              AND game IS NOT NULL
+            GROUP BY game
+            ORDER BY game_count DESC
+          EOT
+          format         = 0
+        }]
+      },
+
+      # ── 일일 신규 가입자 수 현황 (timeseries - last 30 days) ──
+      {
+        id         = 21
+        title      = "일일 신규 가입자 수 현황"
+        type       = "timeseries"
+        gridPos    = { h = 8, w = 8, x = 16, y = 33 }
+        datasource = local.athena_ds
+        fieldConfig = {
+          defaults = {
+            custom = {
+              drawStyle    = "bars"
+              fillOpacity  = 80
+              barAlignment = 0
+              lineWidth    = 1
+            }
+            color = { fixedColor = "#FF9830", mode = "fixed" }
+          }
+        }
+        options = { tooltip = { mode = "single" } }
+        targets = [{
+          connectionArgs = local.athena_conn
+          rawSQL         = <<-EOT
+            SELECT
+              date_trunc('day', from_iso8601_timestamp(timestamp)) AS time,
+              COUNT(*) AS registrations
+            FROM user_activity
+            WHERE event_type = 'register'
+              AND from_iso8601_timestamp(timestamp) >= CURRENT_DATE - INTERVAL '30' DAY
+            GROUP BY 1
+            ORDER BY 1
+          EOT
+          format         = 0
+        }]
+      },
+
+      # ════════════════════════════════════════════════
+      # ROW 5: Detailed activity tables
       # ════════════════════════════════════════════════
       {
         id        = 104
-        title     = "Recent Activity (Detail)"
+        title     = "최근 활동 상세"
         type      = "row"
-        gridPos   = { h = 1, w = 24, x = 0, y = 32 }
+        gridPos   = { h = 1, w = 24, x = 0, y = 41 }
         collapsed = true
         panels = [
 
           # ── Recent Logins (table) ──
           {
             id         = 14
-            title      = "Recent Logins / Logouts"
+            title      = "최근 로그인/로그아웃"
             type       = "table"
-            gridPos    = { h = 8, w = 12, x = 0, y = 33 }
+            gridPos    = { h = 8, w = 12, x = 0, y = 42 }
             datasource = local.athena_ds
             targets = [{
               connectionArgs = local.athena_conn
@@ -734,9 +851,9 @@ resource "grafana_dashboard" "gamehub_logs" {
           # ── Recent Page Views (table) ──
           {
             id         = 15
-            title      = "Recent Page Views"
+            title      = "최근 페이지 조회"
             type       = "table"
-            gridPos    = { h = 8, w = 12, x = 12, y = 33 }
+            gridPos    = { h = 8, w = 12, x = 12, y = 42 }
             datasource = local.athena_ds
             targets = [{
               connectionArgs = local.athena_conn
@@ -757,9 +874,9 @@ resource "grafana_dashboard" "gamehub_logs" {
           # ── Room Activity (table) ──
           {
             id         = 16
-            title      = "Room Activity Stream"
+            title      = "방 활동 내역"
             type       = "table"
-            gridPos    = { h = 8, w = 12, x = 0, y = 41 }
+            gridPos    = { h = 8, w = 12, x = 0, y = 50 }
             datasource = local.athena_ds
             targets = [{
               connectionArgs = local.athena_conn
@@ -779,9 +896,9 @@ resource "grafana_dashboard" "gamehub_logs" {
           # ── Game Results (table) ──
           {
             id         = 17
-            title      = "Game Results"
+            title      = "게임 결과"
             type       = "table"
-            gridPos    = { h = 8, w = 12, x = 12, y = 41 }
+            gridPos    = { h = 8, w = 12, x = 12, y = 50 }
             datasource = local.athena_ds
             targets = [{
               connectionArgs = local.athena_conn
@@ -801,9 +918,9 @@ resource "grafana_dashboard" "gamehub_logs" {
           # ── Chat Messages (table) ──
           {
             id         = 18
-            title      = "Chat Messages"
+            title      = "채팅 메시지 내역"
             type       = "table"
-            gridPos    = { h = 8, w = 24, x = 0, y = 49 }
+            gridPos    = { h = 8, w = 24, x = 0, y = 58 }
             datasource = local.athena_ds
             targets = [{
               connectionArgs = local.athena_conn

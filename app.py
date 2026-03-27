@@ -6,10 +6,11 @@ from functools import wraps
 import re
 from markupsafe import escape
 
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, Response
 from flask_wtf.csrf import CSRFProtect
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
+import boto3
 import db
 import game_logger
 
@@ -107,6 +108,27 @@ def broadcast_friend_status(user_id, status, public_ip=''):
     socketio.emit('friend_status_changed', {
         'id': user_id, 'status': status, 'public_ip': public_ip
     }, room='lobby')
+
+
+# ──────────────────── Error Handlers ────────────────────
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('error.html', error_code=404,
+                           error_title='페이지를 찾을 수 없습니다',
+                           error_desc='요청하신 페이지가 존재하지 않거나 이동되었습니다.'), 404
+
+@app.errorhandler(500)
+def internal_error(e):
+    return render_template('error.html', error_code=500,
+                           error_title='서버 오류가 발생했습니다',
+                           error_desc='일시적인 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'), 500
+
+@app.errorhandler(403)
+def forbidden(e):
+    return render_template('error.html', error_code=403,
+                           error_title='접근이 거부되었습니다',
+                           error_desc='이 페이지에 접근할 권한이 없습니다.'), 403
 
 
 # ──────────────────── Auth ────────────────────
@@ -240,6 +262,10 @@ def _game_route(template):
     game_name = template.replace('.html', '')
     game_logger.log_page_view(session['user_id'], game_name, room_id=room_id or None,
                               game=game_name, user_agent=request.headers.get('User-Agent', ''))
+    uid = session['user_id']
+    new_status = 'spectating' if is_spectator else 'ingame'
+    db.update_user_status(uid, new_status)
+    broadcast_friend_status(uid, new_status)
     my_player = None
     if room_id and not room:
         return render_template('room_not_found.html'), 404
@@ -492,12 +518,14 @@ def post_notice():
     content = sanitize((data.get('content') or '').strip())
     if not title:
         return jsonify({'error': '제목을 입력하세요.'}), 400
-    notice_id = db.create_notice(session['user_id'], title, content)
+    image_url = (data.get('image_url') or '').strip()
+    notice_id = db.create_notice(session['user_id'], title, content, image_url=image_url)
     notice = {
         'notice_id': notice_id,
         'author': session['user_id'],
         'title': title,
         'content': content,
+        'image_url': image_url,
         'created_at': int(time.time()),
     }
     socketio.emit('notice_posted', notice, room='lobby')
@@ -512,8 +540,9 @@ def edit_notice(notice_id):
     content = sanitize((data.get('content') or '').strip())
     if not title:
         return jsonify({'error': '제목을 입력하세요.'}), 400
-    db.update_notice(notice_id, title, content)
-    socketio.emit('notice_updated', {'notice_id': notice_id, 'title': title, 'content': content}, room='lobby')
+    image_url = (data.get('image_url') or '').strip()
+    db.update_notice(notice_id, title, content, image_url=image_url or None)
+    socketio.emit('notice_updated', {'notice_id': notice_id, 'title': title, 'content': content, 'image_url': image_url}, room='lobby')
     return jsonify({'ok': True})
 
 
@@ -523,6 +552,49 @@ def remove_notice(notice_id):
     db.delete_notice(notice_id)
     socketio.emit('notice_deleted', {'notice_id': notice_id}, room='lobby')
     return jsonify({'ok': True})
+
+
+MEDIA_BUCKET = os.environ.get('LOG_BUCKET', '')  # reuse log bucket for media
+ALLOWED_IMG_EXT = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+
+@app.route('/api/upload-image', methods=['POST'])
+@admin_required
+def upload_image():
+    f = request.files.get('image')
+    if not f or not f.filename:
+        return jsonify({'error': '이미지를 선택하세요.'}), 400
+    ext = f.filename.rsplit('.', 1)[-1].lower() if '.' in f.filename else ''
+    if ext not in ALLOWED_IMG_EXT:
+        return jsonify({'error': '허용되지 않는 파일 형식입니다.'}), 400
+    if not MEDIA_BUCKET:
+        return jsonify({'error': '미디어 버킷이 설정되지 않았습니다.'}), 500
+    key = f'media/notices/{uuid.uuid4().hex}.{ext}'
+    region = os.environ.get('AWS_REGION', 'us-east-1')
+    try:
+        s3 = boto3.client('s3', region_name=region)
+        s3.put_object(Bucket=MEDIA_BUCKET, Key=key, Body=f.read(),
+                      ContentType=f.content_type or 'image/png')
+        url = f'/api/media/{key}'
+        return jsonify({'ok': True, 'url': url})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/media/<path:key>')
+@login_required
+def serve_media(key):
+    if not MEDIA_BUCKET:
+        return 'Not configured', 404
+    region = os.environ.get('AWS_REGION', 'us-east-1')
+    try:
+        s3 = boto3.client('s3', region_name=region)
+        obj = s3.get_object(Bucket=MEDIA_BUCKET, Key=key)
+        return Response(obj['Body'].read(),
+                        content_type=obj.get('ContentType', 'image/png'),
+                        headers={'Cache-Control': 'public, max-age=86400'})
+    except Exception:
+        return 'Not found', 404
 
 
 # ──────────────────── Admin Force-Close ────────────────────

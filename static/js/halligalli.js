@@ -138,9 +138,22 @@
     function createFruitCardHTML(card, extraClass) {
         const info = getFruitInfo(card.fruit);
         const cls = extraClass ? `hg-card ${info.cssClass} ${extraClass}` : `hg-card ${info.cssClass}`;
-        const emojis = info.emoji.repeat(card.count);
+        let emojiHTML;
+        if (card.count <= 4) {
+            emojiHTML = info.emoji.repeat(card.count);
+        } else {
+            const rows = [];
+            let remaining = card.count;
+            const perRow = card.count <= 6 ? 2 : 3;
+            while (remaining > 0) {
+                const n = Math.min(perRow, remaining);
+                rows.push(info.emoji.repeat(n));
+                remaining -= n;
+            }
+            emojiHTML = rows.join('<br>');
+        }
         return `<div class="${cls}">
-            <div class="card-emoji">${emojis}</div>
+            <div class="card-emoji">${emojiHTML}</div>
             <div class="card-count">${card.count}</div>
         </div>`;
     }

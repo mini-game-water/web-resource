@@ -17,10 +17,13 @@ body {
     background: rgba(250, 246, 240, 0.95);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid #e6ddd3;
-    padding: 1rem 2rem;
+    padding: 0.8rem 2rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .navbar .logo {
@@ -362,6 +365,7 @@ body {
 .index-layout {
     display: flex;
     margin: 0 auto;
+    max-width: 1400px;
     gap: 2rem;
     padding: 0 2rem;
     min-height: calc(100vh - 60px - 80px);
@@ -382,6 +386,51 @@ body {
     min-height: 0;
 }
 
+/* ===== Hero Section ===== */
+.hero-section {
+    background: linear-gradient(135deg, #a38b6d 0%, #c4aa82 50%, #d4c0a0 100%);
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    margin-bottom: 2rem;
+    color: #fff;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+}
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+}
+.hero-section::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    right: 10%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+}
+.hero-section h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 0.4rem;
+    position: relative;
+    z-index: 1;
+}
+.hero-section p {
+    font-size: 0.95rem;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+}
+
 .dashboard h1 {
     font-size: 2rem;
     margin-bottom: 0.8rem;
@@ -389,76 +438,137 @@ body {
     flex-shrink: 0;
 }
 
-/* ===== Game List (compact) ===== */
-.game-list {
+/* ===== Section Titles ===== */
+.section-title {
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #5a4e42;
+    margin-bottom: 1rem;
+    text-align: left;
+}
+.section-title-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #a38b6d, #c4aa82);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
     flex-shrink: 0;
-    overflow-x: auto;
+}
+
+/* ===== Game Grid (card-based) ===== */
+.game-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    flex-shrink: 0;
 }
 
 .game-list-item {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.8rem;
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid #e6ddd3;
-    border-radius: 10px;
-    padding: 0.6rem 1rem;
+    gap: 0.5rem;
+    background: #fff;
+    border: 1px solid #ede6dc;
+    border-radius: 14px;
+    padding: 1.2rem 0.8rem 1rem;
     text-decoration: none;
     color: inherit;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    position: relative;
+    overflow: hidden;
 }
 
 .game-list-item:hover {
+    transform: translateY(-3px);
     border-color: #c4aa82;
-    box-shadow: 0 4px 12px rgba(163, 139, 109, 0.12);
+    box-shadow: 0 8px 24px rgba(163, 139, 109, 0.15);
 }
 
 .game-list-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: #a38b6d;
-    color: #fff;
-    font-size: 1rem;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f5ede3, #ede3d5);
+    color: #a38b6d;
+    font-size: 1.5rem;
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    transition: transform 0.2s;
+}
+
+.game-list-item:hover .game-list-icon {
+    transform: scale(1.1);
 }
 
 .game-list-info {
     display: flex;
     flex-direction: column;
-    text-align: left;
+    align-items: center;
+    text-align: center;
     min-width: 0;
+    gap: 0.2rem;
 }
 
 .game-list-name {
-    font-weight: 600;
-    font-size: 0.95rem;
+    font-weight: 700;
+    font-size: 0.9rem;
     color: #5a4e42;
 }
 
+.game-players {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #a38b6d;
+    background: rgba(163,139,109,0.1);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+}
+
 .game-list-desc {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #9a8b78;
-    white-space: nowrap;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
+}
+
+@media (max-width: 900px) {
+    .game-list { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 500px) {
+    .game-list { grid-template-columns: 1fr; }
 }
 
 /* ===== Friends Sidebar ===== */
 .friends-sidebar {
-    width: 280px;
+    width: 300px;
     flex-shrink: 0;
     padding-top: 2rem;
     display: flex;
     flex-direction: column;
+    gap: 1.5rem;
+}
+
+.sidebar-card {
+    background: #fff;
+    border: 1px solid #ede6dc;
+    border-radius: 14px;
+    padding: 1.2rem;
 }
 
 .friends-sidebar h3 {
@@ -500,10 +610,14 @@ body {
     display: flex;
     align-items: center;
     gap: 0.8rem;
-    background: #fff;
-    border: 1px solid #e6ddd3;
+    background: #faf8f5;
+    border: 1px solid #ede6dc;
     border-radius: 10px;
-    padding: 0.8rem;
+    padding: 0.7rem 0.8rem;
+    transition: border-color 0.2s;
+}
+.friend-item:hover {
+    border-color: #c4aa82;
 }
 
 .friend-status-dot {
@@ -515,7 +629,8 @@ body {
 
 .friend-item.status-online .friend-status-dot { background: #5cb85c; }
 .friend-item.status-chilling .friend-status-dot { background: #f0ad4e; }
-.friend-item.status-ingame .friend-status-dot { background: #d9534f; }
+.friend-item.status-ingame .friend-status-dot { background: #5794F2; }
+.friend-item.status-spectating .friend-status-dot { background: #B877D9; }
 .friend-item.status-offline .friend-status-dot { background: #ccc; }
 
 .friend-info {
@@ -555,12 +670,16 @@ body {
 
 /* ===== Room Section ===== */
 .room-section {
-    margin-top: 1rem;
+    margin-top: 0;
     text-align: left;
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
+    background: #fff;
+    border: 1px solid #ede6dc;
+    border-radius: 14px;
+    padding: 1.2rem 1.5rem;
 }
 
 .room-header {
@@ -571,8 +690,9 @@ body {
 }
 
 .room-header h2 {
-    font-size: 1.3rem;
-    color: #a38b6d;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #5a4e42;
 }
 
 .room-list {
@@ -588,10 +708,15 @@ body {
     display: flex;
     align-items: center;
     gap: 1rem;
-    background: #fff;
-    border: 1px solid #e6ddd3;
+    background: #faf8f5;
+    border: 1px solid #ede6dc;
     border-radius: 10px;
-    padding: 1rem 1.2rem;
+    padding: 0.9rem 1.1rem;
+    transition: border-color 0.2s, background 0.2s;
+}
+.room-item:hover {
+    border-color: #c4aa82;
+    background: #fff;
 }
 
 .room-info-row {
@@ -1174,26 +1299,20 @@ body {
 
 /* ===== Room Filter Tabs ===== */
 .room-filter-select {
-    padding: 0.5rem 1rem;
-    border: 1px solid #e6ddd3;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid #ede6dc;
     border-radius: 8px;
-    font-size: 0.9rem;
-    background: #fff;
+    font-size: 0.85rem;
+    background: #faf8f5;
     color: #5a4e42;
     outline: none;
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
     cursor: pointer;
+    width: 100%;
 }
 
 .room-filter-select:focus {
     border-color: #c4aa82;
-}
-
-.game-players {
-    font-size: 0.75rem;
-    color: #a38b6d;
-    font-weight: normal;
-    margin-left: 0.3rem;
 }
 
 /* ===== Friend Controls ===== */
@@ -1620,9 +1739,8 @@ body {
 
 /* ===== Notice Board (Index Sidebar) ===== */
 .notice-section {
-    margin-top: 1.5rem;
-    border-top: 1px solid #e6ddd3;
-    padding-top: 1rem;
+    margin-top: 0;
+    padding-top: 0;
 }
 
 .notice-section h3 {
@@ -1643,10 +1761,14 @@ body {
 }
 
 .notice-item {
-    background: #fff;
-    border: 1px solid #e6ddd3;
+    background: #faf8f5;
+    border: 1px solid #ede6dc;
     border-radius: 8px;
     padding: 0.6rem 0.8rem;
+    transition: border-color 0.2s;
+}
+.notice-item:hover {
+    border-color: #c4aa82;
 }
 
 .notice-item-header {
@@ -1792,7 +1914,7 @@ body {
 
 /* ===== Footer ===== */
 .site-footer {
-    background: #3d3429;
+    background: linear-gradient(135deg, #3d3429, #2e271f);
     color: #c4b9a8;
     padding: 1.5rem 2rem;
     text-align: center;
@@ -1891,6 +2013,35 @@ body {
     min-height: 90px;
     /* Ensures 150px+ distance from game canvas per AdSense gaming policy */
     margin-bottom: 0;
+}
+
+/* ===== Index Page Responsive ===== */
+@media (max-width: 1024px) {
+    .index-layout {
+        flex-direction: column;
+        padding: 0 1rem;
+    }
+    .friends-sidebar {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .friends-sidebar .sidebar-card {
+        flex: 1;
+        min-width: 280px;
+    }
+}
+@media (max-width: 600px) {
+    .hero-section {
+        padding: 1.5rem;
+    }
+    .hero-section h1 {
+        font-size: 1.4rem;
+    }
+    .room-section {
+        padding: 1rem;
+    }
 }
 
 /* Mobile: reduce ad density — hide secondary ads, keep only primary */

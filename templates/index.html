@@ -21,8 +21,15 @@
 
     <div class="index-layout">
         <main class="dashboard">
-            <h1>Game Hub</h1>
+            <div class="hero-section">
+                <h1>Game Hub</h1>
+                <p>9가지 멀티플레이어 게임을 친구와 함께 즐기세요</p>
+            </div>
 
+            <div class="section-title">
+                <div class="section-title-icon">&#127918;</div>
+                게임 목록
+            </div>
             <div class="game-list">
                 <a href="/tetris" class="game-list-item">
                     <div class="game-list-icon">T</div>
@@ -102,7 +109,10 @@
 
             <section class="room-section">
                 <div class="room-header">
-                    <h2>대전 방 목록</h2>
+                    <div class="section-title" style="margin-bottom:0;">
+                        <div class="section-title-icon">&#128481;</div>
+                        대전 방 목록
+                    </div>
                     <button class="btn btn-primary" id="create-room-btn">방 만들기</button>
                 </div>
                 <select class="room-filter-select" id="room-filter">
@@ -125,41 +135,46 @@
         </main>
 
         <aside class="friends-sidebar">
-            <h3>친구 목록</h3>
-            <div class="friend-controls">
-                <select id="friend-filter" class="friend-filter-select">
-                    <option value="all">전체</option>
-                    <option value="online">온라인</option>
-                    <option value="chilling">쉬는 중</option>
-                    <option value="ingame">게임중</option>
-                    <option value="spectating">관전중</option>
-                    <option value="offline">오프라인</option>
-                    <option value="nearby">근처</option>
-                </select>
-                <div class="friend-add">
-                    <input type="text" id="friend-id-input" placeholder="친구 ID">
-                    <button class="btn" onclick="addFriend()">추가</button>
+            <div class="sidebar-card">
+                <div class="section-title" style="margin-bottom:0.8rem;">
+                    <div class="section-title-icon">&#128101;</div>
+                    친구 목록
                 </div>
-            </div>
-            <div class="friend-list" id="friend-list">
-                {% for f in friends %}
-                <div class="friend-item status-{{ f.status }}" data-uid="{{ f.id }}" data-status="{{ f.status }}" data-nearby="{{ 'true' if f.nearby else 'false' }}">
-                    <div class="friend-status-dot"></div>
-                    <div class="friend-info">
-                        <span class="friend-name">{{ f.id }}</span>
-                        <span class="friend-score">점수: {{ f.score }}</span>
-                        {% if f.nearby %}
-                        <span class="friend-nearby">바로 옆에 있는 친구</span>
-                        {% endif %}
+                <div class="friend-controls">
+                    <select id="friend-filter" class="friend-filter-select">
+                        <option value="all">전체</option>
+                        <option value="online">온라인</option>
+                        <option value="chilling">쉬는 중</option>
+                        <option value="ingame">게임중</option>
+                        <option value="spectating">관전중</option>
+                        <option value="offline">오프라인</option>
+                        <option value="nearby">근처</option>
+                    </select>
+                    <div class="friend-add">
+                        <input type="text" id="friend-id-input" placeholder="친구 ID">
+                        <button class="btn" onclick="addFriend()">추가</button>
                     </div>
-                    <span class="friend-status-text">
-                        {% if f.status == 'online' %}온라인{% elif f.status == 'chilling' %}쉬는 중{% elif f.status == 'ingame' %}게임중{% elif f.status == 'spectating' %}관전중{% else %}오프라인{% endif %}
-                    </span>
                 </div>
-                {% endfor %}
-                {% if not friends %}
-                <p class="empty-msg">친구가 없습니다.</p>
-                {% endif %}
+                <div class="friend-list" id="friend-list">
+                    {% for f in friends %}
+                    <div class="friend-item status-{{ f.status }}" data-uid="{{ f.id }}" data-status="{{ f.status }}" data-nearby="{{ 'true' if f.nearby else 'false' }}">
+                        <div class="friend-status-dot"></div>
+                        <div class="friend-info">
+                            <span class="friend-name">{{ f.id }}</span>
+                            <span class="friend-score">점수: {{ f.score }}</span>
+                            {% if f.nearby %}
+                            <span class="friend-nearby">바로 옆에 있는 친구</span>
+                            {% endif %}
+                        </div>
+                        <span class="friend-status-text">
+                            {% if f.status == 'online' %}온라인{% elif f.status == 'chilling' %}쉬는 중{% elif f.status == 'ingame' %}게임중{% elif f.status == 'spectating' %}관전중{% else %}오프라인{% endif %}
+                        </span>
+                    </div>
+                    {% endfor %}
+                    {% if not friends %}
+                    <p class="empty-msg">친구가 없습니다.</p>
+                    {% endif %}
+                </div>
             </div>
 
             <!-- Ad: sidebar rectangle (300x250 best fit, high viewability) -->
@@ -174,9 +189,12 @@
             </div>
 
             <!-- Notice Board -->
-            <div class="notice-section">
+            <div class="sidebar-card notice-section">
                 <div class="notice-header">
-                    <h3>공지사항</h3>
+                    <div class="section-title" style="margin-bottom:0;">
+                        <div class="section-title-icon">&#128227;</div>
+                        공지사항
+                    </div>
                     {% if is_admin %}
                     <button class="btn btn-sm" id="create-notice-btn">작성</button>
                     {% endif %}
@@ -186,6 +204,9 @@
                     <div class="notice-item" data-id="{{ n.notice_id }}">
                         <div class="notice-title">{{ n.title }}</div>
                         <div class="notice-body">{{ n.content }}</div>
+                        {% if n.image_url %}
+                        <div class="notice-image"><img src="{{ n.image_url }}" alt="공지 이미지" style="max-width:100%;border-radius:8px;margin-top:0.5rem;"></div>
+                        {% endif %}
                         <div class="notice-meta">{{ n.author }} &middot; {{ n.created_at }}</div>
                         {% if is_admin %}
                         <div class="notice-actions">
@@ -311,6 +332,10 @@
                 <input type="text" id="notice-title" placeholder="제목" required>
                 <label>내용</label>
                 <textarea id="notice-content" placeholder="내용" rows="4" style="width:100%;padding:0.7rem 1rem;border:1px solid #e6ddd3;border-radius:8px;font-size:0.9rem;background:#faf6f0;color:#5a4e42;outline:none;resize:vertical;font-family:inherit;"></textarea>
+                <label>이미지 (선택)</label>
+                <input type="file" id="notice-image" accept="image/*" style="width:100%;padding:0.5rem;border:1px solid #e6ddd3;border-radius:8px;font-size:0.85rem;background:#faf6f0;">
+                <div id="notice-image-preview" style="margin-top:0.5rem;display:none;"><img id="notice-preview-img" style="max-width:100%;max-height:200px;border-radius:8px;"></div>
+                <input type="hidden" id="notice-image-url" value="">
                 <div class="modal-buttons">
                     <button type="button" class="btn" onclick="closeModal('notice-overlay')">취소</button>
                     <button type="submit" class="btn btn-primary" id="notice-submit-btn">게시</button>
@@ -753,6 +778,9 @@
                 document.getElementById('notice-edit-id').value = '';
                 document.getElementById('notice-title').value = '';
                 document.getElementById('notice-content').value = '';
+                document.getElementById('notice-image').value = '';
+                document.getElementById('notice-image-url').value = '';
+                document.getElementById('notice-image-preview').style.display = 'none';
                 document.getElementById('notice-modal-title').textContent = '공지사항 작성';
                 document.getElementById('notice-submit-btn').textContent = '게시';
                 document.getElementById('notice-overlay').classList.add('active');
@@ -771,23 +799,57 @@
             document.getElementById('notice-overlay').classList.add('active');
         }
 
+        // Image preview
+        const noticeImageInput = document.getElementById('notice-image');
+        if (noticeImageInput) {
+            noticeImageInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                const preview = document.getElementById('notice-image-preview');
+                const previewImg = document.getElementById('notice-preview-img');
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => { previewImg.src = ev.target.result; preview.style.display = 'block'; };
+                    reader.readAsDataURL(file);
+                } else {
+                    preview.style.display = 'none';
+                }
+            });
+        }
+
         document.getElementById('notice-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const editId = document.getElementById('notice-edit-id').value;
             const title = document.getElementById('notice-title').value.trim();
             const content = document.getElementById('notice-content').value.trim();
+            let imageUrl = document.getElementById('notice-image-url').value;
+
+            // Upload image if selected
+            const imgFile = document.getElementById('notice-image').files[0];
+            if (imgFile) {
+                const formData = new FormData();
+                formData.append('image', imgFile);
+                const imgRes = await fetch('/api/upload-image', { method: 'POST', body: formData });
+                const imgData = await imgRes.json();
+                if (imgData.ok) {
+                    imageUrl = imgData.url;
+                } else {
+                    alert(imgData.error || '이미지 업로드에 실패했습니다.');
+                    return;
+                }
+            }
+
             let res;
             if (editId) {
                 res = await fetch('/api/notices/' + editId, {
                     method: 'PUT',
                     headers: CSRF_HEADERS,
-                    body: JSON.stringify({ title, content })
+                    body: JSON.stringify({ title, content, image_url: imageUrl })
                 });
             } else {
                 res = await fetch('/api/notices', {
                     method: 'POST',
                     headers: CSRF_HEADERS,
-                    body: JSON.stringify({ title, content })
+                    body: JSON.stringify({ title, content, image_url: imageUrl })
                 });
             }
             const data = await res.json();
@@ -796,6 +858,9 @@
                 document.getElementById('notice-edit-id').value = '';
                 document.getElementById('notice-title').value = '';
                 document.getElementById('notice-content').value = '';
+                document.getElementById('notice-image').value = '';
+                document.getElementById('notice-image-url').value = '';
+                document.getElementById('notice-image-preview').style.display = 'none';
             } else {
                 alert(data.error || '저장에 실패했습니다.');
             }
@@ -817,9 +882,11 @@
                 <button class="notice-edit-btn" onclick="editNotice('${safeId}', this)">수정</button>
                 <button class="notice-delete-btn" onclick="deleteNotice('${safeId}')">&times;</button>
             </div>` : '';
+            const imgHtml = n.image_url ? `<div class="notice-image"><img src="${escapeHtml(n.image_url)}" alt="공지 이미지" style="max-width:100%;border-radius:8px;margin-top:0.5rem;"></div>` : '';
             return `<div class="notice-item" data-id="${safeId}">
                 <div class="notice-title">${escapeHtml(n.title)}</div>
                 <div class="notice-body">${escapeHtml(n.content)}</div>
+                ${imgHtml}
                 <div class="notice-meta">${escapeHtml(n.author)} &middot; ${formatTime(n.created_at)}</div>
                 ${adminBtns}
             </div>`;
