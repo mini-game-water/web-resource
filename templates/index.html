@@ -167,11 +167,15 @@
                             <span class="friend-nearby">바로 옆에 있는 친구</span>
                             {% endif %}
                         </div>
-                        <span class="friend-status-text">
-                            {% if f.status == 'online' %}온라인{% elif f.status == 'chilling' %}쉬는 중{% elif f.status == 'waiting' %}방 대기{% elif f.status == 'ingame' %}게임중{% elif f.status == 'spectating' %}관전중{% else %}오프라인{% endif %}
-                        </span>
-                        <button class="dm-btn" onclick="openDM('{{ f.id }}')" title="메시지 보내기">&#128172;</button>
-                        <span class="dm-unread-badge" data-dm-uid="{{ f.id }}" style="display:none;"></span>
+                        <div class="friend-actions">
+                            <span class="friend-status-text">
+                                {% if f.status == 'online' %}온라인{% elif f.status == 'chilling' %}쉬는 중{% elif f.status == 'waiting' %}방 대기{% elif f.status == 'ingame' %}게임중{% elif f.status == 'spectating' %}관전중{% else %}오프라인{% endif %}
+                            </span>
+                            <div class="friend-action-row">
+                                <button class="dm-btn" onclick="openDM('{{ f.id }}')" title="메시지 보내기">&#128172;</button>
+                                <span class="dm-unread-badge" data-dm-uid="{{ f.id }}" style="display:none;"></span>
+                            </div>
+                        </div>
                     </div>
                     {% endfor %}
                     {% if not friends %}
@@ -831,7 +835,7 @@
             if (imgFile) {
                 const formData = new FormData();
                 formData.append('image', imgFile);
-                const imgRes = await fetch('/api/upload-image', { method: 'POST', body: formData });
+                const imgRes = await fetch('/api/upload-image', { method: 'POST', body: formData, headers: {'X-CSRFToken': CSRF_TOKEN} });
                 const imgData = await imgRes.json();
                 if (imgData.ok) {
                     imageUrl = imgData.url;
@@ -871,7 +875,7 @@
 
         async function deleteNotice(noticeId) {
             if (!confirm('공지를 삭제하시겠습니까?')) return;
-            await fetch('/api/notices/' + noticeId, { method: 'DELETE' });
+            await fetch('/api/notices/' + noticeId, { method: 'DELETE', headers: {'X-CSRFToken': CSRF_TOKEN} });
         }
 
         function formatTime(ts) {

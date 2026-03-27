@@ -241,6 +241,8 @@ def room_page(room_id):
         return redirect(f'/{game}?room_id={room_id}')
 
     uid = session['user_id']
+    # Set status to 'waiting' immediately so lobby disconnect doesn't flash 'offline'
+    db.update_user_status(uid, 'waiting')
     user = db.get_user(uid) or {}
     friend_ids = user.get('friends', [])
     friends_data = db.batch_get_users(friend_ids)
@@ -1009,7 +1011,12 @@ def on_disconnect():
     if info['context'] == 'lobby':
         if uid in lobby_sids and lobby_sids[uid] == request.sid:
             del lobby_sids[uid]
-        broadcast_friend_status(uid, 'offline')
+        # Only broadcast offline if user isn't navigating to waiting/game/spectate
+        user = db.get_user(uid)
+        current_status = user.get('status', 'offline') if user else 'offline'
+        if current_status not in ('waiting', 'ingame', 'spectating'):
+            db.update_user_status(uid, 'offline')
+            broadcast_friend_status(uid, 'offline')
         leave_room('lobby')
     elif info['context'] == 'waiting':
         leave_room(rid)

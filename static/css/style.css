@@ -665,6 +665,18 @@ body {
     margin-top: 2px;
 }
 
+.friend-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.friend-action-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
 .friend-status-text {
     font-size: 0.75rem;
     color: #9a8b78;
@@ -1845,6 +1857,14 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    min-width: 0;
+    overflow: hidden;
+}
+.notice-header .section-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
 }
 
 /* ===== Profile Edit Modal ===== */
