@@ -26,6 +26,7 @@ docker run -d \
   -e USERS_TABLE=gamehub-users \
   -e ROOMS_TABLE=gamehub-rooms \
   -e NOTICES_TABLE=gamehub-notices \
+  -e DMS_TABLE=gamehub-dms \
   -e SECRET_KEY='${app_secret_key}' \
   -e LOG_BUCKET=${log_bucket} \
   -e LOG_FLUSH_INTERVAL=60 \
@@ -67,6 +68,7 @@ docker run -d \
   -e USERS_TABLE=gamehub-users \
   -e ROOMS_TABLE=gamehub-rooms \
   -e NOTICES_TABLE=gamehub-notices \
+  -e DMS_TABLE=gamehub-dms \
   -e SECRET_KEY='${app_secret_key}' \
   -e LOG_BUCKET=${log_bucket} \
   -e LOG_FLUSH_INTERVAL=60 \

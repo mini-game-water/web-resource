@@ -23,6 +23,7 @@ _dynamodb = boto3.resource('dynamodb', region_name=_region)
 _users_table = _dynamodb.Table(os.environ.get('USERS_TABLE', 'gamehub-users'))
 _rooms_table = _dynamodb.Table(os.environ.get('ROOMS_TABLE', 'gamehub-rooms'))
 _notices_table = _dynamodb.Table(os.environ.get('NOTICES_TABLE', 'gamehub-notices'))
+_dms_table = _dynamodb.Table(os.environ.get('DMS_TABLE', 'gamehub-dms'))
 
 ROOM_TTL_SECONDS = 3600  # 1 hour
 
@@ -315,6 +316,74 @@ def set_room_status(room_id, status):
         ExpressionAttributeNames={'#s': 'status'},
         ExpressionAttributeValues={':status': status},
     )
+
+
+# ──────────────────── DM Operations ────────────────────
+
+def make_conversation_id(user1, user2):
+    return '#'.join(sorted([user1, user2]))
+
+
+def send_dm(sender_id, recipient_id, message):
+    conv_id = make_conversation_id(sender_id, recipient_id)
+    ts = int(time.time() * 1000)
+    item = {
+        'conversation_id': conv_id,
+        'timestamp': ts,
+        'dm_id': uuid.uuid4().hex,
+        'sender_id': sender_id,
+        'recipient_id': recipient_id,
+        'message': message,
+        'read': False,
+    }
+    _dms_table.put_item(Item=item)
+    return _convert_decimals(item)
+
+
+def get_conversation(user1, user2, limit=50, last_key=None):
+    conv_id = make_conversation_id(user1, user2)
+    kwargs = {
+        'KeyConditionExpression': Key('conversation_id').eq(conv_id),
+        'ScanIndexForward': False,
+        'Limit': limit,
+    }
+    if last_key:
+        kwargs['ExclusiveStartKey'] = last_key
+    resp = _dms_table.query(**kwargs)
+    items = [_convert_decimals(i) for i in resp.get('Items', [])]
+    return items, resp.get('LastEvaluatedKey')
+
+
+def get_unread_counts(user_id):
+    resp = _dms_table.query(
+        IndexName='recipient-index',
+        KeyConditionExpression=Key('recipient_id').eq(user_id),
+        FilterExpression='#r = :false',
+        ExpressionAttributeNames={'#r': 'read'},
+        ExpressionAttributeValues={':false': False},
+    )
+    counts = {}
+    for item in resp.get('Items', []):
+        conv_id = item['conversation_id']
+        counts[conv_id] = counts.get(conv_id, 0) + 1
+    return counts
+
+
+def mark_as_read(user1, user2, recipient_id):
+    conv_id = make_conversation_id(user1, user2)
+    resp = _dms_table.query(
+        KeyConditionExpression=Key('conversation_id').eq(conv_id),
+        FilterExpression='recipient_id = :rid AND #r = :false',
+        ExpressionAttributeNames={'#r': 'read'},
+        ExpressionAttributeValues={':rid': recipient_id, ':false': False},
+    )
+    for item in resp.get('Items', []):
+        _dms_table.update_item(
+            Key={'conversation_id': conv_id, 'timestamp': item['timestamp']},
+            UpdateExpression='SET #r = :true',
+            ExpressionAttributeNames={'#r': 'read'},
+            ExpressionAttributeValues={':true': True},
+        )
 
 
 def list_waiting_rooms():

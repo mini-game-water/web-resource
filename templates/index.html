@@ -145,6 +145,7 @@
                         <option value="all">전체</option>
                         <option value="online">온라인</option>
                         <option value="chilling">쉬는 중</option>
+                        <option value="waiting">방 대기</option>
                         <option value="ingame">게임중</option>
                         <option value="spectating">관전중</option>
                         <option value="offline">오프라인</option>
@@ -167,8 +168,10 @@
                             {% endif %}
                         </div>
                         <span class="friend-status-text">
-                            {% if f.status == 'online' %}온라인{% elif f.status == 'chilling' %}쉬는 중{% elif f.status == 'ingame' %}게임중{% elif f.status == 'spectating' %}관전중{% else %}오프라인{% endif %}
+                            {% if f.status == 'online' %}온라인{% elif f.status == 'chilling' %}쉬는 중{% elif f.status == 'waiting' %}방 대기{% elif f.status == 'ingame' %}게임중{% elif f.status == 'spectating' %}관전중{% else %}오프라인{% endif %}
                         </span>
+                        <button class="dm-btn" onclick="openDM('{{ f.id }}')" title="메시지 보내기">&#128172;</button>
+                        <span class="dm-unread-badge" data-dm-uid="{{ f.id }}" style="display:none;"></span>
                     </div>
                     {% endfor %}
                     {% if not friends %}
@@ -605,7 +608,7 @@
                 if (nearbyBadge) nearbyBadge.remove();
             }
 
-            const labels = {online: '온라인', chilling: '쉬는 중', ingame: '게임중', spectating: '관전중', offline: '오프라인'};
+            const labels = {online: '온라인', chilling: '쉬는 중', waiting: '방 대기', ingame: '게임중', spectating: '관전중', offline: '오프라인'};
             el.querySelector('.friend-status-text').textContent = labels[data.status] || '오프라인';
             applyFriendFilter();
         });
@@ -920,6 +923,138 @@
                 document.getElementById('notice-list').innerHTML = '<p class="empty-msg" id="no-notices">공지사항이 없습니다.</p>';
             }
         });
+        /* ── DM Feature ── */
+        let dmCurrentFriend = null;
+
+        function openDM(friendId) {
+            dmCurrentFriend = friendId;
+            let overlay = document.getElementById('dm-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'dm-overlay';
+                overlay.className = 'dm-overlay';
+                overlay.innerHTML = `
+                    <div class="dm-modal">
+                        <div class="dm-header">
+                            <span id="dm-friend-name"></span>
+                            <button class="dm-close-btn" onclick="closeDM()">&times;</button>
+                        </div>
+                        <div class="dm-messages" id="dm-messages"></div>
+                        <div class="dm-input-wrap">
+                            <input type="text" id="dm-input" placeholder="메시지 입력..." maxlength="500" autocomplete="off">
+                            <button onclick="sendDM()">전송</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(overlay);
+                overlay.querySelector('.dm-modal').addEventListener('click', e => e.stopPropagation());
+                overlay.addEventListener('click', closeDM);
+                document.getElementById('dm-input').addEventListener('keydown', e => {
+                    if (e.key === 'Enter') sendDM();
+                });
+            }
+            overlay.style.display = 'flex';
+            document.getElementById('dm-friend-name').textContent = friendId;
+            document.getElementById('dm-messages').innerHTML = '<p class="dm-empty">불러오는 중...</p>';
+            document.getElementById('dm-input').value = '';
+            fetch(`/api/dms/${friendId}`, {headers: {'X-CSRFToken': CSRF_TOKEN}})
+                .then(r => r.json())
+                .then(data => {
+                    renderDMMessages(data.messages || []);
+                    // Mark as read
+                    fetch(`/api/dms/${friendId}/read`, {method:'POST', headers:{'X-CSRFToken':CSRF_TOKEN}});
+                    // Clear unread badge
+                    const badge = document.querySelector(`.dm-unread-badge[data-dm-uid="${friendId}"]`);
+                    if (badge) { badge.style.display = 'none'; badge.textContent = ''; }
+                });
+        }
+
+        function closeDM() {
+            const overlay = document.getElementById('dm-overlay');
+            if (overlay) overlay.style.display = 'none';
+            dmCurrentFriend = null;
+        }
+
+        function renderDMMessages(messages) {
+            const container = document.getElementById('dm-messages');
+            if (!messages.length) {
+                container.innerHTML = '<p class="dm-empty">대화를 시작해보세요!</p>';
+                return;
+            }
+            // Messages come newest-first from API, reverse for display
+            const sorted = [...messages].reverse();
+            container.innerHTML = sorted.map(m => {
+                const cls = m.sender_id === MY_USER ? 'sent' : 'received';
+                const t = new Date(m.timestamp).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
+                return `<div class="dm-msg ${cls}">${escapeHtml(m.message)}<span class="dm-time">${t}</span></div>`;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sendDM() {
+            const input = document.getElementById('dm-input');
+            const msg = input.value.trim();
+            if (!msg || !dmCurrentFriend) return;
+            input.value = '';
+            fetch('/api/dms/send', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json', 'X-CSRFToken': CSRF_TOKEN},
+                body: JSON.stringify({recipient_id: dmCurrentFriend, message: msg})
+            }).then(r => r.json()).then(data => {
+                if (data.ok) {
+                    const container = document.getElementById('dm-messages');
+                    const emptyMsg = container.querySelector('.dm-empty');
+                    if (emptyMsg) emptyMsg.remove();
+                    const t = new Date(data.dm.timestamp).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
+                    container.insertAdjacentHTML('beforeend',
+                        `<div class="dm-msg sent">${escapeHtml(msg)}<span class="dm-time">${t}</span></div>`);
+                    container.scrollTop = container.scrollHeight;
+                }
+            });
+        }
+
+        // Real-time DM reception
+        socket.on('dm_received', (data) => {
+            // Update unread badge
+            const badge = document.querySelector(`.dm-unread-badge[data-dm-uid="${data.sender_id}"]`);
+            if (badge) {
+                if (dmCurrentFriend === data.sender_id) {
+                    // DM modal is open for this friend — append message and mark read
+                    const container = document.getElementById('dm-messages');
+                    const emptyMsg = container.querySelector('.dm-empty');
+                    if (emptyMsg) emptyMsg.remove();
+                    const t = new Date(data.timestamp).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
+                    container.insertAdjacentHTML('beforeend',
+                        `<div class="dm-msg received">${escapeHtml(data.message)}<span class="dm-time">${t}</span></div>`);
+                    container.scrollTop = container.scrollHeight;
+                    fetch(`/api/dms/${data.sender_id}/read`, {method:'POST', headers:{'X-CSRFToken':CSRF_TOKEN}});
+                } else {
+                    const cur = parseInt(badge.textContent) || 0;
+                    badge.textContent = cur + 1;
+                    badge.style.display = 'inline-flex';
+                }
+            }
+        });
+
+        socket.on('dm_read', (data) => {
+            // Could update read receipts UI here if desired
+        });
+
+        // Load unread counts on page load
+        fetch('/api/dms/unread', {headers: {'X-CSRFToken': CSRF_TOKEN}})
+            .then(r => r.json())
+            .then(data => {
+                const counts = data.counts || {};
+                for (const [convId, count] of Object.entries(counts)) {
+                    // Extract friend ID from conversation_id
+                    const parts = convId.split('#');
+                    const friendId = parts[0] === MY_USER ? parts[1] : parts[0];
+                    const badge = document.querySelector(`.dm-unread-badge[data-dm-uid="${friendId}"]`);
+                    if (badge && count > 0) {
+                        badge.textContent = count;
+                        badge.style.display = 'inline-flex';
+                    }
+                }
+            });
     </script>
 </body>
 </html>

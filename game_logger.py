@@ -33,6 +33,7 @@ CATEGORIES = [
     'chat_activity',
     'friend_activity',
     'spectate_activity',
+    'dm_activity',
 ]
 
 _buffers = {cat: [] for cat in CATEGORIES}
@@ -232,3 +233,8 @@ def log_coaching(room_id, user_id, game):
 
 def log_coaching_clear(room_id, user_id):
     log('spectate_activity', 'coaching_clear', room_id=room_id, user_id=user_id)
+
+# DM activity
+def log_dm_sent(sender_id, recipient_id, conversation_id):
+    log('dm_activity', 'dm_sent', sender_id=sender_id,
+        recipient_id=recipient_id, conversation_id=conversation_id)

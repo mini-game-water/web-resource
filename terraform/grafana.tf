@@ -935,6 +935,50 @@ resource "grafana_dashboard" "gamehub_logs" {
               EOT
               format         = 0
             }]
+          },
+
+          # ── DM Messages Today (stat) ──
+          {
+            id         = 22
+            title      = "오늘의 DM 메시지"
+            type       = "stat"
+            gridPos    = { h = 4, w = 6, x = 18, y = 66 }
+            datasource = local.athena_ds
+            targets = [{
+              connectionArgs = local.athena_conn
+              rawSQL         = <<-EOT
+                SELECT COUNT(*) AS dm_count
+                FROM dm_activity
+                WHERE event_type = 'dm_sent'
+                  AND year = YEAR(CURRENT_DATE)
+                  AND month = MONTH(CURRENT_DATE)
+                  AND day = DAY(CURRENT_DATE)
+              EOT
+              format         = 0
+            }]
+          },
+
+          # ── DM History (table) ──
+          {
+            id         = 23
+            title      = "DM 메시지 내역"
+            type       = "table"
+            gridPos    = { h = 8, w = 24, x = 0, y = 70 }
+            datasource = local.athena_ds
+            targets = [{
+              connectionArgs = local.athena_conn
+              rawSQL         = <<-EOT
+                SELECT timestamp, sender_id, recipient_id, conversation_id
+                FROM dm_activity
+                WHERE event_type = 'dm_sent'
+                  AND year = YEAR(CURRENT_DATE)
+                  AND month = MONTH(CURRENT_DATE)
+                  AND day = DAY(CURRENT_DATE)
+                ORDER BY timestamp DESC
+                LIMIT 100
+              EOT
+              format         = 0
+            }]
           }
         ]
       }

@@ -58,3 +58,34 @@ resource "aws_dynamodb_table" "notices" {
 
   tags = { Name = "gamehub-notices" }
 }
+
+resource "aws_dynamodb_table" "dms" {
+  name         = "gamehub-dms"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "conversation_id"
+  range_key    = "timestamp"
+
+  attribute {
+    name = "conversation_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "timestamp"
+    type = "N"
+  }
+
+  attribute {
+    name = "recipient_id"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "recipient-index"
+    hash_key        = "recipient_id"
+    range_key       = "timestamp"
+    projection_type = "ALL"
+  }
+
+  tags = { Name = "gamehub-dms" }
+}
