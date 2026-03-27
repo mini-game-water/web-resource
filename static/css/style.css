@@ -29,8 +29,11 @@ body {
 .navbar .logo {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #a38b6d;
+    color: #fff;
     text-decoration: none;
+    background: linear-gradient(135deg, #a38b6d, #8a7259);
+    padding: 0.2rem 0.8rem;
+    border-radius: 8px;
 }
 
 .navbar .nav-links {
@@ -423,43 +426,40 @@ body {
     margin-bottom: 0.4rem;
     position: relative;
     z-index: 1;
+    color: #fff;
 }
 .hero-section p {
     font-size: 0.95rem;
     opacity: 0.9;
     position: relative;
     z-index: 1;
-}
-
-.dashboard h1 {
-    font-size: 2rem;
-    margin-bottom: 0.8rem;
-    color: #a38b6d;
-    flex-shrink: 0;
+    color: #fff;
 }
 
 /* ===== Section Titles ===== */
 .section-title {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    font-size: 1.15rem;
+    gap: 0.5rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: #5a4e42;
     margin-bottom: 1rem;
     text-align: left;
+    line-height: 1;
 }
 .section-title-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
     background: linear-gradient(135deg, #a38b6d, #c4aa82);
     color: #fff;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     flex-shrink: 0;
+    line-height: 1;
 }
 
 /* ===== Game Grid (card-based) ===== */

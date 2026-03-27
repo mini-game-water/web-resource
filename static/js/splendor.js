@@ -550,8 +550,8 @@
 
         me.reserved.forEach(card => {
             const el = createCardElement(card);
-            el.style.width = '90px';
-            el.style.height = '126px';
+            el.style.width = '100px';
+            el.style.height = '140px';
             reservedArea.appendChild(el);
         });
     }
