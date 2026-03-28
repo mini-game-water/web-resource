@@ -865,7 +865,7 @@ resource "grafana_dashboard" "gamehub_logs" {
                   AND month = MONTH(CURRENT_DATE)
                   AND day = DAY(CURRENT_DATE)
                   AND event_type IN ('login', 'logout', 'register')
-                  AND ('${filter_user_id}' = '' OR user_id = '${filter_user_id}')
+                  AND ('$${filter_user_id}' = '' OR user_id = '$${filter_user_id}')
                 ORDER BY timestamp DESC
                 LIMIT 50
               EOT
@@ -889,8 +889,8 @@ resource "grafana_dashboard" "gamehub_logs" {
                   AND month = MONTH(CURRENT_DATE)
                   AND day = DAY(CURRENT_DATE)
                   AND event_type = 'page_view'
-                  AND ('${filter_user_id}' = '' OR user_id = '${filter_user_id}')
-                  AND ('${filter_game}' = '' OR game = '${filter_game}')
+                  AND ('$${filter_user_id}' = '' OR user_id = '$${filter_user_id}')
+                  AND ('$${filter_game}' = '' OR game = '$${filter_game}')
                 ORDER BY timestamp DESC
                 LIMIT 50
               EOT
@@ -913,9 +913,9 @@ resource "grafana_dashboard" "gamehub_logs" {
                 WHERE year = YEAR(CURRENT_DATE)
                   AND month = MONTH(CURRENT_DATE)
                   AND day = DAY(CURRENT_DATE)
-                  AND ('${filter_user_id}' = '' OR user_id = '${filter_user_id}')
-                  AND ('${filter_room_id}' = '' OR room_id = '${filter_room_id}')
-                  AND ('${filter_game}' = '' OR game = '${filter_game}')
+                  AND ('$${filter_user_id}' = '' OR user_id = '$${filter_user_id}')
+                  AND ('$${filter_room_id}' = '' OR room_id = '$${filter_room_id}')
+                  AND ('$${filter_game}' = '' OR game = '$${filter_game}')
                 ORDER BY timestamp DESC
                 LIMIT 50
               EOT
@@ -938,9 +938,9 @@ resource "grafana_dashboard" "gamehub_logs" {
                 WHERE year = YEAR(CURRENT_DATE)
                   AND month = MONTH(CURRENT_DATE)
                   AND day = DAY(CURRENT_DATE)
-                  AND ('${filter_user_id}' = '' OR user_id = '${filter_user_id}')
-                  AND ('${filter_room_id}' = '' OR room_id = '${filter_room_id}')
-                  AND ('${filter_game}' = '' OR game = '${filter_game}')
+                  AND ('$${filter_user_id}' = '' OR user_id = '$${filter_user_id}')
+                  AND ('$${filter_room_id}' = '' OR room_id = '$${filter_room_id}')
+                  AND ('$${filter_game}' = '' OR game = '$${filter_game}')
                 ORDER BY timestamp DESC
                 LIMIT 50
               EOT
@@ -963,8 +963,8 @@ resource "grafana_dashboard" "gamehub_logs" {
                 WHERE year = YEAR(CURRENT_DATE)
                   AND month = MONTH(CURRENT_DATE)
                   AND day = DAY(CURRENT_DATE)
-                  AND ('${filter_user_id}' = '' OR user_id = '${filter_user_id}')
-                  AND ('${filter_room_id}' = '' OR room_id = '${filter_room_id}')
+                  AND ('$${filter_user_id}' = '' OR user_id = '$${filter_user_id}')
+                  AND ('$${filter_room_id}' = '' OR room_id = '$${filter_room_id}')
                 ORDER BY timestamp DESC
                 LIMIT 100
               EOT
@@ -1009,8 +1009,8 @@ resource "grafana_dashboard" "gamehub_logs" {
                   AND year = YEAR(CURRENT_DATE)
                   AND month = MONTH(CURRENT_DATE)
                   AND day = DAY(CURRENT_DATE)
-                  AND ('${filter_conversation_id}' = '' OR conversation_id = '${filter_conversation_id}')
-                  AND ('${filter_user_id}' = '' OR sender_id = '${filter_user_id}')
+                  AND ('$${filter_conversation_id}' = '' OR conversation_id = '$${filter_conversation_id}')
+                  AND ('$${filter_user_id}' = '' OR sender_id = '$${filter_user_id}')
                 ORDER BY timestamp DESC
                 LIMIT 100
               EOT
