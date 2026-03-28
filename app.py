@@ -1052,12 +1052,9 @@ def on_disconnect():
                     }, room=rid)
                     broadcast_rooms()
             # Restore user status after leaving waiting room
-            if uid in lobby_sids:
-                db.update_user_status(uid, 'online')
-                broadcast_friend_status(uid, 'online')
-            else:
-                db.update_user_status(uid, 'offline')
-                broadcast_friend_status(uid, 'offline')
+            # Set 'online' optimistically — lobby join or next page load will correct
+            db.update_user_status(uid, 'online')
+            broadcast_friend_status(uid, 'online')
     elif info['context'] == 'game':
         leave_room(rid)
         if rid in game_conns:

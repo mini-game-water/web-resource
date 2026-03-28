@@ -2121,25 +2121,26 @@ body {
     margin-left: 4px;
     line-height: 1;
 }
-.dm-overlay {
+.dm-panel {
     position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-}
-.dm-modal {
+    bottom: 20px;
+    right: 20px;
+    width: 360px;
+    height: 450px;
+    min-width: 280px;
+    min-height: 300px;
     background: #fff;
     border-radius: 14px;
-    width: 400px;
-    max-width: 92vw;
-    max-height: 80vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+    z-index: 9999;
     overflow: hidden;
+    resize: both;
+    direction: rtl;         /* resize handle appears bottom-right */
+}
+.dm-panel > * {
+    direction: ltr;
 }
 .dm-header {
     display: flex;
@@ -2164,8 +2165,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    min-height: 200px;
-    max-height: 50vh;
+    min-height: 0;
 }
 .dm-msg {
     max-width: 75%;
@@ -2224,4 +2224,81 @@ body {
     color: #aaa;
     padding: 40px 0;
     font-size: 0.9rem;
+}
+
+/* ── Notice Title-Only List + View Popup ── */
+.notice-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.notice-title-row .notice-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.notice-open-btn {
+    background: #a38b6d;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-weight: 600;
+}
+.notice-open-btn:hover { background: #8a7459; }
+
+.notice-view-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+.notice-view-modal {
+    background: #fff;
+    border-radius: 14px;
+    width: 520px;
+    max-width: 92vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.notice-view-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.notice-view-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #5a4e42;
+    word-break: break-word;
+}
+.notice-view-body {
+    font-size: 0.95rem;
+    color: #444;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin-bottom: 12px;
+}
+.notice-view-image img {
+    max-width: 100%;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    display: block;
+}
+.notice-view-meta {
+    font-size: 0.8rem;
+    color: #9a8b78;
 }

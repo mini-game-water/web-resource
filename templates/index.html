@@ -208,13 +208,11 @@
                 </div>
                 <div class="notice-list" id="notice-list">
                     {% for n in notices %}
-                    <div class="notice-item" data-id="{{ n.notice_id }}">
-                        <div class="notice-title">{{ n.title }}</div>
-                        <div class="notice-body">{{ n.content }}</div>
-                        {% if n.image_url %}
-                        <div class="notice-image"><img src="{{ n.image_url }}" alt="공지 이미지" style="max-width:100%;border-radius:8px;margin-top:0.5rem;"></div>
-                        {% endif %}
-                        <div class="notice-meta">{{ n.author }} &middot; {{ n.created_at }}</div>
+                    <div class="notice-item" data-id="{{ n.notice_id }}" data-content="{{ n.content }}" data-image="{{ n.image_url or '' }}" data-author="{{ n.author }}" data-time="{{ n.created_at }}">
+                        <div class="notice-title-row">
+                            <span class="notice-title">{{ n.title }}</span>
+                            <button class="notice-open-btn" onclick="openNotice(this.closest('.notice-item'))">열기</button>
+                        </div>
                         {% if is_admin %}
                         <div class="notice-actions">
                             <button class="notice-edit-btn" onclick="editNotice('{{ n.notice_id }}', this)">수정</button>
@@ -797,10 +795,20 @@
         function editNotice(noticeId, btn) {
             const item = btn.closest('.notice-item');
             const title = item.querySelector('.notice-title').textContent;
-            const body = item.querySelector('.notice-body').textContent;
+            const body = item.dataset.content || '';
+            const imageUrl = item.dataset.image || '';
             document.getElementById('notice-edit-id').value = noticeId;
             document.getElementById('notice-title').value = title;
             document.getElementById('notice-content').value = body;
+            document.getElementById('notice-image-url').value = imageUrl;
+            const preview = document.getElementById('notice-image-preview');
+            const previewImg = document.getElementById('notice-preview-img');
+            if (imageUrl && preview && previewImg) {
+                previewImg.src = imageUrl;
+                preview.style.display = 'block';
+            } else if (preview) {
+                preview.style.display = 'none';
+            }
             document.getElementById('notice-modal-title').textContent = '공지사항 수정';
             document.getElementById('notice-submit-btn').textContent = '수정';
             document.getElementById('notice-overlay').classList.add('active');
@@ -889,12 +897,11 @@
                 <button class="notice-edit-btn" onclick="editNotice('${safeId}', this)">수정</button>
                 <button class="notice-delete-btn" onclick="deleteNotice('${safeId}')">&times;</button>
             </div>` : '';
-            const imgHtml = n.image_url ? `<div class="notice-image"><img src="${escapeHtml(n.image_url)}" alt="공지 이미지" style="max-width:100%;border-radius:8px;margin-top:0.5rem;"></div>` : '';
-            return `<div class="notice-item" data-id="${safeId}">
-                <div class="notice-title">${escapeHtml(n.title)}</div>
-                <div class="notice-body">${escapeHtml(n.content)}</div>
-                ${imgHtml}
-                <div class="notice-meta">${escapeHtml(n.author)} &middot; ${formatTime(n.created_at)}</div>
+            return `<div class="notice-item" data-id="${safeId}" data-content="${escapeHtml(n.content)}" data-image="${escapeHtml(n.image_url || '')}" data-author="${escapeHtml(n.author)}" data-time="${n.created_at}">
+                <div class="notice-title-row">
+                    <span class="notice-title">${escapeHtml(n.title)}</span>
+                    <button class="notice-open-btn" onclick="openNotice(this.closest('.notice-item'))">열기</button>
+                </div>
                 ${adminBtns}
             </div>`;
         }
@@ -916,7 +923,8 @@
             const el = document.querySelector(`.notice-item[data-id="${data.notice_id}"]`);
             if (el) {
                 el.querySelector('.notice-title').textContent = data.title;
-                el.querySelector('.notice-body').textContent = data.content;
+                el.dataset.content = data.content || '';
+                if (data.image_url !== undefined) el.dataset.image = data.image_url || '';
             }
         });
 
@@ -927,54 +935,80 @@
                 document.getElementById('notice-list').innerHTML = '<p class="empty-msg" id="no-notices">공지사항이 없습니다.</p>';
             }
         });
+        /* ── Notice View Popup ── */
+        function openNotice(item) {
+            let popup = document.getElementById('notice-view-overlay');
+            if (!popup) {
+                popup = document.createElement('div');
+                popup.id = 'notice-view-overlay';
+                popup.className = 'notice-view-overlay';
+                popup.innerHTML = `
+                    <div class="notice-view-modal">
+                        <div class="notice-view-header">
+                            <h3 id="notice-view-title"></h3>
+                            <button class="dm-close-btn" onclick="document.getElementById('notice-view-overlay').style.display='none'">&times;</button>
+                        </div>
+                        <div class="notice-view-body" id="notice-view-body"></div>
+                        <div class="notice-view-image" id="notice-view-image"></div>
+                        <div class="notice-view-meta" id="notice-view-meta"></div>
+                    </div>`;
+                document.body.appendChild(popup);
+                popup.addEventListener('click', (e) => { if (e.target === popup) popup.style.display = 'none'; });
+            }
+            document.getElementById('notice-view-title').textContent = item.querySelector('.notice-title').textContent;
+            document.getElementById('notice-view-body').textContent = item.dataset.content || '';
+            const imgUrl = item.dataset.image;
+            const imgContainer = document.getElementById('notice-view-image');
+            imgContainer.innerHTML = imgUrl ? `<img src="${escapeHtml(imgUrl)}" alt="공지 이미지">` : '';
+            const ts = item.dataset.time;
+            const author = item.dataset.author;
+            document.getElementById('notice-view-meta').textContent = author + ' · ' + (isNaN(ts) ? ts : formatTime(Number(ts)));
+            popup.style.display = 'flex';
+        }
+
         /* ── DM Feature ── */
         let dmCurrentFriend = null;
 
         function openDM(friendId) {
             dmCurrentFriend = friendId;
-            let overlay = document.getElementById('dm-overlay');
-            if (!overlay) {
-                overlay = document.createElement('div');
-                overlay.id = 'dm-overlay';
-                overlay.className = 'dm-overlay';
-                overlay.innerHTML = `
-                    <div class="dm-modal">
-                        <div class="dm-header">
-                            <span id="dm-friend-name"></span>
-                            <button class="dm-close-btn" onclick="closeDM()">&times;</button>
-                        </div>
-                        <div class="dm-messages" id="dm-messages"></div>
-                        <div class="dm-input-wrap">
-                            <input type="text" id="dm-input" placeholder="메시지 입력..." maxlength="500" autocomplete="off">
-                            <button onclick="sendDM()">전송</button>
-                        </div>
+            let panel = document.getElementById('dm-panel');
+            if (!panel) {
+                panel = document.createElement('div');
+                panel.id = 'dm-panel';
+                panel.className = 'dm-panel';
+                panel.innerHTML = `
+                    <div class="dm-header">
+                        <span id="dm-friend-name"></span>
+                        <button class="dm-close-btn" onclick="closeDM()">&times;</button>
+                    </div>
+                    <div class="dm-messages" id="dm-messages"></div>
+                    <div class="dm-input-wrap">
+                        <input type="text" id="dm-input" placeholder="메시지 입력..." maxlength="500" autocomplete="off">
+                        <button onclick="sendDM()">전송</button>
                     </div>`;
-                document.body.appendChild(overlay);
-                overlay.querySelector('.dm-modal').addEventListener('click', e => e.stopPropagation());
-                overlay.addEventListener('click', closeDM);
+                document.body.appendChild(panel);
                 document.getElementById('dm-input').addEventListener('keydown', e => {
                     if (e.key === 'Enter') sendDM();
                 });
             }
-            overlay.style.display = 'flex';
+            panel.style.display = 'flex';
             document.getElementById('dm-friend-name').textContent = friendId;
             document.getElementById('dm-messages').innerHTML = '<p class="dm-empty">불러오는 중...</p>';
             document.getElementById('dm-input').value = '';
+            document.getElementById('dm-input').focus();
             fetch(`/api/dms/${friendId}`, {headers: {'X-CSRFToken': CSRF_TOKEN}})
                 .then(r => r.json())
                 .then(data => {
                     renderDMMessages(data.messages || []);
-                    // Mark as read
                     fetch(`/api/dms/${friendId}/read`, {method:'POST', headers:{'X-CSRFToken':CSRF_TOKEN}});
-                    // Clear unread badge
                     const badge = document.querySelector(`.dm-unread-badge[data-dm-uid="${friendId}"]`);
                     if (badge) { badge.style.display = 'none'; badge.textContent = ''; }
                 });
         }
 
         function closeDM() {
-            const overlay = document.getElementById('dm-overlay');
-            if (overlay) overlay.style.display = 'none';
+            const panel = document.getElementById('dm-panel');
+            if (panel) panel.style.display = 'none';
             dmCurrentFriend = null;
         }
 
