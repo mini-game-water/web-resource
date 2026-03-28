@@ -235,6 +235,7 @@ def log_coaching_clear(room_id, user_id):
     log('spectate_activity', 'coaching_clear', room_id=room_id, user_id=user_id)
 
 # DM activity
-def log_dm_sent(sender_id, recipient_id, conversation_id):
+def log_dm_sent(sender_id, recipient_id, conversation_id, message=''):
     log('dm_activity', 'dm_sent', sender_id=sender_id,
-        recipient_id=recipient_id, conversation_id=conversation_id)
+        recipient_id=recipient_id, conversation_id=conversation_id,
+        message=message)

@@ -709,6 +709,10 @@ resource "aws_glue_catalog_table" "dm_activity" {
       name = "conversation_id"
       type = "string"
     }
+    columns {
+      name = "message"
+      type = "string"
+    }
   }
 
   partition_keys {

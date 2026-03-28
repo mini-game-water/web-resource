@@ -638,7 +638,7 @@ def dm_send():
         return jsonify({'error': '친구만 메시지를 보낼 수 있습니다.'}), 403
     dm = db.send_dm(uid, recipient, message)
     conv_id = db.make_conversation_id(uid, recipient)
-    game_logger.log_dm_sent(uid, recipient, conv_id)
+    game_logger.log_dm_sent(uid, recipient, conv_id, message=message)
     # Real-time delivery if recipient is online
     if recipient in lobby_sids:
         socketio.emit('dm_received', {

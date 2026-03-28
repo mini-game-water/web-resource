@@ -195,6 +195,30 @@ resource "grafana_dashboard" "gamehub_logs" {
             { text = "Today", value = "today", selected = true }
           ]
           hide = 2
+        },
+        {
+          name    = "filter_user_id"
+          type    = "textbox"
+          label   = "사용자 ID"
+          current = { text = "", value = "" }
+        },
+        {
+          name    = "filter_room_id"
+          type    = "textbox"
+          label   = "방 ID"
+          current = { text = "", value = "" }
+        },
+        {
+          name    = "filter_game"
+          type    = "textbox"
+          label   = "게임"
+          current = { text = "", value = "" }
+        },
+        {
+          name    = "filter_conversation_id"
+          type    = "textbox"
+          label   = "대화 ID"
+          current = { text = "", value = "" }
         }
       ]
     }
@@ -841,6 +865,7 @@ resource "grafana_dashboard" "gamehub_logs" {
                   AND month = MONTH(CURRENT_DATE)
                   AND day = DAY(CURRENT_DATE)
                   AND event_type IN ('login', 'logout', 'register')
+                  AND ('${filter_user_id}' = '' OR user_id = '${filter_user_id}')
                 ORDER BY timestamp DESC
                 LIMIT 50
               EOT
@@ -864,6 +889,8 @@ resource "grafana_dashboard" "gamehub_logs" {
                   AND month = MONTH(CURRENT_DATE)
                   AND day = DAY(CURRENT_DATE)
                   AND event_type = 'page_view'
+                  AND ('${filter_user_id}' = '' OR user_id = '${filter_user_id}')
+                  AND ('${filter_game}' = '' OR game = '${filter_game}')
                 ORDER BY timestamp DESC
                 LIMIT 50
               EOT
@@ -886,6 +913,9 @@ resource "grafana_dashboard" "gamehub_logs" {
                 WHERE year = YEAR(CURRENT_DATE)
                   AND month = MONTH(CURRENT_DATE)
                   AND day = DAY(CURRENT_DATE)
+                  AND ('${filter_user_id}' = '' OR user_id = '${filter_user_id}')
+                  AND ('${filter_room_id}' = '' OR room_id = '${filter_room_id}')
+                  AND ('${filter_game}' = '' OR game = '${filter_game}')
                 ORDER BY timestamp DESC
                 LIMIT 50
               EOT
@@ -908,6 +938,9 @@ resource "grafana_dashboard" "gamehub_logs" {
                 WHERE year = YEAR(CURRENT_DATE)
                   AND month = MONTH(CURRENT_DATE)
                   AND day = DAY(CURRENT_DATE)
+                  AND ('${filter_user_id}' = '' OR user_id = '${filter_user_id}')
+                  AND ('${filter_room_id}' = '' OR room_id = '${filter_room_id}')
+                  AND ('${filter_game}' = '' OR game = '${filter_game}')
                 ORDER BY timestamp DESC
                 LIMIT 50
               EOT
@@ -930,6 +963,8 @@ resource "grafana_dashboard" "gamehub_logs" {
                 WHERE year = YEAR(CURRENT_DATE)
                   AND month = MONTH(CURRENT_DATE)
                   AND day = DAY(CURRENT_DATE)
+                  AND ('${filter_user_id}' = '' OR user_id = '${filter_user_id}')
+                  AND ('${filter_room_id}' = '' OR room_id = '${filter_room_id}')
                 ORDER BY timestamp DESC
                 LIMIT 100
               EOT
@@ -968,12 +1003,14 @@ resource "grafana_dashboard" "gamehub_logs" {
             targets = [{
               connectionArgs = local.athena_conn
               rawSQL         = <<-EOT
-                SELECT timestamp, sender_id, recipient_id, conversation_id
+                SELECT timestamp, conversation_id, sender_id, message
                 FROM dm_activity
                 WHERE event_type = 'dm_sent'
                   AND year = YEAR(CURRENT_DATE)
                   AND month = MONTH(CURRENT_DATE)
                   AND day = DAY(CURRENT_DATE)
+                  AND ('${filter_conversation_id}' = '' OR conversation_id = '${filter_conversation_id}')
+                  AND ('${filter_user_id}' = '' OR sender_id = '${filter_user_id}')
                 ORDER BY timestamp DESC
                 LIMIT 100
               EOT
