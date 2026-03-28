@@ -34,13 +34,14 @@ No test or lint commands are configured. No build step — JS and CSS are served
 
 ## Architecture
 
-**Backend (`app.py`)**: Flask + Flask-SocketIO (async_mode=`gevent`). Routes: auth (`/login`, `/register`, `/logout`), pages (`/`, `/tetris`, `/omok`, `/chess`, `/yacht`, `/poker`, `/rummikub`, `/bang`, `/splendor`, `/halligalli`, `/room/<id>`), REST API (`/api/rooms`, `/api/rooms/<id>/join`, `/api/friends/add`). SocketIO events handle lobby presence, waiting room coordination, friend invites, and real-time game moves.
+**Backend (`app.py`)**: Flask + Flask-SocketIO (async_mode=`gevent`). Routes: auth (`/login`, `/register`, `/logout`), pages (`/`, `/tetris`, `/omok`, `/chess`, `/yacht`, `/poker`, `/rummikub`, `/bang`, `/splendor`, `/halligalli`, `/room/<id>`), REST API (`/api/rooms`, `/api/rooms/<id>/join`, `/api/friends/add`, `/api/notices`, `/api/dms/*`). SocketIO events handle lobby presence, waiting room coordination, friend invites, DM delivery, and real-time game moves.
 
 **CSRF/CORS**: `WTF_CSRF_CHECK_DEFAULT = False` with manual `csrf.protect()` in `before_request` that skips `/socket.io` paths. SocketIO uses `cors_allowed_origins='*'` for ALB compatibility.
 
-**Data layer (`db.py`)**: DynamoDB via boto3. Two tables:
+**Data layer (`db.py`)**: DynamoDB via boto3. Three tables:
 - `gamehub-users` — PK: `user_id`. Fields: `pw`, `score`, `logged_in`, `public_ip`, `friends` (list). All access by user_id; friends use `BatchGetItem`.
 - `gamehub-rooms` — PK: `room_id`. GSI `status-index` (PK: `status`, SK: `created_at`) for listing waiting rooms. TTL auto-deletes rooms after 1 hour.
+- `gamehub-dms` — PK: `conversation_id` (sorted hash of user pair, e.g. `alice#bob`), SK: `timestamp`. GSI `recipient-index` (PK: `recipient_id`, SK: `timestamp`) for unread queries. Fields: `sender_id`, `recipient_id`, `message`, `read`.
 
 **Auth**: Flask session-based. `login_required` decorator on all game/page routes. Public IP tracked on login for "nearby friend" detection.
 
@@ -79,13 +80,15 @@ All games render to `<canvas>` elements. Each JS file is wrapped in an IIFE (`((
 - DynamoDB room items use `room_id` as the key (not `id`). Templates reference `room.room_id`.
 - Game-over overlay variable names differ per game: bang/halligalli use `gameOverOverlay`, others use `overlay`. All use `gameOverMsg` for the message element.
 - Room navigation uses `window.location.replace()` (not `.href`) to avoid polluting browser history.
-- Environment variables: `AWS_REGION`, `USERS_TABLE`, `ROOMS_TABLE`, `SECRET_KEY`, `LOG_BUCKET`, `LOG_FLUSH_INTERVAL`.
+- Environment variables: `AWS_REGION`, `USERS_TABLE`, `ROOMS_TABLE`, `NOTICES_TABLE`, `DMS_TABLE`, `SECRET_KEY`, `LOG_BUCKET`, `LOG_FLUSH_INTERVAL`.
 - Sound/animation guard pattern: Always use `if (typeof GameSounds !== 'undefined') GameSounds.play('name');` and `if (typeof GameAnimations !== 'undefined') GameAnimations.method();` to avoid errors if scripts aren't loaded.
-- `broadcast_friend_status` must be called from SocketIO handlers (`join_lobby`, `disconnect`), NOT from HTTP routes (`login`, `logout`). HTTP routes fire before the browser connects to SocketIO, so the event reaches the lobby room before the user joins it.
+- **User status states**: `online`, `chilling`, `waiting`, `ingame`, `spectating`, `offline`. Status is set in HTTP routes (`room_page` → `waiting`, `_game_route` → `ingame`/`spectating`) and SocketIO handlers (`join_lobby` → `online`, visibility change → `chilling`).
+- **Status transition safety**: Lobby disconnect checks DB status before setting `offline` — skips if already `waiting`/`ingame`/`spectating` (user is navigating, not leaving). Waiting disconnect sets `online` optimistically when room was still `waiting`.
+- `broadcast_friend_status` is called from both HTTP routes (for immediate status broadcast) and SocketIO handlers. The key rule: **lobby disconnect must NOT blindly set `offline`** — always check current DB status first.
 
 ## Infrastructure (Terraform)
 
-All infrastructure is defined in `terraform/`. Resources: VPC (2 public subnets), ALB (HTTPS with ACM cert, HTTP→HTTPS redirect, sticky sessions), EC2 (Amazon Linux 2023 + Docker), DynamoDB (2 tables), Route53 (A record → ALB), ACM (DNS-validated cert), IAM (EC2 instance profile with DynamoDB access).
+All infrastructure is defined in `terraform/`. Resources: VPC (2 public subnets), ALB (HTTPS with ACM cert, HTTP→HTTPS redirect, sticky sessions), EC2 (Amazon Linux 2023 + Docker), DynamoDB (4 tables: users, rooms, notices, dms), Route53 (A record → ALB), ACM (DNS-validated cert), IAM (EC2 instance profile with DynamoDB access), Glue catalog (7 tables for log categories), Grafana (managed workspace + Athena dashboard with template variable filters).
 
 ```bash
 cd terraform
@@ -109,7 +112,7 @@ GitHub repo: `https://github.com/mini-game-water/web-resource.git`. Deploy via `
 
 **S3 storage structure**: `s3://{LOG_BUCKET}/{category}/year=YYYY/month=MM/day=DD/{category}-{suffix}.json.gz`
 
-**6 log categories** with their event types:
+**7 log categories** with their event types:
 
 | Category | Event Types | Key Fields |
 |----------|------------|------------|
@@ -119,12 +122,27 @@ GitHub repo: `https://github.com/mini-game-water/web-resource.git`. Deploy via `
 | `chat_activity` | `chat_message` | `room_id`, `user_id`, `role`, `message` |
 | `friend_activity` | `friend_add`, `invite_sent`, `invite_response` | `user_id`, `friend_id`, `room_id`, `inviter`, `invitee`, `accepted` |
 | `spectate_activity` | `spectate_join`, `spectate_leave`, `coaching_suggest`, `coaching_clear` | `room_id`, `user_id`, `game` |
+| `dm_activity` | `dm_sent` | `sender_id`, `recipient_id`, `conversation_id`, `message` |
 
 ## Sound & Animation System
 
 **Sounds (`static/js/sounds.js`)**: Web Audio API-based procedural sound generation. 12 sounds: `click`, `place`, `capture`, `flip`, `roll`, `bell`, `win`, `lose`, `check`, `chip`, `buzz`, `tick`. Mute state persisted to `localStorage('gamehub_muted')`. Mute toggle button (`.sound-toggle-btn`) on all 9 game pages.
 
 **Animations (`static/css/animations.css` + `static/js/animations.js`)**: CSS keyframe animations triggered via JS. Effects: `showConfetti()` (win), `showShake(el)` (lose/damage), `showFlash(el)`, `showRipple(el, x, y)`, `showGlow(el)`, `showSparkle(el, color)`, `showDamage(el)`, `bounceIn(el)`. All use `pointer-events: none` overlays.
+
+## Direct Messaging (DM)
+
+**Backend**: REST API (`/api/dms/send`, `/api/dms/<friend_id>`, `/api/dms/<friend_id>/read`, `/api/dms/unread`). Real-time delivery via `lobby_sids` dict — if recipient is online, `dm_received` SocketIO event is emitted directly to their SID.
+
+**Frontend**: Fixed bottom-right panel (`.dm-panel`), CSS `resize: both` for user resizing, only one DM conversation open at a time (reuses same element by id `dm-panel`). Unread badges (`.dm-unread-badge[data-dm-uid]`) on friend list items, loaded on page load via `/api/dms/unread`.
+
+**Conversation ID**: `'#'.join(sorted([user1, user2]))` — deterministic, order-independent key for 1:1 conversations.
+
+## Notice Board
+
+**List view**: Shows title only + "열기" button per notice. Full content stored in `data-content`, `data-image`, `data-author`, `data-time` attributes on `.notice-item`. Clicking "열기" opens `openNotice()` popup (`.notice-view-overlay`).
+
+**Admin editing**: `editNotice()` reads from `item.dataset.content` / `item.dataset.image` (NOT from DOM child elements like `.notice-body`). When adding/removing DOM elements from notice items, always update `editNotice()` and `renderNotice()` to match.
 
 ## Known Pitfalls & Checklists
 
@@ -135,13 +153,18 @@ GitHub repo: `https://github.com/mini-game-water/web-resource.git`. Deploy via `
 - **Use `window.location.replace()` not `.href`** for game redirects to avoid polluting browser history.
 - **Game-over overlay variable names differ per game**: bang/halligalli use `gameOverOverlay`, others use `overlay`. All use `gameOverMsg`.
 - **All 9 games must handle the `game_winner` socket event** — server emits it when only 1 player remains after disconnect.
+- **CSRF token on ALL fetch calls**: Every `fetch()` with method POST/PUT/DELETE MUST include `headers: {'X-CSRFToken': CSRF_TOKEN}`. For `FormData` uploads (multipart), add ONLY the `X-CSRFToken` header — do NOT set `Content-Type` (browser sets it with boundary automatically).
+- **No duplicate global variable declarations**: `index.html` defines `MY_USER`, `CSRF_TOKEN`, `IS_ADMIN` once at the top of `<script>`. Never redeclare them (e.g., `MY_UID` duplicating `MY_USER`). Same for utility functions like `escapeHtml` — define once, reuse everywhere.
+- **When removing DOM elements, update ALL JS readers**: If a `.notice-body` div is removed from notice items, every JS function that reads from it (e.g., `editNotice`, `renderNotice`, socket handlers) must switch to the new data source (e.g., `dataset.content`). Search the entire file for the old selector before committing.
 
 ### Backend (app.py / SocketIO)
 
 - **CSRF does NOT apply to SocketIO**: `WTF_CSRF_CHECK_DEFAULT = False` + manual `csrf.protect()` skipping `/socket.io` is the correct pattern.
 - **`cors_allowed_origins='*'`** is required on SocketIO init when behind ALB/reverse proxy.
 - **Disconnect handler must check `game_conns` count**: When 1 player remains, emit `game_winner` and call `destroy_game_room()`.
-- **`broadcast_friend_status` timing**: Must be called from SocketIO handlers (`join_lobby`, `disconnect`), NOT from HTTP routes. HTTP routes fire before the browser connects to SocketIO.
+- **Lobby disconnect must check DB status before setting offline**: When a user navigates from index to room/game, the lobby socket disconnects. The handler must read `db.get_user(uid).status` and skip setting `offline` if already `waiting`/`ingame`/`spectating`. Otherwise, friends see a brief offline flicker.
+- **Set user status in HTTP routes before page render**: `room_page()` sets `waiting`, `_game_route()` sets `ingame`/`spectating` — this ensures DB status is correct before the lobby socket disconnects.
+- **New DynamoDB tables/env vars must be added in 4 places**: `db.py` (table ref), `terraform/dynamodb.tf` (table resource), `terraform/iam.tf` (ARN + index ARN in policy), `terraform/user_data.sh` (env var in both `docker run` blocks).
 
 ### Templates (HTML)
 
@@ -157,6 +180,9 @@ GitHub repo: `https://github.com/mini-game-water/web-resource.git`. Deploy via `
 - **After tainting a Grafana data source**, the dashboard must also be re-applied since it references the data source UID. Always target both: `terraform apply -target=grafana_data_source.athena -target=grafana_dashboard.gamehub_logs`.
 - **`user_data.sh` contains Terraform template variables** (`${aws_region}`, `${app_secret_key}`, `${log_bucket}`, `${docker_image}`) interpolated at plan/apply time. The embedded `deploy.sh` also uses these — do NOT use single-quoted heredoc (`'EOF'`) if you want variable interpolation.
 - **S3 log path structure** must match Glue table partition projection exactly: `{category}/year=YYYY/month=MM/day=DD/`. If `game_logger.py` path format changes, update `storage.location.template` in `athena.tf`.
+- **Escape `${...}` in Grafana dashboard SQL as `$${...}`**: Terraform interprets `${var}` as its own interpolation. Grafana template variables like `${filter_user_id}` must be written as `$${filter_user_id}` in `.tf` files so Terraform passes the literal string through. This applies to all `rawSQL` blocks inside `grafana_dashboard` resources.
+- **New log categories require updates in 3 places**: `game_logger.py` (add to `CATEGORIES` list + logging function), `terraform/athena.tf` (Glue catalog table with matching columns), `terraform/grafana.tf` (dashboard panels). Columns in Glue table must match the fields passed to `log()`.
+- **Grafana dashboard template variables**: Defined in `templating.list` inside the dashboard JSON. Use `type = "textbox"` for free-text filters. Reference in SQL as `$${variable_name}`. Filter pattern: `('$${filter_x}' = '' OR column = '$${filter_x}')`.
 
 ### Debugging Multiplayer Issues
 
