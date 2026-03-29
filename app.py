@@ -1,6 +1,7 @@
 import os
 import uuid
 import time
+import random
 from functools import wraps
 
 import re
@@ -832,7 +833,11 @@ def on_join_game(data):
     # Use actual player count (not max_players) for force-started games
     actual_players = len(room.get('players', [])) if room else 2
     if len(game_conns[rid]) >= actual_players:
-        emit('game_ready', {}, room=rid)
+        ready_data = {}
+        # For tetris: send synchronized seed so all players get same piece queue
+        if room and room.get('game') == 'tetris':
+            ready_data['seed'] = random.randint(0, 0xFFFFFFFF)
+        emit('game_ready', ready_data, room=rid)
     broadcast_participants(rid)
 
 
@@ -886,6 +891,33 @@ def on_tetris_state(data):
     game_logger.log_tetris_state(rid, uid, data['score'],
                                  data.get('level', 1), data.get('lines', 0))
     emit('opponent_state', data, room=rid, include_self=False)
+
+
+@socketio.on('tetris_attack')
+def on_tetris_attack(data):
+    rid = data['room_id']
+    attacker = data['user_id']
+    attack_lines = data.get('lines', 0)
+    if attack_lines < 1:
+        return
+    # Send garbage lines = cleared - 1 (clear 1 → 0, clear 2 → 1, clear 3 → 2, clear 4 → 3)
+    garbage = attack_lines - 1
+    if garbage < 1:
+        return
+    # Pick a random active (non-eliminated) opponent
+    active = game_conns.get(rid, set()) - {attacker}
+    gs = game_states.get(rid, {})
+    elim = gs.get('eliminated', set())
+    targets = [u for u in active if u not in elim]
+    if not targets:
+        return
+    target = random.choice(targets)
+    hole = random.randint(0, 9)
+    # Find target's SID and send garbage
+    for sid, info in sid_info.items():
+        if info.get('user_id') == target and info.get('room_id') == rid and info.get('context') == 'game':
+            socketio.emit('tetris_garbage', {'lines': garbage, 'hole': hole}, room=sid)
+            break
 
 
 def destroy_game_room(rid):

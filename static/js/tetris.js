@@ -13,6 +13,7 @@
         "#0000f0", // J - blue
         "#f0a000", // L - orange
     ];
+    const GARBAGE_COLOR = "#888888";
 
     const SHAPES = [
         null,
@@ -37,28 +38,45 @@
     let lastBroadcast = 0;
     const BROADCAST_INTERVAL = 50; // ms throttle
 
-    let canvas, ctx, nextCanvas, nextCtx;
+    let canvas, ctx, nextCanvas, nextCtx, holdCanvas, holdCtx;
     let board, piece, nextPiece, score, level, lines, gameOver, paused, dropInterval, timer;
+
+    // Hold piece
+    let holdType = null;
+    let holdUsed = false;
+
+    // Lock delay: allow movement/rotation for LOCK_DELAY_MAX ticks after landing
+    const LOCK_DELAY_MAX = 5;
+    let lockDelayCounter = 0;
+    let isLanding = false;
+
+    // Seeded RNG for synchronized piece queue
+    let rngSeed = 0;
+    function seededRandom() {
+        rngSeed = (rngSeed * 1664525 + 1013904223) & 0xFFFFFFFF;
+        return (rngSeed >>> 0) / 0x100000000;
+    }
 
     if (!isSpectator) {
         canvas = document.getElementById("tetris-board");
         ctx = canvas.getContext("2d");
         nextCanvas = document.getElementById("next-piece");
         nextCtx = nextCanvas.getContext("2d");
+        holdCanvas = document.getElementById("hold-piece");
+        holdCtx = holdCanvas ? holdCanvas.getContext("2d") : null;
     }
 
     function createBoard() {
         return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
     }
 
-    // 7-Bag System: each bag contains one of each piece type (1-7),
-    // shuffled randomly. When the bag is empty, a new bag is generated.
+    // 7-Bag System using seeded RNG for multiplayer sync
     let pieceBag = [];
 
     function fillBag() {
         pieceBag = [1, 2, 3, 4, 5, 6, 7];
         for (let i = pieceBag.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
+            const j = Math.floor(seededRandom() * (i + 1));
             [pieceBag[i], pieceBag[j]] = [pieceBag[j], pieceBag[i]];
         }
     }
@@ -106,6 +124,9 @@
                 board[ny][piece.x + c] = piece.type;
             }
         if (typeof GameSounds !== 'undefined') GameSounds.play('place');
+        lockDelayCounter = 0;
+        isLanding = false;
+        holdUsed = false; // Allow hold again after locking
         clearLines();
         spawn();
     }
@@ -132,14 +153,68 @@
             level = Math.floor(lines / 10) + 1;
             dropInterval = Math.max(100, 1000 - (level - 1) * 80);
             updateUI();
+            // Attack: send garbage lines to random opponent
+            if (isMultiplayer && socket && cleared >= 1) {
+                socket.emit('tetris_attack', {
+                    room_id: ROOM_ID,
+                    user_id: MY_USER,
+                    lines: cleared
+                });
+            }
         }
+    }
+
+    // Receive garbage lines from opponent
+    function receiveGarbage(garbageLines, hole) {
+        if (gameOver || eliminated) return;
+        for (let i = 0; i < garbageLines; i++) {
+            // Remove top row
+            board.shift();
+            // Add garbage row at bottom: all filled except the hole
+            const row = new Array(COLS).fill(8); // 8 = garbage block type
+            row[hole] = 0;
+            board.push(row);
+        }
+        // Check if current piece is now overlapping
+        if (piece && !valid(piece.shape, piece.x, piece.y)) {
+            // Try to push piece up
+            while (piece.y > 0 && !valid(piece.shape, piece.x, piece.y)) {
+                piece.y--;
+            }
+            if (!valid(piece.shape, piece.x, piece.y)) {
+                endGame();
+            }
+        }
+        if (typeof GameSounds !== 'undefined') GameSounds.play('buzz');
+        if (typeof GameAnimations !== 'undefined') GameAnimations.showShake(canvas);
+        draw();
     }
 
     function spawn() {
         piece = newPiece(nextPiece);
         nextPiece = randomType();
+        lockDelayCounter = 0;
+        isLanding = false;
         if (!valid(piece.shape, piece.x, piece.y)) endGame();
         drawNext();
+    }
+
+    // Hold piece functionality
+    function holdPiece() {
+        if (holdUsed || gameOver || paused) return;
+        holdUsed = true;
+        if (holdType === null) {
+            holdType = piece.type;
+            spawn();
+        } else {
+            const tmp = holdType;
+            holdType = piece.type;
+            piece = newPiece(tmp);
+            lockDelayCounter = 0;
+            isLanding = false;
+        }
+        drawHold();
+        draw();
     }
 
     function endGame() {
@@ -198,7 +273,10 @@
 
         for (let r = 0; r < ROWS; r++)
             for (let c = 0; c < COLS; c++)
-                if (board[r][c]) drawBlock(ctx, c, r, COLORS[board[r][c]]);
+                if (board[r][c]) {
+                    const color = board[r][c] === 8 ? GARBAGE_COLOR : COLORS[board[r][c]];
+                    drawBlock(ctx, c, r, color);
+                }
 
         if (piece && !gameOver) {
             let gy = piece.y;
@@ -232,6 +310,22 @@
                 if (shape[r][c]) {
                     nextCtx.fillStyle = COLORS[nextPiece];
                     nextCtx.fillRect(offsetX + c * size, offsetY + r * size, size - 1, size - 1);
+                }
+    }
+
+    function drawHold() {
+        if (!holdCtx) return;
+        holdCtx.clearRect(0, 0, holdCanvas.width, holdCanvas.height);
+        if (holdType === null) return;
+        const shape = SHAPES[holdType];
+        const size = 22;
+        const offsetX = (holdCanvas.width - shape[0].length * size) / 2;
+        const offsetY = (holdCanvas.height - shape.length * size) / 2;
+        for (let r = 0; r < shape.length; r++)
+            for (let c = 0; c < shape[r].length; c++)
+                if (shape[r][c]) {
+                    holdCtx.fillStyle = holdUsed ? 'rgba(128,128,128,0.5)' : COLORS[holdType];
+                    holdCtx.fillRect(offsetX + c * size, offsetY + r * size, size - 1, size - 1);
                 }
     }
 
@@ -276,7 +370,8 @@
         for (let r = 0; r < ROWS; r++)
             for (let c = 0; c < COLS; c++)
                 if (boardData[r] && boardData[r][c]) {
-                    miniCtx.fillStyle = isEliminated ? '#bbb' : (COLORS[boardData[r][c]] || '#999');
+                    const clr = boardData[r][c] === 8 ? GARBAGE_COLOR : (COLORS[boardData[r][c]] || '#999');
+                    miniCtx.fillStyle = isEliminated ? '#bbb' : clr;
                     miniCtx.fillRect(c * OB, r * OB, OB - 1, OB - 1);
                     // Highlight
                     if (!isEliminated) {
@@ -366,16 +461,14 @@
     function sortOpponentPanels() {
         const panel = document.getElementById('opponents-panel');
         if (!panel) return;
-        // Build sorted list by score (descending), eliminated last
         const sorted = Object.entries(opponents).sort((a, b) => {
             if (a[1].eliminated !== b[1].eliminated) return a[1].eliminated ? 1 : -1;
             return b[1].score - a[1].score;
         });
-        // Reorder DOM + apply rank classes
         sorted.forEach(([uid, data], idx) => {
             const el = document.getElementById('opp-' + uid);
             if (!el) return;
-            panel.appendChild(el); // moves element to end in DOM order
+            panel.appendChild(el);
             const rank = idx + 1;
             el.classList.remove('rank-top', 'rank-lower');
             if (rank <= 3) {
@@ -383,7 +476,6 @@
             } else {
                 el.classList.add('rank-lower');
             }
-            // Resize canvas based on rank
             const canvas = el.querySelector('.opponent-canvas');
             if (canvas) {
                 if (rank <= 3) {
@@ -392,20 +484,17 @@
                     canvas.width = 80; canvas.height = 160;
                 }
             }
-            // Update rank badge
             const badge = el.querySelector('.opponent-rank-badge');
             if (badge) {
                 badge.textContent = data.eliminated ? '탈락' : '#' + rank;
                 badge.className = 'opponent-rank-badge' + (data.eliminated ? ' badge-eliminated' : rank <= 3 ? ' badge-top' : '');
             }
-            // Redraw with current data
             if (canvas) drawMiniBoard(canvas, data.board, data.eliminated, data.piece);
         });
     }
 
     let lastSortOrder = '';
     function sortIfChanged() {
-        // Build a string key from current scores to detect rank changes
         const sorted = Object.entries(opponents).sort((a, b) => {
             if (a[1].eliminated !== b[1].eliminated) return a[1].eliminated ? 1 : -1;
             return b[1].score - a[1].score;
@@ -440,8 +529,18 @@
         if (gameOver || paused) return;
         if (valid(piece.shape, piece.x, piece.y + 1)) {
             piece.y++;
+            isLanding = false;
+            lockDelayCounter = 0;
         } else {
-            lock();
+            // Lock delay: piece is on ground, count ticks before locking
+            if (!isLanding) {
+                isLanding = true;
+                lockDelayCounter = 0;
+            }
+            lockDelayCounter++;
+            if (lockDelayCounter >= LOCK_DELAY_MAX) {
+                lock();
+            }
         }
         draw();
     }
@@ -461,10 +560,19 @@
         score = 0; level = 1; lines = 0;
         gameOver = false; paused = false; eliminated = false;
         dropInterval = 1000;
+        holdType = null;
+        holdUsed = false;
+        lockDelayCounter = 0;
+        isLanding = false;
         pieceBag = []; // Reset bag for new game
+        // Solo mode: use random seed
+        if (!isMultiplayer) {
+            rngSeed = Math.floor(Math.random() * 0xFFFFFFFF);
+        }
         nextPiece = randomType();
         spawn();
         updateUI();
+        drawHold();
         draw();
         clearInterval(timer);
         timer = setInterval(drop, dropInterval);
@@ -474,34 +582,53 @@
     // ===== Input =====
     if (!isSpectator) {
         document.addEventListener("keydown", (e) => {
-            if (["ArrowLeft","ArrowRight","ArrowDown","ArrowUp"," "].includes(e.key)) {
+            if (["ArrowLeft","ArrowRight","ArrowDown","ArrowUp"," ","Shift"].includes(e.key)) {
                 e.preventDefault();
             }
             if (gameOver || paused) return;
             if (isMultiplayer && !gameReady) return;
             switch (e.key) {
                 case "ArrowLeft":
-                    if (valid(piece.shape, piece.x - 1, piece.y)) piece.x--;
+                    if (valid(piece.shape, piece.x - 1, piece.y)) {
+                        piece.x--;
+                        // Reset lock delay on successful move while landing
+                        if (isLanding) lockDelayCounter = 0;
+                    }
                     break;
                 case "ArrowRight":
-                    if (valid(piece.shape, piece.x + 1, piece.y)) piece.x++;
+                    if (valid(piece.shape, piece.x + 1, piece.y)) {
+                        piece.x++;
+                        if (isLanding) lockDelayCounter = 0;
+                    }
                     break;
                 case "ArrowDown":
-                    if (valid(piece.shape, piece.x, piece.y + 1)) { piece.y++; score += 1; updateUI(); }
+                    if (valid(piece.shape, piece.x, piece.y + 1)) {
+                        piece.y++;
+                        if (isLanding) { isLanding = false; lockDelayCounter = 0; }
+                        score += 1;
+                        updateUI();
+                    }
                     break;
                 case "ArrowUp": {
                     const rotated = rotate(piece.shape);
+                    let kicked = false;
                     for (const dx of [0, -1, 1, -2, 2]) {
                         if (valid(rotated, piece.x + dx, piece.y)) {
                             piece.shape = rotated;
                             piece.x += dx;
+                            kicked = true;
                             break;
                         }
                     }
+                    // Reset lock delay on successful rotation while landing
+                    if (kicked && isLanding) lockDelayCounter = 0;
                     break;
                 }
                 case " ":
                     hardDrop();
+                    break;
+                case "Shift":
+                    holdPiece();
                     break;
             }
             draw();
@@ -635,7 +762,11 @@
                 }
             });
 
-            socket.on('game_ready', () => {
+            socket.on('game_ready', (data) => {
+                // Set synchronized seed for piece queue
+                if (data && data.seed !== undefined) {
+                    rngSeed = data.seed;
+                }
                 const el = document.getElementById('mp-status');
                 let countdown = 7;
                 if (el) {
@@ -666,6 +797,11 @@
                     opponents[data.user_id].piece = null;
                     sortIfChanged();
                 }
+            });
+
+            // Receive garbage lines from attacker
+            socket.on('tetris_garbage', (data) => {
+                receiveGarbage(data.lines, data.hole);
             });
 
             socket.on('game_winner', (data) => {
