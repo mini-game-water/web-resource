@@ -1,7 +1,7 @@
 (() => {
     const COLS = 10;
     const ROWS = 20;
-    const BLOCK = 30;
+    const BLOCK = 40;
     const BG_COLOR = "#f5ede3";
     const COLORS = [
         null,

@@ -1,7 +1,7 @@
 (() => {
     const canvas = document.getElementById("chess-board");
     const ctx = canvas.getContext("2d");
-    const SQ = 70;
+    const SQ = 85;
     const BOARD_SIZE = 8;
 
     // Multiplayer

@@ -51,7 +51,7 @@
         <div class="mp-status" id="mp-status">{% if is_spectator %}관전 모드{% else %}상대방 연결 대기 중...{% endif %}</div>
         {% endif %}
         <div class="omok-status" id="status">Black's Turn</div>
-        <canvas id="omok-board" class="game-board" width="600" height="600"></canvas>
+        <canvas id="omok-board" class="game-board" width="750" height="750"></canvas>
         {% if not room_id %}
         <div class="game-controls">
             <button class="btn" id="restart-btn">New Game</button>
@@ -102,14 +102,14 @@
         <button class="btn btn-coaching-clear" id="coaching-clear-btn" style="margin-top:8px;width:100%;">훈수 지우기</button>
         {% endif %}
     </div>
-    <div class="game-chat" id="game-chat">
+    <div class="game-chat minimized" id="game-chat">
         <div class="chat-header" id="chat-header">
             <span class="chat-title">채팅</span>
             <div class="chat-controls">
                 <label class="chat-opacity-label" title="투명도">
                     <input type="range" id="chat-opacity" min="20" max="100" value="100" class="chat-opacity-slider">
                 </label>
-                <button class="chat-toggle-btn" id="chat-toggle-btn" title="최소화">−</button>
+                <button class="chat-toggle-btn" id="chat-toggle-btn" title="최소화">+</button>
             </div>
         </div>
         <div class="chat-body" id="chat-body">
@@ -134,7 +134,7 @@
 <div class="game-help-panel" id="game-help-panel">
     <div class="game-help-header" id="game-help-toggle">
         <span>게임 설명</span>
-        <button class="game-help-btn">−</button>
+        <button class="game-help-btn">+</button>
     </div>
     <div class="game-help-body" id="game-help-body">
         <p><strong>규칙</strong></p>
@@ -151,8 +151,8 @@
     const body = document.getElementById('game-help-body');
     const btn = toggle.querySelector('.game-help-btn');
     toggle.addEventListener('click', () => {
-        if (body.style.display === 'none') {
-            body.style.display = '';
+        if (getComputedStyle(body).display === 'none') {
+            body.style.display = 'block';
             btn.textContent = '−';
         } else {
             body.style.display = 'none';

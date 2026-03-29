@@ -196,6 +196,7 @@ body {
     max-height: calc(70vh - 40px);
     color: #5a4e42;
     line-height: 1.5;
+    display: none;
 }
 .game-help-body ul, .game-help-body ol {
     margin: 4px 0 8px 18px;
@@ -1223,21 +1224,21 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 2rem;
+    padding: 0.5rem 0.5rem;
     min-height: calc(100vh - 60px);
 }
 
 .game-container h1 {
-    font-size: 1.8rem;
-    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    margin-bottom: 0.4rem;
     color: #a38b6d;
 }
 
 .game-info {
     display: flex;
-    gap: 2rem;
-    margin-bottom: 1rem;
-    font-size: 1rem;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
 }
 
 .game-info span {
@@ -1254,7 +1255,7 @@ body {
 }
 
 .game-controls {
-    margin-top: 1rem;
+    margin-top: 0.4rem;
     display: flex;
     gap: 1rem;
 }
@@ -1262,7 +1263,7 @@ body {
 /* ===== Tetris Specific ===== */
 .tetris-wrapper {
     display: flex;
-    gap: 2rem;
+    gap: 1rem;
     align-items: flex-start;
 }
 
@@ -1297,9 +1298,9 @@ body {
 
 /* ===== Omok Specific ===== */
 .omok-status {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+    padding: 0.3rem 1rem;
     background: rgba(255, 255, 255, 0.6);
     border-radius: 8px;
     border: 1px solid #e6ddd3;
@@ -1308,7 +1309,7 @@ body {
 /* ===== Chess Specific ===== */
 .chess-wrapper {
     display: flex;
-    gap: 2rem;
+    gap: 1rem;
     align-items: flex-start;
 }
 
@@ -1337,9 +1338,9 @@ body {
 }
 
 .chess-status {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+    padding: 0.3rem 1rem;
     background: rgba(255, 255, 255, 0.6);
     border-radius: 8px;
     border: 1px solid #e6ddd3;
@@ -1592,7 +1593,8 @@ body {
 }
 
 .game-chat.minimized .chat-body,
-.game-chat.minimized .chat-resize-handle {
+.game-chat.minimized .chat-resize-handle,
+.game-chat.minimized .chat-opacity-label {
     display: none;
 }
 

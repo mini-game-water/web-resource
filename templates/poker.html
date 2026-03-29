@@ -11,13 +11,13 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            margin: 1rem auto;
+            margin: 0.3rem auto;
         }
         .poker-table {
             position: relative;
-            width: 900px;
-            max-width: 95vw;
-            height: 520px;
+            width: 1100px;
+            max-width: 97vw;
+            height: 640px;
             background: radial-gradient(ellipse at center, #2d7a3a 0%, #1a5c28 60%, #0f3d18 100%);
             border-radius: 260px / 260px;
             border: 12px solid #5c3a1e;
@@ -424,14 +424,14 @@
         <h4>참가자</h4>
         <div id="participants-list"></div>
     </div>
-    <div class="game-chat" id="game-chat">
+    <div class="game-chat minimized" id="game-chat">
         <div class="chat-header" id="chat-header">
             <span class="chat-title">채팅</span>
             <div class="chat-controls">
                 <label class="chat-opacity-label" title="투명도">
                     <input type="range" id="chat-opacity" min="20" max="100" value="100" class="chat-opacity-slider">
                 </label>
-                <button class="chat-toggle-btn" id="chat-toggle-btn" title="최소화">−</button>
+                <button class="chat-toggle-btn" id="chat-toggle-btn" title="최소화">+</button>
             </div>
         </div>
         <div class="chat-body" id="chat-body">
@@ -459,7 +459,7 @@
 <div class="game-help-panel" id="game-help-panel">
     <div class="game-help-header" id="game-help-toggle">
         <span>게임 규칙</span>
-        <button class="game-help-btn">−</button>
+        <button class="game-help-btn">+</button>
     </div>
     <div class="game-help-body" id="game-help-body">
         <p><strong>텍사스 홀덤 기본 규칙</strong></p>
@@ -497,7 +497,7 @@
 <div class="game-help-panel panel-second" id="hand-rank-panel">
     <div class="game-help-header" id="hand-rank-toggle">
         <span>핸드 랭킹</span>
-        <button class="game-help-btn">−</button>
+        <button class="game-help-btn">+</button>
     </div>
     <div class="game-help-body" id="hand-rank-body">
         <ul class="hand-ranking-list">
@@ -622,8 +622,8 @@
         const body = document.getElementById(bodyId);
         const btn = toggle.querySelector('.game-help-btn');
         toggle.addEventListener('click', () => {
-            if (body.style.display === 'none') {
-                body.style.display = '';
+            if (getComputedStyle(body).display === 'none') {
+                body.style.display = 'block';
                 btn.textContent = '−';
             } else {
                 body.style.display = 'none';
