@@ -750,6 +750,7 @@ def on_join_lobby(data):
     join_room('lobby')
     lobby_sids[uid] = request.sid
     sid_info[request.sid] = {'user_id': uid, 'room_id': 'lobby', 'context': 'lobby'}
+    db.update_user_status(uid, 'online')
     broadcast_rooms()
     user = db.get_user(uid)
     ip = user.get('public_ip', '') if user else ''
