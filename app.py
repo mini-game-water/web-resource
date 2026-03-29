@@ -779,6 +779,7 @@ def on_join_waiting(data):
     uid = data['user_id']
     app.logger.info(f'[join_waiting] rid={rid} uid={uid} sid={request.sid}')
     join_room(rid)
+    lobby_sids[uid] = request.sid  # Update SID so invites reach this socket
     sid_info[request.sid] = {'user_id': uid, 'room_id': rid, 'context': 'waiting'}
     db.update_user_status(uid, 'waiting')
     broadcast_friend_status(uid, 'waiting')
@@ -1108,6 +1109,8 @@ def on_disconnect():
         leave_room('lobby')
     elif info['context'] == 'waiting':
         leave_room(rid)
+        if uid in lobby_sids and lobby_sids[uid] == request.sid:
+            del lobby_sids[uid]
         if rid in waiting_conns:
             waiting_conns[rid].discard(uid)
         # Only remove from DB if room is still waiting

@@ -399,7 +399,8 @@
 
         // ── Visibility / focus detection ──
         let isLoggingOut = false;
-        document.querySelector('a[href="/logout"]').addEventListener('click', () => { isLoggingOut = true; });
+        const logoutLink = document.querySelector('a[href="/logout"]');
+        if (logoutLink) logoutLink.addEventListener('click', () => { isLoggingOut = true; });
         function emitStatus(status) {
             if (isLoggingOut) return;
             socket.emit('user_status', { user_id: MY_USER, status: status });
@@ -1065,7 +1066,7 @@
                     </div>`;
                 document.body.appendChild(panel);
                 document.getElementById('dm-input').addEventListener('keydown', e => {
-                    if (e.key === 'Enter') sendDM();
+                    if (e.key === 'Enter' && !e.isComposing) sendDM();
                 });
             }
             panel.style.display = 'flex';

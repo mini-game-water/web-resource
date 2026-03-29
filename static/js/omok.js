@@ -447,7 +447,7 @@
 
         if (chatSend) chatSend.addEventListener('click', sendChat);
         if (chatInput) chatInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); sendChat(); }
+            if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); sendChat(); }
         });
 
         socket.on('chat_message', appendChat);
