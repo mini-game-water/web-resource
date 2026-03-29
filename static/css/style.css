@@ -467,7 +467,7 @@ body {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.75rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     flex-shrink: 0;
 }
 
@@ -664,6 +664,57 @@ body {
     display: inline-block;
     margin-top: 2px;
 }
+
+/* ── Friend Requests ── */
+.friend-requests {
+    margin-top: 0.8rem;
+}
+.friend-requests-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #a38b6d;
+    margin-bottom: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #ede6dc;
+}
+.friend-request-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    gap: 8px;
+}
+.friend-request-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #5a4e42;
+}
+.friend-request-btns {
+    display: flex;
+    gap: 4px;
+}
+.btn-accept {
+    background: #4caf50;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+.btn-accept:hover { background: #388e3c; }
+.btn-reject {
+    background: #e57373;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+.btn-reject:hover { background: #c62828; }
 
 .friend-actions {
     display: flex;
@@ -1987,7 +2038,7 @@ body {
 
 /* Leaderboard ad (between game list and room list on index) */
 .ad-leaderboard {
-    margin: 1.2rem auto;
+    margin: 0.5rem auto;
     max-width: 728px;
     min-height: 90px;
 }

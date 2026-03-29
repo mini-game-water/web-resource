@@ -182,6 +182,22 @@
                     <p class="empty-msg">친구가 없습니다.</p>
                     {% endif %}
                 </div>
+
+                <!-- Friend Requests -->
+                <div class="friend-requests" id="friend-requests">
+                    {% if friend_requests %}
+                    <div class="friend-requests-title">친구 요청 ({{ friend_requests|length }})</div>
+                    {% for req in friend_requests %}
+                    <div class="friend-request-item" data-uid="{{ req }}">
+                        <span class="friend-request-name">{{ req }}</span>
+                        <div class="friend-request-btns">
+                            <button class="btn btn-sm btn-accept" onclick="acceptFriend('{{ req }}')">수락</button>
+                            <button class="btn btn-sm btn-reject" onclick="rejectFriend('{{ req }}')">거절</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
             </div>
 
             <!-- Ad: sidebar rectangle (300x250 best fit, high viewability) -->
@@ -728,14 +744,48 @@
             const input = document.getElementById('friend-id-input');
             const fid = input.value.trim();
             if (!fid) return;
-            const res = await fetch('/api/friends/add', {
+            const res = await fetch('/api/friends/request', {
+                method: 'POST',
+                headers: CSRF_HEADERS,
+                body: JSON.stringify({ friend_id: fid })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                input.value = '';
+                alert(data.message);
+            } else {
+                alert(data.error || '요청에 실패했습니다.');
+            }
+        }
+
+        async function acceptFriend(fid) {
+            const res = await fetch('/api/friends/accept', {
                 method: 'POST',
                 headers: CSRF_HEADERS,
                 body: JSON.stringify({ friend_id: fid })
             });
             const data = await res.json();
             if (data.ok) location.reload();
-            else alert(data.error || '추가에 실패했습니다.');
+            else alert(data.error || '수락에 실패했습니다.');
+        }
+
+        async function rejectFriend(fid) {
+            const res = await fetch('/api/friends/reject', {
+                method: 'POST',
+                headers: CSRF_HEADERS,
+                body: JSON.stringify({ friend_id: fid })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                const item = document.querySelector(`.friend-request-item[data-uid="${fid}"]`);
+                if (item) item.remove();
+                const container = document.getElementById('friend-requests');
+                if (container && !container.querySelector('.friend-request-item')) {
+                    container.innerHTML = '';
+                }
+            } else {
+                alert(data.error || '거절에 실패했습니다.');
+            }
         }
 
         // ── Profile edit ──
@@ -935,6 +985,33 @@
                 document.getElementById('notice-list').innerHTML = '<p class="empty-msg" id="no-notices">공지사항이 없습니다.</p>';
             }
         });
+        /* ── Friend request real-time ── */
+        socket.on('friend_request_received', (data) => {
+            const container = document.getElementById('friend-requests');
+            if (!container) return;
+            // Avoid duplicates
+            if (container.querySelector(`.friend-request-item[data-uid="${data.from}"]`)) return;
+            if (!container.querySelector('.friend-requests-title')) {
+                container.innerHTML = '<div class="friend-requests-title">친구 요청</div>';
+            }
+            const title = container.querySelector('.friend-requests-title');
+            const count = container.querySelectorAll('.friend-request-item').length + 1;
+            title.textContent = `친구 요청 (${count})`;
+            container.insertAdjacentHTML('beforeend',
+                `<div class="friend-request-item" data-uid="${escapeHtml(data.from)}">
+                    <span class="friend-request-name">${escapeHtml(data.from)}</span>
+                    <div class="friend-request-btns">
+                        <button class="btn btn-sm btn-accept" onclick="acceptFriend('${escapeHtml(data.from)}')">수락</button>
+                        <button class="btn btn-sm btn-reject" onclick="rejectFriend('${escapeHtml(data.from)}')">거절</button>
+                    </div>
+                </div>`);
+        });
+
+        socket.on('friend_request_accepted', (data) => {
+            // Friend accepted our request — reload to show new friend
+            location.reload();
+        });
+
         /* ── Notice View Popup ── */
         function openNotice(item) {
             let popup = document.getElementById('notice-view-overlay');

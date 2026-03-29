@@ -220,8 +220,10 @@ def index():
 
     notices = db.list_notices()
     is_admin = user.get('role') == 'admin'
+    friend_requests = user.get('friend_requests', [])
     return render_template('index.html', user_id=uid, user=user, friends=friends,
-                           rooms=room_list, notices=notices, is_admin=is_admin)
+                           rooms=room_list, notices=notices, is_admin=is_admin,
+                           friend_requests=friend_requests)
 
 
 @app.route('/room/<room_id>')
@@ -412,9 +414,9 @@ def join_game_api(room_id):
     return jsonify({'room_id': room_id, 'joining_mid_game': True})
 
 
-@app.route('/api/friends/add', methods=['POST'])
+@app.route('/api/friends/request', methods=['POST'])
 @login_required
-def add_friend():
+def friend_request():
     data = request.get_json()
     fid = sanitize(data.get('friend_id', '').strip())
     uid = session['user_id']
@@ -423,9 +425,63 @@ def add_friend():
     friend = db.get_user(fid)
     if not friend:
         return jsonify({'error': '사용자를 찾을 수 없습니다.'}), 404
+    # Already friends?
+    user = db.get_user(uid) or {}
+    if fid in user.get('friends', []):
+        return jsonify({'error': '이미 친구입니다.'}), 400
+    # Check if they already sent us a request → auto-accept
+    my_requests = db.get_friend_requests(uid)
+    if fid in my_requests:
+        db.remove_friend_request(uid, fid)
+        db.add_friend(uid, fid)
+        game_logger.log_friend_add(uid, fid)
+        if fid in lobby_sids:
+            socketio.emit('friend_request_accepted', {'from': uid}, room=lobby_sids[fid])
+        return jsonify({'ok': True, 'message': f'{fid}님과 친구가 되었습니다! (상대방도 요청을 보낸 상태였습니다)'})
+    ok = db.send_friend_request(uid, fid)
+    if not ok:
+        return jsonify({'error': '이미 친구 요청을 보냈습니다.'}), 400
+    # Real-time notification
+    if fid in lobby_sids:
+        socketio.emit('friend_request_received', {'from': uid}, room=lobby_sids[fid])
+    return jsonify({'ok': True, 'message': f'{fid}님에게 친구 요청을 보냈습니다.'})
+
+
+@app.route('/api/friends/accept', methods=['POST'])
+@login_required
+def friend_accept():
+    data = request.get_json()
+    fid = sanitize(data.get('friend_id', '').strip())
+    uid = session['user_id']
+    # Verify request exists
+    requests = db.get_friend_requests(uid)
+    if fid not in requests:
+        return jsonify({'error': '해당 친구 요청이 없습니다.'}), 404
+    db.remove_friend_request(uid, fid)
     db.add_friend(uid, fid)
     game_logger.log_friend_add(uid, fid)
+    # Notify requester in real-time
+    if fid in lobby_sids:
+        socketio.emit('friend_request_accepted', {'from': uid}, room=lobby_sids[fid])
     return jsonify({'ok': True})
+
+
+@app.route('/api/friends/reject', methods=['POST'])
+@login_required
+def friend_reject():
+    data = request.get_json()
+    fid = sanitize(data.get('friend_id', '').strip())
+    uid = session['user_id']
+    db.remove_friend_request(uid, fid)
+    return jsonify({'ok': True})
+
+
+@app.route('/api/friends/pending', methods=['GET'])
+@login_required
+def friend_pending():
+    uid = session['user_id']
+    requests = db.get_friend_requests(uid)
+    return jsonify({'requests': requests})
 
 
 # ──────────────────── Profile API ────────────────────

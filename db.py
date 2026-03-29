@@ -118,22 +118,66 @@ def delete_user(user_id):
 
 
 def add_friend(user_id, friend_id):
+    """Add friend_id to user_id's friends list (both directions for mutual friendship)."""
+    for a, b in [(user_id, friend_id), (friend_id, user_id)]:
+        try:
+            _users_table.update_item(
+                Key={'user_id': a},
+                UpdateExpression='SET friends = list_append(if_not_exists(friends, :empty), :f)',
+                ConditionExpression='NOT contains(friends, :fid)',
+                ExpressionAttributeValues={
+                    ':f': [b],
+                    ':empty': [],
+                    ':fid': b,
+                },
+            )
+        except ClientError as e:
+            if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                raise
+    return True
+
+
+def send_friend_request(from_id, to_id):
+    """Add from_id to to_id's friend_requests list."""
     try:
         _users_table.update_item(
-            Key={'user_id': user_id},
-            UpdateExpression='SET friends = list_append(if_not_exists(friends, :empty), :f)',
-            ConditionExpression='NOT contains(friends, :fid)',
+            Key={'user_id': to_id},
+            UpdateExpression='SET friend_requests = list_append(if_not_exists(friend_requests, :empty), :f)',
+            ConditionExpression='attribute_not_exists(friend_requests) OR NOT contains(friend_requests, :fid)',
             ExpressionAttributeValues={
-                ':f': [friend_id],
+                ':f': [from_id],
                 ':empty': [],
-                ':fid': friend_id,
+                ':fid': from_id,
             },
         )
         return True
     except ClientError as e:
         if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
-            return False  # already friends
+            return False  # already requested
         raise
+
+
+def remove_friend_request(user_id, requester_id):
+    """Remove requester_id from user_id's friend_requests list."""
+    user = get_user(user_id)
+    if not user:
+        return
+    requests = user.get('friend_requests', [])
+    if requester_id in requests:
+        requests.remove(requester_id)
+        _users_table.update_item(
+            Key={'user_id': user_id},
+            UpdateExpression='SET friend_requests = :r',
+            ExpressionAttributeValues={':r': requests},
+        )
+
+
+def get_friend_requests(user_id):
+    """Get list of pending friend request user IDs."""
+    user = get_user(user_id)
+    if not user:
+        return []
+    return user.get('friend_requests', [])
 
 
 def batch_get_users(user_ids):

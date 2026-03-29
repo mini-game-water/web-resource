@@ -34,7 +34,7 @@ No test or lint commands are configured. No build step — JS and CSS are served
 
 ## Architecture
 
-**Backend (`app.py`)**: Flask + Flask-SocketIO (async_mode=`gevent`). Routes: auth (`/login`, `/register`, `/logout`), pages (`/`, `/tetris`, `/omok`, `/chess`, `/yacht`, `/poker`, `/rummikub`, `/bang`, `/splendor`, `/halligalli`, `/room/<id>`), REST API (`/api/rooms`, `/api/rooms/<id>/join`, `/api/friends/add`, `/api/notices`, `/api/dms/*`). SocketIO events handle lobby presence, waiting room coordination, friend invites, DM delivery, and real-time game moves.
+**Backend (`app.py`)**: Flask + Flask-SocketIO (async_mode=`gevent`). Routes: auth (`/login`, `/register`, `/logout`), pages (`/`, `/tetris`, `/omok`, `/chess`, `/yacht`, `/poker`, `/rummikub`, `/bang`, `/splendor`, `/halligalli`, `/room/<id>`), REST API (`/api/rooms`, `/api/rooms/<id>/join`, `/api/friends/request`, `/api/friends/accept`, `/api/friends/reject`, `/api/friends/pending`, `/api/notices`, `/api/dms/*`). SocketIO events handle lobby presence, waiting room coordination, friend invites, DM delivery, and real-time game moves.
 
 **CSRF/CORS**: `WTF_CSRF_CHECK_DEFAULT = False` with manual `csrf.protect()` in `before_request` that skips `/socket.io` paths. SocketIO uses `cors_allowed_origins='*'` for ALB compatibility.
 
