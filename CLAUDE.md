@@ -88,7 +88,7 @@ All games render to `<canvas>` elements. Each JS file is wrapped in an IIFE (`((
 
 ## Infrastructure (Terraform)
 
-All infrastructure is defined in `terraform/`. Resources: VPC (2 public subnets), ALB (HTTPS with ACM cert, HTTP→HTTPS redirect, sticky sessions), EC2 (Amazon Linux 2023 + Docker), DynamoDB (4 tables: users, rooms, notices, dms), Route53 (A record → ALB), ACM (DNS-validated cert), IAM (EC2 instance profile with DynamoDB access), Glue catalog (7 tables for log categories), Grafana (managed workspace + Athena dashboard with template variable filters).
+All infrastructure is defined in `terraform/`. Resources: VPC (2 public subnets), ALB (HTTPS with ACM cert, HTTP→HTTPS redirect, sticky sessions, `/grafana/*` path routing to port 3000), EC2 (Amazon Linux 2023 + Docker + Grafana OSS), DynamoDB (4 tables: users, rooms, notices, dms), Route53 (A record → ALB), ACM (DNS-validated cert), IAM (EC2 instance profile with DynamoDB + Athena/Glue access), Glue catalog (7 tables for log categories). Grafana OSS is self-hosted on EC2 (installed via `user_data.sh`), accessible at `https://domain/grafana/`.
 
 ```bash
 cd terraform
@@ -174,14 +174,14 @@ GitHub repo: `https://github.com/mini-game-water/web-resource.git`. Deploy via `
 
 ### Infrastructure (Terraform / AWS)
 
-- **Grafana workspace `configuration` JSON format varies by version**. For Grafana 10.4, the `plugins` block only accepts `pluginAdminEnabled: true` — you CANNOT pre-install plugins (e.g., `grafana-athena-datasource`) via the configuration JSON. Attempting to include a `plugins` list causes `ValidationException: The JSON provided in the configuration property is invalid for the grafanaVersion 10.4`. Instead, set `pluginAdminEnabled = true` and install plugins manually from the Grafana workspace UI after creation.
-- **`grafana-athena-datasource` plugin must be manually installed** in the Grafana workspace UI (Administration > Plugins > Athena). `data_sources = ["ATHENA"]` only grants IAM permissions — it does NOT install the plugin. Without the plugin, Grafana shows "Datasource was not found".
-- **Grafana API key has 30-day TTL** (`aws_grafana_workspace_api_key`). If `terraform apply` fails with auth errors on Grafana resources, taint and recreate: `terraform taint aws_grafana_workspace_api_key.terraform && terraform apply`.
-- **After tainting a Grafana data source**, the dashboard must also be re-applied since it references the data source UID. Always target both: `terraform apply -target=grafana_data_source.athena -target=grafana_dashboard.gamehub_logs`.
-- **`user_data.sh` contains Terraform template variables** (`${aws_region}`, `${app_secret_key}`, `${log_bucket}`, `${docker_image}`) interpolated at plan/apply time. The embedded `deploy.sh` also uses these — do NOT use single-quoted heredoc (`'EOF'`) if you want variable interpolation.
+- **Grafana OSS is self-hosted on EC2**, installed via `user_data.sh` (RPM + systemd). Accessible at `https://domain/grafana/` via ALB path-based routing. Default login: `admin` / password from `grafana_admin_password` tfvar.
+- **Grafana Athena plugin** is installed via `grafana-cli plugins install grafana-athena-datasource` in `user_data.sh`. Datasource uses EC2 instance profile credentials (`authType: default`).
+- **Grafana provisioning files**: Datasource at `/etc/grafana/provisioning/datasources/athena.yaml`, dashboard provider at `/etc/grafana/provisioning/dashboards/gamehub.yaml`, dashboard JSON at `/var/lib/grafana/dashboards/gamehub.json`.
+- **Dashboard JSON template** (`grafana_dashboard.json.tftpl`) is uploaded to S3 via `aws_s3_object` and downloaded by `user_data.sh` at boot. This avoids the EC2 user_data 16KB size limit and Terraform double-interpolation of `${filter_*}` Grafana template variables.
+- **`user_data.sh` contains Terraform template variables** (`${aws_region}`, `${app_secret_key}`, `${log_bucket}`, `${docker_image}`, `${domain_name}`, `${grafana_admin_password}`, `${athena_database}`, `${athena_workgroup}`, `${athena_results_bucket}`) interpolated at plan/apply time. The embedded `deploy.sh` also uses these — do NOT use single-quoted heredoc (`'EOF'`) if you want variable interpolation.
 - **S3 log path structure** must match Glue table partition projection exactly: `{category}/year=YYYY/month=MM/day=DD/`. If `game_logger.py` path format changes, update `storage.location.template` in `athena.tf`.
-- **Escape `${...}` in Grafana dashboard SQL as `$${...}`**: Terraform interprets `${var}` as its own interpolation. Grafana template variables like `${filter_user_id}` must be written as `$${filter_user_id}` in `.tf` files so Terraform passes the literal string through. This applies to all `rawSQL` blocks inside `grafana_dashboard` resources.
-- **New log categories require updates in 3 places**: `game_logger.py` (add to `CATEGORIES` list + logging function), `terraform/athena.tf` (Glue catalog table with matching columns), `terraform/grafana.tf` (dashboard panels). Columns in Glue table must match the fields passed to `log()`.
+- **Escape `${...}` in Grafana dashboard SQL as `$${...}`**: In `grafana_dashboard.json.tftpl`, Grafana template variables like `${filter_user_id}` must be written as `$${filter_user_id}` so Terraform passes the literal string through.
+- **New log categories require updates in 3 places**: `game_logger.py` (add to `CATEGORIES` list + logging function), `terraform/athena.tf` (Glue catalog table with matching columns), `terraform/grafana_dashboard.json.tftpl` (dashboard panels).
 - **Grafana dashboard template variables**: Defined in `templating.list` inside the dashboard JSON. Use `type = "textbox"` for free-text filters. Reference in SQL as `$${variable_name}`. Filter pattern: `('$${filter_x}' = '' OR column = '$${filter_x}')`.
 
 ### Debugging Multiplayer Issues

@@ -66,3 +66,46 @@ resource "aws_lb_target_group_attachment" "ec2" {
   target_id        = aws_instance.app.id
   port             = 5000
 }
+
+# ── Grafana OSS target group & routing ──
+
+resource "aws_lb_target_group" "grafana" {
+  name        = "gamehub-grafana-tg"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "instance"
+
+  health_check {
+    path                = "/grafana/api/health"
+    matcher             = "200"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+  }
+
+  tags = { Name = "gamehub-grafana-tg" }
+}
+
+resource "aws_lb_target_group_attachment" "grafana" {
+  target_group_arn = aws_lb_target_group.grafana.arn
+  target_id        = aws_instance.app.id
+  port             = 3000
+}
+
+resource "aws_lb_listener_rule" "grafana" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 10
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.grafana.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/grafana", "/grafana/*"]
+    }
+  }
+}

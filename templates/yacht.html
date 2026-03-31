@@ -370,8 +370,69 @@
         const ALLOW_COACHING = false;
     </script>
     {% endif %}
+    {% if not room_id %}
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+    (function() {
+        const socket = io();
+        socket.emit('join_solo', { user_id: '{{ user_id }}' });
+        socket.on('invite_received', (data) => {
+            const popup = document.getElementById('solo-invite-overlay');
+            if (!popup) return;
+            document.getElementById('solo-invite-inviter').textContent = data.from;
+            document.getElementById('solo-invite-room-name').textContent = data.room_name || '';
+            document.getElementById('solo-invite-game').textContent = data.game || '';
+            popup.style.display = 'flex';
+            let sec = 10;
+            const timerEl = document.getElementById('solo-invite-timer');
+            const wrap = popup.querySelector('.invite-popup-wrap');
+            if (timerEl) timerEl.textContent = sec;
+            const iv = setInterval(() => {
+                sec--;
+                if (timerEl) timerEl.textContent = sec;
+                if (wrap) wrap.style.setProperty('--progress', (sec / 10 * 360));
+                if (sec <= 0) { clearInterval(iv); popup.style.display = 'none'; socket.emit('invite_response', {room_id: data.room_id, accepted: false, user_id: '{{ user_id }}'}); }
+            }, 1000);
+            window._soloInviteIv = iv;
+            window._soloInviteData = data;
+        });
+        socket.on('invite_accepted', (data) => {
+            if (data.error) { alert(data.error); return; }
+            window.location.replace('/room/' + data.room_id);
+        });
+        window.acceptSoloInvite = function() {
+            clearInterval(window._soloInviteIv);
+            const data = window._soloInviteData;
+            socket.emit('invite_response', {room_id: data.room_id, accepted: true, user_id: '{{ user_id }}'});
+            document.getElementById('solo-invite-overlay').style.display = 'none';
+        };
+        window.declineSoloInvite = function() {
+            clearInterval(window._soloInviteIv);
+            const data = window._soloInviteData;
+            socket.emit('invite_response', {room_id: data.room_id, accepted: false, user_id: '{{ user_id }}'});
+            document.getElementById('solo-invite-overlay').style.display = 'none';
+        };
+    })();
+    </script>
+    {% endif %}
 
     <script src="{{ url_for('static', filename='js/yacht.js') }}"></script>
+    {% if not room_id %}
+    <div class="overlay" id="solo-invite-overlay" style="display:none;">
+        <div class="invite-popup-wrap" style="--progress:360">
+            <div class="overlay-content invite-popup">
+                <div class="invite-timer-num" id="solo-invite-timer">10</div>
+                <h2>게임 초대</h2>
+                <p><strong id="solo-invite-inviter"></strong>님이 초대했습니다</p>
+                <p>방: <strong id="solo-invite-room-name"></strong> (<span id="solo-invite-game"></span>)</p>
+                <div class="modal-buttons">
+                    <button class="btn" onclick="declineSoloInvite()">거부</button>
+                    <button class="btn btn-primary" onclick="acceptSoloInvite()">수락</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 <div class="game-help-panel" id="game-help-panel">
     <div class="game-help-header" id="game-help-toggle">
         <span>게임 설명</span>

@@ -268,7 +268,7 @@ def _game_route(template):
     game_logger.log_page_view(session['user_id'], game_name, room_id=room_id or None,
                               game=game_name, user_agent=request.headers.get('User-Agent', ''))
     uid = session['user_id']
-    new_status = 'spectating' if is_spectator else 'ingame'
+    new_status = 'spectating' if is_spectator else ('practicing' if not room_id else 'ingame')
     db.update_user_status(uid, new_status)
     broadcast_friend_status(uid, new_status)
     my_player = None
@@ -757,11 +757,19 @@ def on_join_lobby(data):
     broadcast_friend_status(uid, 'online', ip)
 
 
+@socketio.on('join_solo')
+def on_join_solo(data):
+    uid = data['user_id']
+    join_room('lobby')
+    lobby_sids[uid] = request.sid
+    sid_info[request.sid] = {'user_id': uid, 'room_id': 'lobby', 'context': 'solo'}
+
+
 @socketio.on('user_status')
 def on_user_status(data):
     uid = data.get('user_id')
     status = data.get('status')
-    if uid and status in ('online', 'chilling', 'ingame', 'spectating', 'waiting'):
+    if uid and status in ('online', 'chilling', 'ingame', 'spectating', 'waiting', 'practicing'):
         user = db.get_user(uid)
         if not user or user.get('status') == 'offline':
             return
@@ -791,6 +799,7 @@ def on_join_waiting(data):
     host = room.get('host', '') if room else ''
     app.logger.info(f'[join_waiting] room={room.get("game") if room else "?"} players={players} waiting={len(waiting_conns[rid])} max_p={max_p}')
     emit('room_update', {'players': players, 'count': len(players), 'max_players': max_p, 'host': host}, room=rid)
+    broadcast_rooms()
     min_to_start = 2 if room and room['game'] in ('poker', 'rummikub') else max_p
     if len(waiting_conns[rid]) >= min_to_start:
         if room and room['status'] == 'waiting':
@@ -1098,15 +1107,21 @@ def on_disconnect():
     rid = info['room_id']
     uid = info['user_id']
 
-    if info['context'] == 'lobby':
+    if info['context'] in ('lobby', 'solo'):
         if uid in lobby_sids and lobby_sids[uid] == request.sid:
             del lobby_sids[uid]
-        # Only broadcast offline if user isn't navigating to waiting/game/spectate
         user = db.get_user(uid)
         current_status = user.get('status', 'offline') if user else 'offline'
-        if current_status not in ('waiting', 'ingame', 'spectating'):
-            db.update_user_status(uid, 'offline')
-            broadcast_friend_status(uid, 'offline')
+        if info['context'] == 'solo':
+            # Leaving solo game page — restore to online
+            if current_status == 'practicing':
+                db.update_user_status(uid, 'online')
+                broadcast_friend_status(uid, 'online')
+        else:
+            # Lobby disconnect — only set offline if not navigating to waiting/game/spectate
+            if current_status not in ('waiting', 'ingame', 'spectating', 'practicing'):
+                db.update_user_status(uid, 'offline')
+                broadcast_friend_status(uid, 'offline')
         leave_room('lobby')
     elif info['context'] == 'waiting':
         leave_room(rid)

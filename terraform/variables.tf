@@ -32,8 +32,9 @@ variable "app_secret_key" {
   sensitive   = true
 }
 
-# ── Grafana SSO user ──
-variable "grafana_user_name" {
-  description = "IAM Identity Center username for Grafana admin (must already exist in IAM Identity Center)"
+variable "grafana_admin_password" {
+  description = "Admin password for self-hosted Grafana OSS"
   type        = string
+  sensitive   = true
+  default     = "admin"
 }

@@ -148,6 +148,7 @@
                         <option value="waiting">방 대기</option>
                         <option value="ingame">게임중</option>
                         <option value="spectating">관전중</option>
+                        <option value="practicing">연습게임중</option>
                         <option value="offline">오프라인</option>
                         <option value="nearby">근처</option>
                     </select>
@@ -169,7 +170,7 @@
                         </div>
                         <div class="friend-actions">
                             <span class="friend-status-text">
-                                {% if f.status == 'online' %}온라인{% elif f.status == 'chilling' %}쉬는 중{% elif f.status == 'waiting' %}방 대기{% elif f.status == 'ingame' %}게임중{% elif f.status == 'spectating' %}관전중{% else %}오프라인{% endif %}
+                                {% if f.status == 'online' %}온라인{% elif f.status == 'chilling' %}쉬는 중{% elif f.status == 'waiting' %}방 대기{% elif f.status == 'ingame' %}게임중{% elif f.status == 'spectating' %}관전중{% elif f.status == 'practicing' %}연습게임중{% else %}오프라인{% endif %}
                             </span>
                             <div class="friend-action-row">
                                 <button class="dm-btn" onclick="openDM('{{ f.id }}')" title="메시지 보내기">&#128172;</button>
@@ -627,7 +628,7 @@
                 if (nearbyBadge) nearbyBadge.remove();
             }
 
-            const labels = {online: '온라인', chilling: '쉬는 중', waiting: '방 대기', ingame: '게임중', spectating: '관전중', offline: '오프라인'};
+            const labels = {online: '온라인', chilling: '쉬는 중', waiting: '방 대기', ingame: '게임중', spectating: '관전중', practicing: '연습게임중', offline: '오프라인'};
             el.querySelector('.friend-status-text').textContent = labels[data.status] || '오프라인';
             applyFriendFilter();
         });

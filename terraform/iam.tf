@@ -65,6 +65,65 @@ resource "aws_iam_role_policy" "s3_logs" {
   })
 }
 
+resource "aws_iam_role_policy" "athena_glue" {
+  name = "gamehub-athena-glue-access"
+  role = aws_iam_role.ec2.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "athena:GetDatabase",
+          "athena:GetDataCatalog",
+          "athena:GetTableMetadata",
+          "athena:ListDatabases",
+          "athena:ListDataCatalogs",
+          "athena:ListTableMetadata",
+          "athena:GetQueryExecution",
+          "athena:GetQueryResults",
+          "athena:GetWorkGroup",
+          "athena:StartQueryExecution",
+          "athena:StopQueryExecution",
+          "athena:ListWorkGroups",
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "glue:GetDatabase",
+          "glue:GetDatabases",
+          "glue:GetTable",
+          "glue:GetTables",
+          "glue:GetPartition",
+          "glue:GetPartitions",
+          "glue:BatchGetPartition",
+        ]
+        Resource = [
+          "arn:aws:glue:${var.aws_region}:${data.aws_caller_identity.current.account_id}:catalog",
+          "arn:aws:glue:${var.aws_region}:${data.aws_caller_identity.current.account_id}:database/${aws_glue_catalog_database.gamehub.name}",
+          "arn:aws:glue:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${aws_glue_catalog_database.gamehub.name}/*",
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:GetBucketLocation",
+          "s3:PutObject",
+        ]
+        Resource = [
+          aws_s3_bucket.athena_results.arn,
+          "${aws_s3_bucket.athena_results.arn}/*",
+        ]
+      },
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "ec2" {
   name = "gamehub-ec2-profile"
   role = aws_iam_role.ec2.name

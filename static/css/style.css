@@ -652,6 +652,7 @@ body {
 .friend-item.status-ingame .friend-status-dot { background: #5794F2; }
 .friend-item.status-spectating .friend-status-dot { background: #B877D9; }
 .friend-item.status-waiting .friend-status-dot { background: #00bcd4; }
+.friend-item.status-practicing .friend-status-dot { background: #8bc34a; }
 .friend-item.status-offline .friend-status-dot { background: #ccc; }
 
 .friend-info {
@@ -1261,6 +1262,13 @@ body {
 }
 
 /* ===== Tetris Specific ===== */
+.tetris-main-layout {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    justify-content: center;
+}
+
 .tetris-wrapper {
     display: flex;
     gap: 1rem;
@@ -1444,11 +1452,11 @@ body {
 /* ===== Opponents Grid (Tetris multi-player) ===== */
 .opponents-grid {
     display: flex;
+    flex-direction: column;
     flex-wrap: wrap;
-    gap: 1rem;
-    justify-content: center;
-    margin-top: 1.5rem;
-    align-items: flex-start;
+    gap: 0.8rem;
+    align-items: center;
+    max-height: 820px;
     transition: all 0.3s ease;
 }
 

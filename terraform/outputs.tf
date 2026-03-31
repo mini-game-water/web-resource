@@ -35,6 +35,6 @@ output "athena_database" {
 }
 
 output "grafana_url" {
-  description = "Amazon Managed Grafana workspace URL"
-  value       = aws_grafana_workspace.gamehub.endpoint
+  description = "Grafana OSS URL (via ALB)"
+  value       = "https://${var.domain_name}/grafana/"
 }

@@ -1,0 +1,505 @@
+{
+  "uid": "gamehub-dashboard",
+  "title": "GameHub \ubd84\uc11d \ub300\uc2dc\ubcf4\ub4dc",
+  "description": "GameHub \uc2e4\uc2dc\uac04 \uc0ac\uc6a9\uc790 \ubd84\uc11d \ubc0f \uc774\ubca4\ud2b8 \ubaa8\ub2c8\ud130\ub9c1",
+  "editable": true,
+  "time": { "from": "now-24h", "to": "now" },
+  "refresh": "1m",
+  "templating": {
+    "list": [
+      {
+        "name": "date_filter",
+        "type": "custom",
+        "label": "\ub0a0\uc9dc",
+        "current": { "text": "Today", "value": "today" },
+        "options": [{ "text": "Today", "value": "today", "selected": true }],
+        "hide": 2
+      },
+      {
+        "name": "filter_user_id",
+        "type": "textbox",
+        "label": "\uc0ac\uc6a9\uc790 ID",
+        "current": { "text": "", "value": "" }
+      },
+      {
+        "name": "filter_room_id",
+        "type": "textbox",
+        "label": "\ubc29 ID",
+        "current": { "text": "", "value": "" }
+      },
+      {
+        "name": "filter_game",
+        "type": "textbox",
+        "label": "\uac8c\uc784",
+        "current": { "text": "", "value": "" }
+      },
+      {
+        "name": "filter_conversation_id",
+        "type": "textbox",
+        "label": "\ub300\ud654 ID",
+        "current": { "text": "", "value": "" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 100,
+      "title": "",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "panels": []
+    },
+    {
+      "id": 1,
+      "title": "\uc624\ub298\uc758 \ud65c\uc131 \uc0ac\uc6a9\uc790",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "#73BF69", "value": null },
+              { "color": "#FF9830", "value": 50 },
+              { "color": "#F2495C", "value": 100 }
+            ]
+          }
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "textMode": "value" },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT COUNT(DISTINCT user_id) AS active_users\nFROM user_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND event_type = 'login'",
+        "format": 0
+      }]
+    },
+    {
+      "id": 2,
+      "title": "\uc624\ub298\uc758 \ud398\uc774\uc9c0 \uc870\ud68c",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "#73BF69", "value": null }] }
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "textMode": "value" },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT COUNT(*) AS page_views\nFROM user_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND event_type = 'page_view'",
+        "format": 0
+      }]
+    },
+    {
+      "id": 3,
+      "title": "\uc624\ub298\uc758 \uac8c\uc784 \uc2e4\ud589",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "#5794F2", "value": null }] }
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "textMode": "value" },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT COUNT(*) AS games_played\nFROM room_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND event_type = 'game_start'",
+        "format": 0
+      }]
+    },
+    {
+      "id": 4,
+      "title": "\uc0dd\uc131\ub41c \ubc29",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "#B877D9", "value": null }] }
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "textMode": "value" },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT COUNT(*) AS rooms_created\nFROM room_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND event_type = 'room_create'",
+        "format": 0
+      }]
+    },
+    {
+      "id": 5,
+      "title": "\ucc44\ud305 \uba54\uc2dc\uc9c0",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "#FADE2A", "value": null }] }
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "textMode": "value" },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT COUNT(*) AS chat_messages\nFROM chat_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)",
+        "format": 0
+      }]
+    },
+    {
+      "id": 6,
+      "title": "\uc2e0\uaddc \uac00\uc785\uc790",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "#FF9830", "value": null }] }
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "textMode": "value" },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT COUNT(*) AS registrations\nFROM user_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND event_type = 'register'",
+        "format": 0
+      }]
+    },
+    {
+      "id": 101,
+      "title": "\uc2dc\uac04\ubcc4 \ud65c\ub3d9 \ucd94\uc774",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "panels": []
+    },
+    {
+      "id": 7,
+      "title": "\uc2dc\uac04\ubcc4 \uc774\ubca4\ud2b8 (\uce74\ud14c\uace0\ub9ac\ubcc4)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": { "mode": "normal", "group": "A" },
+            "barAlignment": 0
+          }
+        }
+      },
+      "options": { "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT\n  date_trunc('hour', from_iso8601_timestamp(timestamp)) AS time,\n  category,\n  COUNT(*) AS count\nFROM (\n  SELECT timestamp, 'user' AS category FROM user_activity\n  WHERE year = YEAR(CURRENT_DATE) AND month = MONTH(CURRENT_DATE) AND day = DAY(CURRENT_DATE)\n  UNION ALL\n  SELECT timestamp, 'room' FROM room_activity\n  WHERE year = YEAR(CURRENT_DATE) AND month = MONTH(CURRENT_DATE) AND day = DAY(CURRENT_DATE)\n  UNION ALL\n  SELECT timestamp, 'game' FROM game_activity\n  WHERE year = YEAR(CURRENT_DATE) AND month = MONTH(CURRENT_DATE) AND day = DAY(CURRENT_DATE)\n  UNION ALL\n  SELECT timestamp, 'chat' FROM chat_activity\n  WHERE year = YEAR(CURRENT_DATE) AND month = MONTH(CURRENT_DATE) AND day = DAY(CURRENT_DATE)\n  UNION ALL\n  SELECT timestamp, 'friend' FROM friend_activity\n  WHERE year = YEAR(CURRENT_DATE) AND month = MONTH(CURRENT_DATE) AND day = DAY(CURRENT_DATE)\n  UNION ALL\n  SELECT timestamp, 'spectate' FROM spectate_activity\n  WHERE year = YEAR(CURRENT_DATE) AND month = MONTH(CURRENT_DATE) AND day = DAY(CURRENT_DATE)\n)\nGROUP BY 1, 2\nORDER BY 1",
+        "format": 0
+      }]
+    },
+    {
+      "id": 8,
+      "title": "\uc2dc\uac04\ubcc4 \ub85c\uadf8\uc778/\ub85c\uadf8\uc544\uc6c3",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 20,
+            "pointSize": 5,
+            "showPoints": "auto"
+          }
+        }
+      },
+      "options": { "tooltip": { "mode": "multi" } },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT\n  date_trunc('hour', from_iso8601_timestamp(timestamp)) AS time,\n  event_type,\n  COUNT(*) AS count\nFROM user_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND event_type IN ('login', 'logout', 'register')\nGROUP BY 1, 2\nORDER BY 1",
+        "format": 0
+      }]
+    },
+    {
+      "id": 102,
+      "title": "\ubd84\ud3ec \ubd84\uc11d",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "panels": []
+    },
+    {
+      "id": 9,
+      "title": "\ud398\uc774\uc9c0\ubcc4 \uc870\ud68c\uc218",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 15 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "pieType": "donut",
+        "tooltip": { "mode": "single" },
+        "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false }
+      },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT page, COUNT(*) AS views\nFROM user_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND event_type = 'page_view'\n  AND page IS NOT NULL\nGROUP BY page\nORDER BY views DESC",
+        "format": 0
+      }]
+    },
+    {
+      "id": 10,
+      "title": "\uac8c\uc784 \uc885\ub958\ubcc4 \uc2e4\ud589 \ud69f\uc218",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 15 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "pieType": "donut",
+        "tooltip": { "mode": "single" },
+        "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false }
+      },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT game, COUNT(*) AS games_started\nFROM room_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND event_type = 'game_start'\n  AND game IS NOT NULL\nGROUP BY game\nORDER BY games_started DESC",
+        "format": 0
+      }]
+    },
+    {
+      "id": 11,
+      "title": "\ubc29 \uc774\ubca4\ud2b8 \uc720\ud615",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 15 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "options": {
+        "orientation": "horizontal",
+        "legend": { "displayMode": "hidden" },
+        "tooltip": { "mode": "single" }
+      },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" } }
+      },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT event_type, COUNT(*) AS count\nFROM room_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\nGROUP BY event_type\nORDER BY count DESC",
+        "format": 0
+      }]
+    },
+    {
+      "id": 103,
+      "title": "\uc0ac\uc6a9\uc790 \ubd84\uc11d",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "panels": []
+    },
+    {
+      "id": 12,
+      "title": "\ud65c\ub3d9\ub7c9 \uc0c1\uc704 15\uba85",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "options": {
+        "orientation": "horizontal",
+        "legend": { "displayMode": "hidden" },
+        "tooltip": { "mode": "single" }
+      },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" } }
+      },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT user_id, COUNT(*) AS total_events\nFROM (\n  SELECT user_id FROM user_activity\n  WHERE year = YEAR(CURRENT_DATE) AND month = MONTH(CURRENT_DATE) AND day = DAY(CURRENT_DATE)\n  UNION ALL\n  SELECT user_id FROM room_activity\n  WHERE year = YEAR(CURRENT_DATE) AND month = MONTH(CURRENT_DATE) AND day = DAY(CURRENT_DATE)\n  UNION ALL\n  SELECT user_id FROM game_activity\n  WHERE year = YEAR(CURRENT_DATE) AND month = MONTH(CURRENT_DATE) AND day = DAY(CURRENT_DATE)\n  UNION ALL\n  SELECT user_id FROM chat_activity\n  WHERE year = YEAR(CURRENT_DATE) AND month = MONTH(CURRENT_DATE) AND day = DAY(CURRENT_DATE)\n)\nWHERE user_id IS NOT NULL AND user_id != ''\nGROUP BY user_id\nORDER BY total_events DESC\nLIMIT 15",
+        "format": 0
+      }]
+    },
+    {
+      "id": 13,
+      "title": "\uc624\ub298\uc758 \uc2b9\ub9ac \ub7ad\ud0b9",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "options": {
+        "orientation": "horizontal",
+        "legend": { "displayMode": "hidden" },
+        "tooltip": { "mode": "single" }
+      },
+      "fieldConfig": {
+        "defaults": { "color": { "fixedColor": "#73BF69", "mode": "fixed" } }
+      },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT winner, COUNT(*) AS wins\nFROM game_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND event_type = 'game_over'\n  AND winner IS NOT NULL AND winner != ''\nGROUP BY winner\nORDER BY wins DESC\nLIMIT 10",
+        "format": 0
+      }]
+    },
+    {
+      "id": 105,
+      "title": "\uac8c\uc784 \ud1b5\uacc4",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "panels": []
+    },
+    {
+      "id": 19,
+      "title": "\uc2dc\uac04\ubcc4 \uac8c\uc784 \uc2e4\ud589 \uadf8\ub798\ud504",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 33 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 30,
+            "pointSize": 5,
+            "showPoints": "auto"
+          }
+        }
+      },
+      "options": { "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT\n  date_trunc('hour', from_iso8601_timestamp(timestamp)) AS time,\n  COUNT(*) AS game_count\nFROM room_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND event_type = 'game_start'\nGROUP BY 1\nORDER BY 1",
+        "format": 0
+      }]
+    },
+    {
+      "id": 20,
+      "title": "\uac8c\uc784 \uc885\ub958\ubcc4 \uc2e4\ud589 \ud69f\uc218 (\ub9c9\ub300)",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 33 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "options": {
+        "orientation": "horizontal",
+        "legend": { "displayMode": "hidden" },
+        "tooltip": { "mode": "single" }
+      },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" } }
+      },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT game, COUNT(*) AS game_count\nFROM room_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND event_type = 'game_start'\n  AND game IS NOT NULL\nGROUP BY game\nORDER BY game_count DESC",
+        "format": 0
+      }]
+    },
+    {
+      "id": 21,
+      "title": "\uc77c\uc77c \uc2e0\uaddc \uac00\uc785\uc790 \uc218 \ud604\ud669",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 33 },
+      "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "barAlignment": 0,
+            "lineWidth": 1
+          },
+          "color": { "fixedColor": "#FF9830", "mode": "fixed" }
+        }
+      },
+      "options": { "tooltip": { "mode": "single" } },
+      "targets": [{
+        "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+        "rawSQL": "SELECT\n  date_trunc('day', from_iso8601_timestamp(timestamp)) AS time,\n  COUNT(*) AS registrations\nFROM user_activity\nWHERE event_type = 'register'\n  AND from_iso8601_timestamp(timestamp) >= CURRENT_DATE - INTERVAL '30' DAY\nGROUP BY 1\nORDER BY 1",
+        "format": 0
+      }]
+    },
+    {
+      "id": 104,
+      "title": "\ucd5c\uadfc \ud65c\ub3d9 \uc0c1\uc138",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 41 },
+      "collapsed": true,
+      "panels": [
+        {
+          "id": 14,
+          "title": "\ucd5c\uadfc \ub85c\uadf8\uc778/\ub85c\uadf8\uc544\uc6c3",
+          "type": "table",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 42 },
+          "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+          "targets": [{
+            "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+            "rawSQL": "SELECT timestamp, event_type, user_id, ip\nFROM user_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND event_type IN ('login', 'logout', 'register')\n  AND ('$${filter_user_id}' = '' OR user_id = '$${filter_user_id}')\nORDER BY timestamp DESC\nLIMIT 50",
+            "format": 0
+          }]
+        },
+        {
+          "id": 15,
+          "title": "\ucd5c\uadfc \ud398\uc774\uc9c0 \uc870\ud68c",
+          "type": "table",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 42 },
+          "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+          "targets": [{
+            "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+            "rawSQL": "SELECT timestamp, user_id, page, game, room_id\nFROM user_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND event_type = 'page_view'\n  AND ('$${filter_user_id}' = '' OR user_id = '$${filter_user_id}')\n  AND ('$${filter_game}' = '' OR game = '$${filter_game}')\nORDER BY timestamp DESC\nLIMIT 50",
+            "format": 0
+          }]
+        },
+        {
+          "id": 16,
+          "title": "\ubc29 \ud65c\ub3d9 \ub0b4\uc5ed",
+          "type": "table",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 50 },
+          "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+          "targets": [{
+            "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+            "rawSQL": "SELECT timestamp, event_type, room_id, user_id, game, host, reason\nFROM room_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND ('$${filter_user_id}' = '' OR user_id = '$${filter_user_id}')\n  AND ('$${filter_room_id}' = '' OR room_id = '$${filter_room_id}')\n  AND ('$${filter_game}' = '' OR game = '$${filter_game}')\nORDER BY timestamp DESC\nLIMIT 50",
+            "format": 0
+          }]
+        },
+        {
+          "id": 17,
+          "title": "\uac8c\uc784 \uacb0\uacfc",
+          "type": "table",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 50 },
+          "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+          "targets": [{
+            "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+            "rawSQL": "SELECT timestamp, event_type, room_id, game, user_id, winner, loser\nFROM game_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND ('$${filter_user_id}' = '' OR user_id = '$${filter_user_id}')\n  AND ('$${filter_room_id}' = '' OR room_id = '$${filter_room_id}')\n  AND ('$${filter_game}' = '' OR game = '$${filter_game}')\nORDER BY timestamp DESC\nLIMIT 50",
+            "format": 0
+          }]
+        },
+        {
+          "id": 18,
+          "title": "\ucc44\ud305 \uba54\uc2dc\uc9c0 \ub0b4\uc5ed",
+          "type": "table",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 58 },
+          "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+          "targets": [{
+            "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+            "rawSQL": "SELECT timestamp, room_id, user_id, role, message\nFROM chat_activity\nWHERE year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND ('$${filter_user_id}' = '' OR user_id = '$${filter_user_id}')\n  AND ('$${filter_room_id}' = '' OR room_id = '$${filter_room_id}')\nORDER BY timestamp DESC\nLIMIT 100",
+            "format": 0
+          }]
+        },
+        {
+          "id": 22,
+          "title": "\uc624\ub298\uc758 DM \uba54\uc2dc\uc9c0",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 66 },
+          "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+          "targets": [{
+            "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+            "rawSQL": "SELECT COUNT(*) AS dm_count\nFROM dm_activity\nWHERE event_type = 'dm_sent'\n  AND year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)",
+            "format": 0
+          }]
+        },
+        {
+          "id": 23,
+          "title": "DM \uba54\uc2dc\uc9c0 \ub0b4\uc5ed",
+          "type": "table",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 70 },
+          "datasource": { "type": "grafana-athena-datasource", "uid": "${ds_uid}" },
+          "targets": [{
+            "connectionArgs": { "region": "${aws_region}", "catalog": "AwsDataCatalog", "database": "${database}" },
+            "rawSQL": "SELECT timestamp, conversation_id, sender_id, message\nFROM dm_activity\nWHERE event_type = 'dm_sent'\n  AND year = YEAR(CURRENT_DATE)\n  AND month = MONTH(CURRENT_DATE)\n  AND day = DAY(CURRENT_DATE)\n  AND ('$${filter_conversation_id}' = '' OR conversation_id = '$${filter_conversation_id}')\n  AND ('$${filter_user_id}' = '' OR sender_id = '$${filter_user_id}')\nORDER BY timestamp DESC\nLIMIT 100",
+            "format": 0
+          }]
+        }
+      ]
+    }
+  ]
+}

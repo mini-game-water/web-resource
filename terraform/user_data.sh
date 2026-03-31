@@ -79,3 +79,77 @@ docker ps --filter "name=$CONTAINER"
 DEPLOY_EOF
 chmod +x /home/ec2-user/deploy.sh
 chown ec2-user:ec2-user /home/ec2-user/deploy.sh
+
+# ══════════════════════════════════════════════
+# Grafana OSS Installation
+# ══════════════════════════════════════════════
+
+# Install Grafana OSS RPM
+dnf install -y https://dl.grafana.com/oss/release/grafana-11.4.0-1.x86_64.rpm
+
+# Install Athena datasource plugin
+grafana-cli plugins install grafana-athena-datasource
+
+# ── Grafana configuration ──
+cat > /etc/grafana/grafana.ini << GRAFANA_INI_EOF
+[server]
+http_port = 3000
+root_url = https://${domain_name}/grafana/
+serve_from_sub_path = true
+
+[security]
+admin_user = admin
+admin_password = ${grafana_admin_password}
+
+[auth.anonymous]
+enabled = false
+
+[log]
+mode = console file
+level = info
+GRAFANA_INI_EOF
+
+# ── Datasource provisioning ──
+cat > /etc/grafana/provisioning/datasources/athena.yaml << DS_EOF
+apiVersion: 1
+datasources:
+  - name: GameHub Athena
+    type: grafana-athena-datasource
+    uid: athena-gamehub
+    access: proxy
+    isDefault: true
+    jsonData:
+      authType: default
+      defaultRegion: ${aws_region}
+      catalog: AwsDataCatalog
+      database: ${athena_database}
+      workgroup: ${athena_workgroup}
+      outputLocation: s3://${athena_results_bucket}/results/
+DS_EOF
+
+# ── Dashboard provisioning ──
+cat > /etc/grafana/provisioning/dashboards/gamehub.yaml << 'DASHPROV_EOF'
+apiVersion: 1
+providers:
+  - name: GameHub
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false
+DASHPROV_EOF
+
+# ── Download dashboard JSON from S3 (too large for user_data 16KB limit) ──
+mkdir -p /var/lib/grafana/dashboards
+aws s3 cp s3://${log_bucket}/grafana/dashboard.json /var/lib/grafana/dashboards/gamehub.json --region ${aws_region}
+
+chown -R grafana:grafana /var/lib/grafana/dashboards
+
+# Start Grafana
+systemctl daemon-reload
+systemctl enable grafana-server
+systemctl start grafana-server
