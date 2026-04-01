@@ -157,6 +157,22 @@ def send_friend_request(from_id, to_id):
         raise
 
 
+def remove_friend(user_id, friend_id):
+    """Remove friend_id from user_id's friends list (both directions)."""
+    for a, b in [(user_id, friend_id), (friend_id, user_id)]:
+        user = get_user(a)
+        if not user:
+            continue
+        friends = user.get('friends', [])
+        if b in friends:
+            friends.remove(b)
+            _users_table.update_item(
+                Key={'user_id': a},
+                UpdateExpression='SET friends = :f',
+                ExpressionAttributeValues={':f': friends},
+            )
+
+
 def remove_friend_request(user_id, requester_id):
     """Remove requester_id from user_id's friend_requests list."""
     user = get_user(user_id)

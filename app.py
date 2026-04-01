@@ -560,6 +560,26 @@ def update_profile():
     return jsonify({'ok': True})
 
 
+@app.route('/api/account', methods=['DELETE'])
+@login_required
+def delete_account():
+    uid = session['user_id']
+    user = db.get_user(uid)
+    if not user:
+        return jsonify({'error': '사용자를 찾을 수 없습니다.'}), 404
+    # Remove from all friends' lists
+    for friend_id in user.get('friends', []):
+        db.remove_friend(uid, friend_id)
+    # Clean up lobby presence
+    if uid in lobby_sids:
+        del lobby_sids[uid]
+    # Delete user and log out
+    game_logger.log_status_change(uid, user.get('status', 'offline'), 'deleted')
+    db.delete_user(uid)
+    session.clear()
+    return jsonify({'ok': True})
+
+
 # ──────────────────── Notice API ────────────────────
 
 @app.route('/api/notices', methods=['GET'])
