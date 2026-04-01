@@ -141,13 +141,13 @@ GitHub repo: `https://github.com/mini-game-water/web-resource.git`. Deploy via `
 
 | Category | Event Types | Key Fields |
 |----------|------------|------------|
-| `user_activity` | `login`, `logout`, `register`, `status_change`, `profile_update`, `page_view` | `user_id`, `ip`, `page`, `game`, `user_agent`, `referrer` |
+| `user_activity` | `login`, `logout`, `register`, `status_change`, `profile_update`, `page_view`, `account_deleted`, `notice_created`, `notice_updated`, `notice_deleted`, `image_uploaded` | `user_id`, `ip`, `page`, `game`, `user_agent`, `referrer`, `notice_id`, `title`, `key` |
 | `room_activity` | `room_create`, `room_join`, `room_leave`, `room_delete`, `game_start`, `host_transfer`, `poker_mid_join` | `room_id`, `user_id`, `host`, `game`, `max_players`, `reason` |
-| `game_activity` | `game_move`, `game_over`, `player_eliminated`, `tetris_state`, `poker_hand`, `player_join_game` | `room_id`, `user_id`, `game`, `winner`, `loser`, `scores`, `move_data` |
+| `game_activity` | `game_move`, `game_over`, `player_eliminated`, `tetris_state`, `poker_hand` | `room_id`, `user_id`, `game`, `winner`, `loser`, `scores`, `move_data` |
 | `chat_activity` | `chat_message` | `room_id`, `user_id`, `role`, `message` |
-| `friend_activity` | `friend_add`, `invite_sent`, `invite_response` | `user_id`, `friend_id`, `room_id`, `inviter`, `invitee`, `accepted` |
+| `friend_activity` | `friend_add`, `friend_remove`, `friend_request_rejected`, `invite_sent`, `invite_response` | `user_id`, `friend_id`, `requester_id`, `room_id`, `inviter`, `invitee`, `accepted` |
 | `spectate_activity` | `spectate_join`, `spectate_leave`, `coaching_suggest`, `coaching_clear` | `room_id`, `user_id`, `game` |
-| `dm_activity` | `dm_sent` | `sender_id`, `recipient_id`, `conversation_id`, `message` |
+| `dm_activity` | `dm_sent`, `dm_read` | `sender_id`, `recipient_id`, `conversation_id`, `message` |
 
 ## Sound & Animation System
 
@@ -200,6 +200,10 @@ GitHub repo: `https://github.com/mini-game-water/web-resource.git`. Deploy via `
 - **`invite_response` event must include `user_id` field**: The server handler `on_invite_response` reads `data['user_id']`. All client-side emits (game templates, solo invite code) MUST include this field. Missing it causes a KeyError on the server.
 - **New DynamoDB tables/env vars must be added in 4 places**: `db.py` (table ref), `terraform/dynamodb.tf` (table resource), `terraform/iam.tf` (ARN + index ARN in policy), `terraform/user_data.sh` (env var in both `docker run` blocks).
 - **Valid user statuses**: The `on_user_status` handler validates against `('online', 'chilling', 'ingame', 'spectating', 'waiting', 'practicing')`. When adding a new status, update this tuple, the disconnect handler status checks, `index.html` labels/filter, and CSS dot colors.
+- **`on_user_status` must NOT override game statuses**: Visibility-triggered changes (`online`/`chilling`) must be blocked when current status is `waiting`/`ingame`/`spectating`/`practicing`. Without this guard, navigating from index to a game triggers `blur` → `chilling` → then disconnect sets `offline`.
+- **`force_close_room` must restore ALL user statuses**: When admin force-closes a room, iterate through `room.players` AND `spectator_conns[room_id]` to set everyone's status to `'online'`. Without this, game players' status stays `'ingame'` forever.
+- **Every new user action MUST have S3 logging**: When adding a new API endpoint, SocketIO handler, or user-triggered event, add a corresponding `game_logger.log_*()` call. Create a new convenience function in `game_logger.py` if none exists. The 7 log categories cover: `user_activity`, `room_activity`, `game_activity`, `chat_activity`, `friend_activity`, `spectate_activity`, `dm_activity`. Check the logging table above for which category to use.
+- **Logging checklist for new features**: (1) Does the action create/modify/delete data? → Log it. (2) Does the action change user state? → Log it. (3) Is it an admin action? → Log it under `user_activity`. (4) Does it involve friend/invite interaction? → Log under `friend_activity`. (5) Is it a game mechanic? → Log under `game_activity` with `move_data`.
 
 ### Templates (HTML)
 
@@ -252,3 +256,18 @@ These bugs were fixed and documented here to prevent regression:
 | Python `COLS` reference in server | `tetris_attack` handler used JS constant `COLS` in Python | Changed to `random.randint(0, 9)` | `app.py` |
 | Grafana per-user charges | AWS Managed Grafana charges $9/editor/month | Migrated to self-hosted Grafana OSS on EC2 | `terraform/` |
 | EC2 user_data exceeds 16KB | Dashboard JSON embedded in user_data via base64 | Upload to S3 via `aws_s3_object`, download in user_data | `terraform/ec2.tf`, `user_data.sh` |
+| Practicing status → offline | `visibilitychange`/`blur` on index page sends `chilling`, overwriting `practicing`; disconnect then sets `offline` | Guard in `on_user_status`: block `online`/`chilling` when current status is game-related | `app.py` |
+| Room force-close: users stuck | Waiting room had no `room_force_closed` handler; game players' status not restored | Add handler to `room.html`; restore all players + spectators to `online` in `force_close_room` | `app.py`, `room.html` |
+| Missing S3 logging for many actions | Account deletion, notices, friend removal, invite-accept join, DM read, tetris attack, etc. had no logging | Added 10+ `game_logger.log_*()` calls and 8 new convenience functions | `game_logger.py`, `app.py` |
+
+## Mandatory Completion Checklist
+
+Before committing any change, verify ALL of the following:
+
+1. **No logic errors**: Read through every modified function's full flow — check edge cases, null checks, status transitions, and race conditions.
+2. **No missing logging**: Every new user action, API endpoint, or SocketIO handler that creates/modifies/deletes data must have a `game_logger.log_*()` call.
+3. **All 9 game files consistent**: If a change applies to all games (socket events, overlays, chat), verify it's applied to ALL 9 JS files and ALL 9 templates.
+4. **Status transitions safe**: Any code that changes user status must not create a path where status gets stuck (e.g., `ingame` forever after room deletion).
+5. **Disconnect handlers updated**: If adding new contexts or status flows, verify the disconnect handler properly cleans up.
+6. **CLAUDE.md updated**: Document new features, pitfalls, and resolved bugs so they don't regress.
+7. **Iterate until clean**: After making changes, re-read all modified code. If ANY error is found, fix it and re-verify. Do NOT push until all issues are resolved.

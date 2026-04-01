@@ -474,6 +474,7 @@ def friend_reject():
     fid = sanitize(data.get('friend_id', '').strip())
     uid = session['user_id']
     db.remove_friend_request(uid, fid)
+    game_logger.log_friend_request_rejected(uid, fid)
     return jsonify({'ok': True})
 
 
@@ -570,11 +571,12 @@ def delete_account():
     # Remove from all friends' lists
     for friend_id in user.get('friends', []):
         db.remove_friend(uid, friend_id)
+        game_logger.log_friend_remove(uid, friend_id)
     # Clean up lobby presence
     if uid in lobby_sids:
         del lobby_sids[uid]
     # Delete user and log out
-    game_logger.log_status_change(uid, user.get('status', 'offline'), 'deleted')
+    game_logger.log_account_deleted(uid)
     db.delete_user(uid)
     session.clear()
     return jsonify({'ok': True})
@@ -599,6 +601,7 @@ def post_notice():
         return jsonify({'error': '제목을 입력하세요.'}), 400
     image_url = (data.get('image_url') or '').strip()
     notice_id = db.create_notice(session['user_id'], title, content, image_url=image_url)
+    game_logger.log_notice_created(session['user_id'], notice_id, title)
     notice = {
         'notice_id': notice_id,
         'author': session['user_id'],
@@ -621,6 +624,7 @@ def edit_notice(notice_id):
         return jsonify({'error': '제목을 입력하세요.'}), 400
     image_url = (data.get('image_url') or '').strip()
     db.update_notice(notice_id, title, content, image_url=image_url or None)
+    game_logger.log_notice_updated(session['user_id'], notice_id)
     socketio.emit('notice_updated', {'notice_id': notice_id, 'title': title, 'content': content, 'image_url': image_url}, room='lobby')
     return jsonify({'ok': True})
 
@@ -629,6 +633,7 @@ def edit_notice(notice_id):
 @admin_required
 def remove_notice(notice_id):
     db.delete_notice(notice_id)
+    game_logger.log_notice_deleted(session['user_id'], notice_id)
     socketio.emit('notice_deleted', {'notice_id': notice_id}, room='lobby')
     return jsonify({'ok': True})
 
@@ -655,6 +660,7 @@ def upload_image():
         s3.put_object(Bucket=MEDIA_BUCKET, Key=key, Body=f.read(),
                       ContentType=f.content_type or 'image/png')
         url = f'/api/media/{key}'
+        game_logger.log_image_uploaded(session['user_id'], key)
         return jsonify({'ok': True, 'url': url})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -748,6 +754,8 @@ def dm_conversation(friend_id):
 def dm_mark_read(friend_id):
     uid = session['user_id']
     db.mark_as_read(uid, friend_id, uid)
+    conv_id = '#'.join(sorted([uid, friend_id]))
+    game_logger.log_dm_read(uid, conv_id)
     # Notify sender that messages were read
     if friend_id in lobby_sids:
         socketio.emit('dm_read', {
@@ -959,6 +967,8 @@ def on_tetris_attack(data):
     for sid, info in sid_info.items():
         if info.get('user_id') == target and info.get('room_id') == rid and info.get('context') == 'game':
             socketio.emit('tetris_garbage', {'lines': garbage, 'hole': hole}, room=sid)
+            game_logger.log_game_move(rid, attacker, 'tetris',
+                                      move_data={'type': 'attack', 'target': target, 'lines': garbage})
             break
 
 
@@ -1013,8 +1023,10 @@ def on_game_over(data):
             destroy_game_room(rid)
     else:
         # 2-player game: notify opponent of victory.
+        players = set(room.get('players', [])) if room else set()
+        winner_2p = (players - {loser}).pop() if len(players) == 2 else None
         game_logger.log_game_over(rid, room['game'] if room else 'unknown',
-                                  loser=loser)
+                                  winner=winner_2p, loser=loser)
         emit('opponent_game_over', data, room=rid, include_self=False)
 
 
@@ -1116,6 +1128,7 @@ def on_invite_response(data):
     game_logger.log_invite_response(rid, uid, accepted)
     if accepted and len(room.get('players', [])) < room.get('max_players', 2):
         db.join_room(rid, uid)
+        game_logger.log_room_join(rid, uid)
         if host_sid:
             emit('invite_result', {'friend_id': uid, 'accepted': True}, to=host_sid)
         emit('invite_accepted', {'room_id': rid})

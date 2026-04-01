@@ -156,6 +156,22 @@ def log_page_view(user_id, page, room_id=None, game=None, user_agent=None, refer
     log('user_activity', 'page_view', user_id=user_id, page=page,
         room_id=room_id, game=game, user_agent=user_agent, referrer=referrer)
 
+def log_account_deleted(user_id):
+    log('user_activity', 'account_deleted', user_id=user_id)
+
+def log_notice_created(user_id, notice_id, title):
+    log('user_activity', 'notice_created', user_id=user_id,
+        notice_id=notice_id, title=title)
+
+def log_notice_updated(user_id, notice_id):
+    log('user_activity', 'notice_updated', user_id=user_id, notice_id=notice_id)
+
+def log_notice_deleted(user_id, notice_id):
+    log('user_activity', 'notice_deleted', user_id=user_id, notice_id=notice_id)
+
+def log_image_uploaded(user_id, key):
+    log('user_activity', 'image_uploaded', user_id=user_id, key=key)
+
 # Room activity
 def log_room_create(room_id, host, game, max_players, allow_spectate, allow_coaching):
     log('room_activity', 'room_create', room_id=room_id, host=host,
@@ -220,6 +236,13 @@ def log_invite_response(room_id, user_id, accepted):
     log('friend_activity', 'invite_response', room_id=room_id,
         user_id=user_id, accepted=accepted)
 
+def log_friend_remove(user_id, friend_id):
+    log('friend_activity', 'friend_remove', user_id=user_id, friend_id=friend_id)
+
+def log_friend_request_rejected(user_id, requester_id):
+    log('friend_activity', 'friend_request_rejected', user_id=user_id,
+        requester_id=requester_id)
+
 # Spectate activity
 def log_spectate_join(room_id, user_id):
     log('spectate_activity', 'spectate_join', room_id=room_id, user_id=user_id)
@@ -239,3 +262,7 @@ def log_dm_sent(sender_id, recipient_id, conversation_id, message=''):
     log('dm_activity', 'dm_sent', sender_id=sender_id,
         recipient_id=recipient_id, conversation_id=conversation_id,
         message=message)
+
+def log_dm_read(user_id, conversation_id):
+    log('dm_activity', 'dm_read', user_id=user_id,
+        conversation_id=conversation_id)
