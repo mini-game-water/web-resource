@@ -666,6 +666,14 @@ def force_close_room(room_id):
         return jsonify({'error': '방을 찾을 수 없습니다.'}), 404
     socketio.emit('room_force_closed', {'message': '관리자에 의해 방이 강제 종료되었습니다.'}, room=room_id)
     game_logger.log_room_delete(room_id, reason='admin_force_close')
+    # Restore all affected players' and spectators' statuses to 'online'
+    for uid in room.get('players', []):
+        db.update_user_status(uid, 'online')
+        broadcast_friend_status(uid, 'online')
+    if room_id in spectator_conns:
+        for uid in spectator_conns[room_id]:
+            db.update_user_status(uid, 'online')
+            broadcast_friend_status(uid, 'online')
     db.delete_room(room_id)
     game_conns.pop(room_id, None)
     game_chats.pop(room_id, None)
@@ -775,6 +783,9 @@ def on_user_status(data):
             return
         old_status = user.get('status', 'offline')
         if old_status == status:
+            return
+        # Don't allow visibility-triggered changes (online/chilling) to override game statuses
+        if old_status in ('waiting', 'ingame', 'spectating', 'practicing') and status in ('online', 'chilling'):
             return
         db.update_user_status(uid, status)
         game_logger.log_status_change(uid, old_status, status)

@@ -1095,7 +1095,7 @@
             // Admin force-closed room
             socket.on('room_force_closed', (data) => {
                 alert(data.message || '관리자에 의해 방이 강제 종료되었습니다.');
-                window.location.href = '/';
+                window.location.replace('/');
             });
         }
     }

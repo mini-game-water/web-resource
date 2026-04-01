@@ -51,7 +51,7 @@
                     <div class="friend-status-dot"></div>
                     <span class="friend-name">{{ f.id }}</span>
                     <button class="btn btn-invite"
-                            {% if f.status not in ['online', 'chilling', 'spectating'] %}disabled{% endif %}
+                            {% if f.status not in ['online', 'chilling', 'spectating', 'practicing'] %}disabled{% endif %}
                             onclick="inviteFriend('{{ f.id }}')">
                         초대
                     </button>
@@ -149,6 +149,12 @@
         socket.on('game_started', (data) => {
             isLeaving = true;
             window.location.replace(data.url);
+        });
+
+        socket.on('room_force_closed', (data) => {
+            alert(data.message || '관리자에 의해 방이 강제 종료되었습니다.');
+            isLeaving = true;
+            window.location.replace('/');
         });
 
         function forceStart() {
