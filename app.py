@@ -1023,6 +1023,9 @@ def on_game_over(data):
             destroy_game_room(rid)
     else:
         # 2-player game: notify opponent of victory.
+        # Mark game as finished so disconnect handler won't emit false game_winner
+        gs = game_states.setdefault(rid, {})
+        gs['finished'] = True
         players = set(room.get('players', [])) if room else set()
         winner_2p = (players - {loser}).pop() if len(players) == 2 else None
         game_logger.log_game_over(rid, room['game'] if room else 'unknown',
@@ -1235,8 +1238,9 @@ def on_disconnect():
                     destroy_game_room(rid)
                     return
 
-            # Any game: if only 1 player remains, they win
-            if len(game_conns.get(rid, set())) == 1:
+            # Any game: if only 1 player remains and game hasn't ended yet, they win
+            gs = game_states.get(rid, {})
+            if len(game_conns.get(rid, set())) == 1 and not gs.get('finished'):
                 winner = next(iter(game_conns[rid]))
                 emit('game_winner', {'winner': winner}, room=rid)
                 destroy_game_room(rid)
