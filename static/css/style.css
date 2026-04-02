@@ -494,11 +494,11 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
     background: #fff;
     border: 1px solid #ede6dc;
     border-radius: 14px;
-    padding: 1.2rem 0.8rem 1rem;
+    padding: 1.4rem 1rem 1.2rem;
     text-decoration: none;
     color: inherit;
     transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
@@ -513,12 +513,12 @@ body {
 }
 
 .game-list-icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 14px;
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
     background: linear-gradient(135deg, #f5ede3, #ede3d5);
     color: #a38b6d;
-    font-size: 1.7rem;
+    font-size: 2rem;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -1226,13 +1226,12 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.5rem 0.5rem;
-    min-height: calc(100vh - 60px);
+    padding: 0.3rem 0.5rem 1rem;
 }
 
 .game-container h1 {
     font-size: 1.5rem;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.3rem;
     color: #a38b6d;
 }
 
@@ -2120,7 +2119,7 @@ body {
 /* Game page top ad (above game-container, all 9 game pages) */
 .ad-game-top {
     margin: 0 auto;
-    padding: 0.5rem 1rem;
+    padding: 0.2rem 1rem;
     max-width: 728px;
     min-height: 90px;
     /* Ensures 150px+ distance from game canvas per AdSense gaming policy */

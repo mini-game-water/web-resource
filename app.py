@@ -807,7 +807,7 @@ def on_user_status(data):
     status = data.get('status')
     if uid and status in ('online', 'chilling', 'ingame', 'spectating', 'waiting', 'practicing'):
         user = db.get_user(uid)
-        if not user or user.get('status') == 'offline':
+        if not user:
             return
         old_status = user.get('status', 'offline')
         if old_status == status:
