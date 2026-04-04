@@ -137,7 +137,7 @@
         .rack-area {
             width: 100%;
             background: rgba(163, 139, 109, 0.15);
-            border: 2px solid #c4aa82;
+            border: 2px solid #a78bfa;
             border-radius: 12px;
             padding: 10px 14px;
             min-height: 80px;
@@ -167,8 +167,8 @@
             width: 100%;
         }
         .opponent-rack {
-            background: rgba(0,0,0,0.05);
-            border: 1px solid #ddd;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(167,139,250,0.25);
             border-radius: 8px;
             padding: 6px 12px;
             text-align: center;
@@ -181,7 +181,7 @@
         .opponent-name {
             font-weight: bold;
             font-size: 1rem;
-            color: #5a4e42;
+            color: #e0dcd6;
             margin-bottom: 4px;
         }
         .opponent-tile-count {
@@ -222,8 +222,8 @@
         .btn-draw:hover { background: #3498db; }
         .btn-undo { background: #e67e22; color: #fff; }
         .btn-undo:hover { background: #f39c12; }
-        .btn-sort { background: rgba(196, 170, 130, 0.3); color: #7a6a55; }
-        .btn-sort:hover { background: rgba(196, 170, 130, 0.5); }
+        .btn-sort { background: rgba(108, 92, 231, 0.2); color: #a78bfa; }
+        .btn-sort:hover { background: rgba(108, 92, 231, 0.35); }
         .rk-controls.hidden { display: none; }
         /* Turn info */
         .turn-info {
@@ -237,14 +237,14 @@
         /* Tile pool count */
         .pool-info {
             text-align: center;
-            color: #c4aa82;
+            color: #a78bfa;
             font-size: 1rem;
             margin-top: 0.2rem;
         }
         /* Multiplayer status */
         .mp-status {
             text-align: center;
-            color: #c4aa82;
+            color: #a78bfa;
             font-size: 1rem;
             font-weight: bold;
             margin-bottom: 0.5rem;
@@ -264,6 +264,13 @@
     <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 </head>
 <body>
+    <div class="stars-layer">
+        <div class="milky-way"></div>
+        <div class="stars stars-sm"></div>
+        <div class="stars stars-md"></div>
+        <div class="stars stars-lg"></div>
+        <div class="stars stars-twinkle"></div>
+    </div>
     <nav class="navbar">
         <a href="/" class="logo">Game Hub</a>
         {% if not room_id %}

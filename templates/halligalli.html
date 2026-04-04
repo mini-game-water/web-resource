@@ -309,7 +309,7 @@
         /* Multiplayer status */
         .mp-status {
             text-align: center;
-            color: #c4aa82;
+            color: #a78bfa;
             font-size: 1rem;
             font-weight: bold;
             margin-bottom: 0.5rem;
@@ -336,6 +336,13 @@
     <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 </head>
 <body>
+    <div class="stars-layer">
+        <div class="milky-way"></div>
+        <div class="stars stars-sm"></div>
+        <div class="stars stars-md"></div>
+        <div class="stars stars-lg"></div>
+        <div class="stars stars-twinkle"></div>
+    </div>
     <nav class="navbar">
         <a href="/" class="logo">Game Hub</a>
         {% if not room_id %}
@@ -542,23 +549,23 @@
         <p><strong>조작법</strong></p>
         <table style="width:100%; border-collapse:collapse; margin-bottom:12px;">
             <thead>
-                <tr style="background:#e8ddd0;">
-                    <th style="padding:6px 10px; text-align:left; border:1px solid #c4aa82;">키</th>
-                    <th style="padding:6px 10px; text-align:left; border:1px solid #c4aa82;">동작</th>
+                <tr style="background:rgba(108,92,231,0.15);">
+                    <th style="padding:6px 10px; text-align:left; border:1px solid #a78bfa;">키</th>
+                    <th style="padding:6px 10px; text-align:left; border:1px solid #a78bfa;">동작</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td style="padding:6px 10px; border:1px solid #c4aa82;"><kbd style="background:#f0ebe4; padding:2px 8px; border-radius:4px; border:1px solid #c4aa82; font-weight:bold;">Space</kbd></td>
-                    <td style="padding:6px 10px; border:1px solid #c4aa82;">카드 뒤집기 (내 턴일 때)</td>
+                    <td style="padding:6px 10px; border:1px solid #a78bfa;"><kbd style="background:rgba(20,22,58,0.8); padding:2px 8px; border-radius:4px; border:1px solid #a78bfa; font-weight:bold;">Space</kbd></td>
+                    <td style="padding:6px 10px; border:1px solid #a78bfa;">카드 뒤집기 (내 턴일 때)</td>
                 </tr>
                 <tr>
-                    <td style="padding:6px 10px; border:1px solid #c4aa82;"><kbd style="background:#f0ebe4; padding:2px 8px; border-radius:4px; border:1px solid #c4aa82; font-weight:bold;">Enter</kbd></td>
-                    <td style="padding:6px 10px; border:1px solid #c4aa82;">벨 치기</td>
+                    <td style="padding:6px 10px; border:1px solid #a78bfa;"><kbd style="background:rgba(20,22,58,0.8); padding:2px 8px; border-radius:4px; border:1px solid #a78bfa; font-weight:bold;">Enter</kbd></td>
+                    <td style="padding:6px 10px; border:1px solid #a78bfa;">벨 치기</td>
                 </tr>
                 <tr>
-                    <td style="padding:6px 10px; border:1px solid #c4aa82;">🖱️ 클릭</td>
-                    <td style="padding:6px 10px; border:1px solid #c4aa82;">덱 카드 클릭으로 뒤집기 / 벨 버튼 클릭</td>
+                    <td style="padding:6px 10px; border:1px solid #a78bfa;">🖱️ 클릭</td>
+                    <td style="padding:6px 10px; border:1px solid #a78bfa;">덱 카드 클릭으로 뒤집기 / 벨 버튼 클릭</td>
                 </tr>
             </tbody>
         </table>

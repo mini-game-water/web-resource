@@ -2,7 +2,7 @@
     const COLS = 10;
     const ROWS = 20;
     const BLOCK = 40;
-    const BG_COLOR = "#f5ede3";
+    const BG_COLOR = "#0e1033";
     const COLORS = [
         null,
         "#00f0f0", // I - cyan
@@ -263,7 +263,7 @@
         ctx.fillStyle = BG_COLOR;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        ctx.strokeStyle = "rgba(0,0,0,0.06)";
+        ctx.strokeStyle = "rgba(167,139,250,0.08)";
         for (let r = 0; r <= ROWS; r++) {
             ctx.beginPath(); ctx.moveTo(0, r * BLOCK); ctx.lineTo(canvas.width, r * BLOCK); ctx.stroke();
         }
@@ -353,7 +353,7 @@
     function drawMiniBoard(canvasEl, boardData, isEliminated, pieceData) {
         const miniCtx = canvasEl.getContext('2d');
         const OB = canvasEl.width / COLS;
-        miniCtx.fillStyle = isEliminated ? '#ddd' : BG_COLOR;
+        miniCtx.fillStyle = isEliminated ? '#1a1a3e' : BG_COLOR;
         miniCtx.fillRect(0, 0, canvasEl.width, canvasEl.height);
         if (!boardData) return;
 

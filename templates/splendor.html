@@ -29,7 +29,7 @@
             width: 90px;
             height: 90px;
             background: linear-gradient(135deg, #f5e6d3, #e8d5c4);
-            border: 3px solid #a38b6d;
+            border: 3px solid #6c5ce7;
             border-radius: 8px;
             display: flex;
             flex-direction: column;
@@ -42,7 +42,7 @@
         .noble-tile .noble-points {
             font-size: 1.5rem;
             font-weight: bold;
-            color: #5a4e42;
+            color: #e0dcd6;
             margin-bottom: 2px;
         }
         .noble-tile .noble-reqs {
@@ -109,8 +109,8 @@
         .dev-card {
             width: 115px;
             height: 160px;
-            background: #fff;
-            border: 2px solid #ccc;
+            background: rgba(20,22,58,0.85);
+            border: 2px solid rgba(167,139,250,0.25);
             border-radius: 8px;
             display: flex;
             flex-direction: column;
@@ -137,7 +137,7 @@
         .dev-card .card-points {
             font-size: 1.55rem;
             font-weight: bold;
-            color: #5a4e42;
+            color: #e0dcd6;
             min-width: 22px;
             text-align: center;
         }
@@ -183,8 +183,8 @@
             justify-content: center;
         }
         .dev-card.empty-slot {
-            border: 2px dashed #ddd;
-            background: rgba(0,0,0,0.02);
+            border: 2px dashed rgba(167,139,250,0.2);
+            background: rgba(0,0,0,0.1);
             cursor: default;
         }
         .dev-card.empty-slot:hover {
@@ -229,7 +229,7 @@
         }
         .gem-label {
             font-size: 0.82rem;
-            color: #7a6a55;
+            color: #a78bfa;
             text-align: center;
         }
 
@@ -277,7 +277,7 @@
         }
         .player-panel {
             background: rgba(163, 139, 109, 0.08);
-            border: 2px solid #e6ddd3;
+            border: 2px solid rgba(167,139,250,0.15);
             border-radius: 10px;
             padding: 8px 12px;
             min-width: 200px;
@@ -294,12 +294,12 @@
         .player-panel .panel-name {
             font-weight: bold;
             font-size: 1.1rem;
-            color: #5a4e42;
+            color: #e0dcd6;
             margin-bottom: 4px;
         }
         .player-panel .panel-name .prestige-badge {
             display: inline-block;
-            background: #a38b6d;
+            background: #6c5ce7;
             color: #fff;
             padding: 1px 8px;
             border-radius: 10px;
@@ -348,7 +348,7 @@
         }
         .player-panel .panel-nobles {
             font-size: 0.88rem;
-            color: #a38b6d;
+            color: #6c5ce7;
         }
 
         /* ── Reserved Cards Area ── */
@@ -369,7 +369,7 @@
             text-align: center;
             font-size: 1.1rem;
             font-weight: bold;
-            color: #a38b6d;
+            color: #6c5ce7;
             min-height: 1.5em;
         }
 
@@ -385,14 +385,14 @@
         }
         .token-return-overlay.hidden { display: none; }
         .token-return-modal {
-            background: #faf6f0;
+            background: rgba(15,15,45,0.6);
             border-radius: 12px;
             padding: 20px 30px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
             text-align: center;
         }
         .token-return-modal h3 {
-            color: #5a4e42;
+            color: #e0dcd6;
             margin-bottom: 10px;
         }
         .token-return-gems {
@@ -415,7 +415,7 @@
         }
         .noble-choice-overlay.hidden { display: none; }
         .noble-choice-modal {
-            background: #faf6f0;
+            background: rgba(15,15,45,0.6);
             border-radius: 12px;
             padding: 20px 30px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
@@ -436,7 +436,7 @@
         /* Multiplayer status */
         .mp-status {
             text-align: center;
-            color: #c4aa82;
+            color: #a78bfa;
             font-size: 1rem;
             font-weight: bold;
             margin-bottom: 0.5rem;
@@ -448,6 +448,13 @@
     <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 </head>
 <body>
+    <div class="stars-layer">
+        <div class="milky-way"></div>
+        <div class="stars stars-sm"></div>
+        <div class="stars stars-md"></div>
+        <div class="stars stars-lg"></div>
+        <div class="stars stars-twinkle"></div>
+    </div>
     <nav class="navbar">
         <a href="/" class="logo">Game Hub</a>
         {% if not room_id %}

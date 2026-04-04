@@ -64,9 +64,9 @@
             border: 2px solid #daa520;
         }
         .discard-pile {
-            background: #fff;
-            color: #333;
-            border: 2px solid #ccc;
+            background: rgba(20,22,58,0.85);
+            color: #e0dcd6;
+            border: 2px solid rgba(167,139,250,0.3);
             min-height: 108px;
         }
         .discard-pile .discard-card-name {
@@ -163,7 +163,8 @@
             height: 108px;
             border-radius: 7px;
             border: 2px solid #999;
-            background: #fff;
+            background: rgba(20,22,58,0.9);
+            color: #e0dcd6;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -199,12 +200,12 @@
             color: #888;
         }
         /* Card type colors */
-        .bang-card.type-attack { border-color: #c0392b; background: #fff0f0; }
-        .bang-card.type-defense { border-color: #27ae60; background: #f0fff0; }
-        .bang-card.type-heal { border-color: #e67e22; background: #fff8f0; }
-        .bang-card.type-draw { border-color: #2980b9; background: #f0f8ff; }
-        .bang-card.type-action { border-color: #8e44ad; background: #f8f0ff; }
-        .bang-card.type-equipment { border-color: #f39c12; background: #fffcf0; }
+        .bang-card.type-attack { border-color: #c0392b; background: rgba(192,57,43,0.15); }
+        .bang-card.type-defense { border-color: #27ae60; background: rgba(39,174,96,0.15); }
+        .bang-card.type-heal { border-color: #e67e22; background: rgba(230,126,34,0.15); }
+        .bang-card.type-draw { border-color: #2980b9; background: rgba(41,128,185,0.15); }
+        .bang-card.type-action { border-color: #8e44ad; background: rgba(142,68,173,0.15); }
+        .bang-card.type-equipment { border-color: #f39c12; background: rgba(243,156,18,0.15); }
         .bang-card.disabled {
             opacity: 0.4;
             cursor: not-allowed;
@@ -280,7 +281,7 @@
         /* Multiplayer status */
         .mp-status {
             text-align: center;
-            color: #c4aa82;
+            color: #a78bfa;
             font-size: 1rem;
             font-weight: bold;
             margin-bottom: 0.5rem;
@@ -304,16 +305,16 @@
         .draw-check-card {
             width: 78px;
             height: 108px;
-            background: #fff;
+            background: rgba(20,22,58,0.9);
             border-radius: 7px;
-            border: 2px solid #ccc;
+            border: 2px solid rgba(167,139,250,0.3);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             font-size: 1.25rem;
             font-weight: bold;
-            color: #333;
+            color: #e0dcd6;
         }
         .draw-check-card.red { color: #d32f2f; }
         @media (max-width: 960px) {
@@ -331,6 +332,13 @@
     <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 </head>
 <body>
+    <div class="stars-layer">
+        <div class="milky-way"></div>
+        <div class="stars stars-sm"></div>
+        <div class="stars stars-md"></div>
+        <div class="stars stars-lg"></div>
+        <div class="stars stars-twinkle"></div>
+    </div>
     <nav class="navbar">
         <a href="/" class="logo">Game Hub</a>
         {% if not room_id %}

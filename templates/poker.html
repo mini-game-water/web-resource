@@ -318,7 +318,7 @@
         /* Multiplayer status */
         .mp-status {
             text-align: center;
-            color: #c4aa82;
+            color: #a78bfa;
             font-size: 1rem;
             font-weight: bold;
             margin-bottom: 0.5rem;
@@ -338,6 +338,13 @@
     <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 </head>
 <body>
+    <div class="stars-layer">
+        <div class="milky-way"></div>
+        <div class="stars stars-sm"></div>
+        <div class="stars stars-md"></div>
+        <div class="stars stars-lg"></div>
+        <div class="stars stars-twinkle"></div>
+    </div>
     <nav class="navbar">
         <a href="/" class="logo">Game Hub</a>
         {% if not room_id %}

@@ -10,6 +10,13 @@
          crossorigin="anonymous"></script>
 </head>
 <body>
+    <div class="stars-layer">
+        <div class="milky-way"></div>
+        <div class="stars stars-sm"></div>
+        <div class="stars stars-md"></div>
+        <div class="stars stars-lg"></div>
+        <div class="stars stars-twinkle"></div>
+    </div>
     <nav class="navbar">
         <a href="/" class="logo">Game Hub</a>
         <div class="nav-links">
@@ -32,21 +39,21 @@
             </div>
             <div class="game-list">
                 <a href="/tetris" class="game-list-item">
-                    <div class="game-list-icon">T</div>
+                    <div class="game-list-icon"><svg viewBox="0 0 32 32" width="36" height="36" fill="none"><rect x="4" y="4" width="10" height="10" rx="2" fill="#6c5ce7"/><rect x="14" y="4" width="10" height="10" rx="2" fill="#a78bfa"/><rect x="14" y="14" width="10" height="10" rx="2" fill="#6c5ce7"/><rect x="4" y="14" width="10" height="10" rx="2" fill="#a78bfa" opacity="0.5"/></svg></div>
                     <div class="game-list-info">
                         <span class="game-list-name">Tetris <span class="game-players">1~8</span></span>
                         <span class="game-list-desc">클래식 블록 쌓기 게임. 줄을 완성하여 점수를 획득하세요!</span>
                     </div>
                 </a>
                 <a href="/omok" class="game-list-item">
-                    <div class="game-list-icon">O</div>
+                    <div class="game-list-icon"><svg viewBox="0 0 32 32" width="36" height="36" fill="none"><circle cx="11" cy="11" r="7" fill="#e0dcd6"/><circle cx="21" cy="21" r="7" fill="#6c5ce7"/><circle cx="11" cy="11" r="4" fill="#c0b8d8"/><circle cx="21" cy="21" r="4" fill="#a78bfa"/></svg></div>
                     <div class="game-list-info">
                         <span class="game-list-name">Omok <span class="game-players">2</span></span>
                         <span class="game-list-desc">15x15 보드에서 2인 대전. 먼저 5개를 연속으로 놓으면 승리!</span>
                     </div>
                 </a>
                 <a href="/chess" class="game-list-item">
-                    <div class="game-list-icon">C</div>
+                    <div class="game-list-icon"><svg viewBox="0 0 32 32" width="36" height="36" fill="none"><path d="M16 4l-2 4h-3l1 4-4 6h16l-4-6 1-4h-3l-2-4z" fill="#a78bfa"/><rect x="8" y="24" width="16" height="4" rx="2" fill="#6c5ce7"/><rect x="10" y="20" width="12" height="4" rx="1" fill="#a78bfa" opacity="0.6"/></svg></div>
                     <div class="game-list-info">
                         <span class="game-list-name">Chess <span class="game-players">2</span></span>
                         <span class="game-list-desc">전략의 정수, 체스. 상대의 킹을 체크메이트 하세요!</span>
@@ -341,7 +348,7 @@
                     <button type="submit" class="btn btn-primary">저장</button>
                 </div>
             </form>
-            <hr style="margin: 1rem 0; border-color: #e0d6ca;">
+            <hr style="margin: 1rem 0; border-color: rgba(167,139,250,0.15);">
             <button type="button" class="btn btn-danger" id="delete-account-btn" style="width:100%;">계정 삭제</button>
         </div>
     </div>
@@ -355,9 +362,9 @@
                 <label>제목</label>
                 <input type="text" id="notice-title" placeholder="제목" required>
                 <label>내용</label>
-                <textarea id="notice-content" placeholder="내용" rows="4" style="width:100%;padding:0.7rem 1rem;border:1px solid #e6ddd3;border-radius:8px;font-size:1.05rem;background:#faf6f0;color:#5a4e42;outline:none;resize:vertical;font-family:inherit;"></textarea>
+                <textarea id="notice-content" placeholder="내용" rows="4" style="width:100%;padding:0.7rem 1rem;border:1px solid rgba(167,139,250,0.15);border-radius:8px;font-size:1.05rem;background:rgba(15,15,45,0.6);color:#e0dcd6;outline:none;resize:vertical;font-family:inherit;"></textarea>
                 <label>이미지 (선택)</label>
-                <input type="file" id="notice-image" accept="image/*" style="width:100%;padding:0.5rem;border:1px solid #e6ddd3;border-radius:8px;font-size:1rem;background:#faf6f0;">
+                <input type="file" id="notice-image" accept="image/*" style="width:100%;padding:0.5rem;border:1px solid rgba(167,139,250,0.15);border-radius:8px;font-size:1rem;background:rgba(15,15,45,0.6);color:#e0dcd6;">
                 <div id="notice-image-preview" style="margin-top:0.5rem;display:none;"><img id="notice-preview-img" style="max-width:100%;max-height:200px;border-radius:8px;"></div>
                 <input type="hidden" id="notice-image-url" value="">
                 <div class="modal-buttons">

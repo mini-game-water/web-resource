@@ -946,7 +946,7 @@
             selectDiv.innerHTML = `
                 <label style="color: #9a8b78; font-size: 0.9rem;">
                     AI 플레이어 수:
-                    <select id="ai-count" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #c4aa82; background: #faf6f0; color: #5a4e42; margin-left: 6px;">
+                    <select id="ai-count" style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(167,139,250,0.3); background: rgba(15,15,45,0.8); color: #e0dcd6; margin-left: 6px;">
                         <option value="1" selected>1명 (2인 게임)</option>
                         <option value="2">2명 (3인 게임)</option>
                         <option value="3">3명 (4인 게임)</option>

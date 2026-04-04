@@ -55,13 +55,13 @@
             position: absolute;
             width: 70px;
             height: 70px;
-            background: #fff;
-            border: 2px solid #d4c8b8;
+            background: rgba(20,22,58,0.9);
+            border: 2px solid rgba(167,139,250,0.3);
             border-radius: 10px;
             box-sizing: border-box;
             display: grid;
             backface-visibility: hidden;
-            box-shadow: inset 0 0 8px rgba(163, 139, 109, 0.1);
+            box-shadow: inset 0 0 8px rgba(108,92,231,0.15);
         }
         .die-face.front  { transform: rotateY(0deg) translateZ(35px); }
         .die-face.back   { transform: rotateY(180deg) translateZ(35px); }
@@ -81,7 +81,7 @@
         .pip {
             width: 14px;
             height: 14px;
-            background: #5a4e42;
+            background: #a78bfa;
             border-radius: 50%;
             box-shadow: inset 0 2px 3px rgba(0,0,0,0.3);
         }
@@ -101,29 +101,29 @@
 
         /* Die held state */
         .die-scene.held .die-face {
-            background: #f0e8d8;
-            border-color: #a38b6d;
-            box-shadow: inset 0 0 12px rgba(163, 139, 109, 0.3);
+            background: rgba(108,92,231,0.25);
+            border-color: #6c5ce7;
+            box-shadow: inset 0 0 12px rgba(108,92,231,0.3);
         }
         .die-scene.held {
-            filter: drop-shadow(0 0 6px rgba(163, 139, 109, 0.5));
+            filter: drop-shadow(0 0 6px rgba(108,92,231,0.5));
         }
 
         .hold-btn {
             font-size: 0.88rem;
             padding: 0.2rem 0.8rem;
-            border: 1px solid #d4c8b8;
+            border: 1px solid rgba(167,139,250,0.3);
             border-radius: 6px;
-            background: #faf6f0;
+            background: rgba(15,15,45,0.6);
             color: #9a8b78;
             cursor: pointer;
             transition: all 0.2s;
         }
-        .hold-btn:hover { background: #f0e8d8; }
+        .hold-btn:hover { background: rgba(108,92,231,0.15); }
         .hold-btn.active {
-            background: #a38b6d;
+            background: #6c5ce7;
             color: #fff;
-            border-color: #a38b6d;
+            border-color: #6c5ce7;
         }
 
         .roll-btn {
@@ -131,18 +131,18 @@
             font-size: 1.25rem;
             border: none;
             border-radius: 10px;
-            background: #a38b6d;
+            background: #6c5ce7;
             color: #fff;
             cursor: pointer;
             transition: all 0.2s;
             font-weight: 600;
         }
         .roll-btn:hover:not(:disabled) {
-            background: #8a7359;
+            background: #5b4ccc;
             transform: translateY(-1px);
         }
         .roll-btn:disabled {
-            background: #d4c8b8;
+            background: rgba(167,139,250,0.2);
             cursor: not-allowed;
         }
 
@@ -160,18 +160,18 @@
         }
         .scorecard th, .scorecard td {
             padding: 0.5rem 0.8rem;
-            border: 1px solid #e6ddd3;
+            border: 1px solid rgba(167,139,250,0.15);
             text-align: center;
         }
         .scorecard th {
-            background: #f0e8d8;
-            color: #5a4e42;
+            background: rgba(108,92,231,0.12);
+            color: #e0dcd6;
             font-weight: 600;
         }
         .scorecard .cat-name {
             text-align: left;
             font-weight: 500;
-            color: #5a4e42;
+            color: #e0dcd6;
         }
         .scorecard .score-cell {
             cursor: pointer;
@@ -180,51 +180,51 @@
             transition: all 0.15s;
         }
         .scorecard .score-cell:hover {
-            background: #f0e8d8;
-            color: #5a4e42;
+            background: rgba(108,92,231,0.12);
+            color: #e0dcd6;
         }
         .scorecard .score-cell.scored {
-            color: #5a4e42;
+            color: #e0dcd6;
             font-weight: 700;
             cursor: default;
-            background: #faf6f0;
+            background: rgba(15,15,45,0.6);
         }
         .scorecard .score-cell.scored:hover {
-            background: #faf6f0;
+            background: rgba(15,15,45,0.6);
         }
         .scorecard .score-cell.preview {
-            color: #a38b6d;
+            color: #6c5ce7;
             font-style: italic;
         }
         .scorecard .score-cell.zero-preview {
-            color: #d4c8b8;
+            color: rgba(167,139,250,0.4);
         }
         .scorecard .section-header {
-            background: #e6ddd3;
+            background: rgba(167,139,250,0.15);
             font-weight: 700;
-            color: #5a4e42;
+            color: #e0dcd6;
         }
         .scorecard .total-row td {
             font-weight: 700;
-            background: #f0e8d8;
-            color: #5a4e42;
+            background: rgba(108,92,231,0.12);
+            color: #e0dcd6;
             font-size: 1rem;
         }
         .scorecard .bonus-row td {
-            color: #a38b6d;
+            color: #6c5ce7;
             font-style: italic;
         }
         .scorecard .subtotal-row td {
-            background: #f8f2ea;
+            background: rgba(108,92,231,0.08);
             font-weight: 600;
-            color: #7a6b5a;
+            color: #a78bfa;
         }
 
         /* Shadow under dice during roll */
         .die-shadow {
             width: 50px;
             height: 10px;
-            background: radial-gradient(ellipse, rgba(90,78,66,0.2) 0%, transparent 70%);
+            background: radial-gradient(ellipse, rgba(108,92,231,0.2) 0%, transparent 70%);
             border-radius: 50%;
             margin-top: -4px;
             transition: opacity 0.3s;
@@ -239,17 +239,17 @@
 
         .game-message {
             text-align: center;
-            color: #a38b6d;
+            color: #6c5ce7;
             font-size: 1rem;
             font-weight: 600;
             min-height: 1.5em;
         }
 
         .scorecard .active-col {
-            background: #f0e8d8;
+            background: rgba(108,92,231,0.12);
         }
         .scorecard th.active-col {
-            background: #e0d4c0;
+            background: rgba(108,92,231,0.18);
         }
     </style>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3328839220107010"
@@ -258,6 +258,13 @@
     <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 </head>
 <body>
+    <div class="stars-layer">
+        <div class="milky-way"></div>
+        <div class="stars stars-sm"></div>
+        <div class="stars stars-md"></div>
+        <div class="stars stars-lg"></div>
+        <div class="stars stars-twinkle"></div>
+    </div>
     <nav class="navbar">
         <a href="/" class="logo">Game Hub</a>
         {% if not room_id %}
