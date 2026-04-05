@@ -385,6 +385,16 @@
         socket.on('opponent_disconnected', showVictoryByLeave);
         socket.on('opponent_game_over', showVictoryByLeave);
 
+        socket.on('game_winner', (data) => {
+            gameOver = true;
+            const isWinner = data.winner === MY_USER;
+            const msg = isWinner ? '승리! 상대방이 나갔습니다.' : data.winner + '님이 승리했습니다.';
+            document.getElementById("win-message").innerHTML = msg;
+            document.getElementById("win-overlay").classList.add("active");
+            if (typeof GameSounds !== 'undefined') GameSounds.play(isWinner ? 'win' : 'lose');
+            if (typeof GameAnimations !== 'undefined') { if (isWinner) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body); }
+        });
+
         // Coaching updates
         socket.on('coaching_update', (data) => {
             if (data.type === 'dot' && data.data) {

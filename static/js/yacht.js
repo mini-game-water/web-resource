@@ -1022,6 +1022,18 @@
             }
         });
         socket.on('opponent_game_over', showVictoryByLeave);
+
+        socket.on('game_winner', (data) => {
+            if (gameOverFlag) return;
+            gameOverFlag = true;
+            const isWinner = data.winner === MY_USER;
+            const msg = isWinner ? '승리! 상대방이 나갔습니다.' : data.winner + '님이 승리했습니다.';
+            finalScore.innerHTML = `<div style="font-size:1.3em;margin-bottom:8px;">${msg}</div>`;
+            overlay.classList.add('active');
+            gameMessage.textContent = isWinner ? '승리!' : '패배';
+            if (typeof GameSounds !== 'undefined') GameSounds.play(isWinner ? 'win' : 'lose');
+            if (typeof GameAnimations !== 'undefined') { if (isWinner) GameAnimations.showConfetti(); else GameAnimations.showShake(document.body); }
+        });
     }
 
     // ===== Game Chat =====
