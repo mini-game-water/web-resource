@@ -34,7 +34,27 @@ No test or lint commands are configured. No build step — JS and CSS are served
 
 ## Architecture
 
-**Backend (`app.py`)**: Flask + Flask-SocketIO (async_mode=`gevent`). Routes: auth (`/login`, `/register`, `/logout`), pages (`/`, `/tetris`, `/omok`, `/chess`, `/yacht`, `/poker`, `/rummikub`, `/bang`, `/splendor`, `/halligalli`, `/room/<id>`), REST API (`/api/rooms`, `/api/rooms/<id>/join`, `/api/friends/request`, `/api/friends/accept`, `/api/friends/reject`, `/api/friends/pending`, `/api/notices`, `/api/dms/*`). SocketIO events handle lobby presence, waiting room coordination, friend invites, DM delivery, and real-time game moves.
+**Backend (modular structure)**: Refactored from monolithic `app.py` (1267 lines) into modular packages:
+- `app.py` — 95-line entry point: Flask init, blueprint registration, SocketIO event registration
+- `state.py` — Shared ephemeral state (`sid_info`, `waiting_conns`, `game_conns`, `lobby_sids`, `spectator_conns`, `game_states`, `game_chats`) + utility functions (`sanitize()`, `client_ip()`)
+- `routes/` — 7 Flask Blueprints:
+  - `auth.py` (`auth_bp`) — Login, register, logout
+  - `pages.py` (`pages_bp`) — Index, room, 9 game routes
+  - `api_rooms.py` (`rooms_bp`) — Room CRUD + force-close
+  - `api_friends.py` (`friends_bp`) — Friend request/accept/reject
+  - `api_profile.py` (`profile_bp`) — Profile get/update, account delete
+  - `api_notices.py` (`notices_bp`) — Notices CRUD + image upload/serve
+  - `api_dms.py` (`dms_bp`) — DM send/read/unread
+  - `decorators.py` — `login_required` and `admin_required` decorators
+- `sockets/` — 3 SocketIO event groups:
+  - `lobby.py` — Connect/disconnect/join_lobby/join_solo/join_waiting/user_status/force_start
+  - `game.py` — join_game/join_spectate/game_move/tetris_state/tetris_attack/game_over_event/poker_join_request/coaching/game_chat
+  - `invite.py` — invite_friend/invite_response
+  - `helpers.py` — `get_socketio()`, `broadcast_rooms()`, `broadcast_friend_status()`, `broadcast_participants()`, `destroy_game_room()`
+
+**Key refactoring pattern**: SocketIO instance accessed via `current_app.extensions['socketio']` (in `sockets/helpers.py::get_socketio()`) to avoid circular imports. Blueprints use `url_for('auth.login')` for cross-blueprint references.
+
+Routes: auth (`/login`, `/register`, `/logout`), pages (`/`, `/tetris`, `/omok`, `/chess`, `/yacht`, `/poker`, `/rummikub`, `/bang`, `/splendor`, `/halligalli`, `/room/<id>`), REST API (`/api/rooms`, `/api/rooms/<id>/join`, `/api/friends/request`, `/api/friends/accept`, `/api/friends/reject`, `/api/friends/pending`, `/api/notices`, `/api/dms/*`). SocketIO events handle lobby presence, waiting room coordination, friend invites, DM delivery, and real-time game moves.
 
 **CSRF/CORS**: `WTF_CSRF_CHECK_DEFAULT = False` with manual `csrf.protect()` in `before_request` that skips `/socket.io` paths. SocketIO uses `cors_allowed_origins='*'` for ALB compatibility.
 
@@ -73,7 +93,19 @@ All games render to `<canvas>` elements. Each JS file is wrapped in an IIFE (`((
 
 **In-game chat**: All 9 multiplayer game pages include a draggable, resizable chat box (NW-resize handle on top-left corner). Chat uses SocketIO `game_chat` events. Korean IME composition handled with `!e.isComposing` check.
 
-**Styling (`static/css/style.css`)**: Single shared stylesheet. Light beige theme (`#faf6f0` background) with beige accents (`#a38b6d`, `#c4aa82`). Includes styles for login, friends sidebar, room list, waiting room, game layouts, and chat.
+**Styling (`static/css/style.css`)**: Single shared stylesheet. Dark space theme (`#0b0d2a` background) with purple accents (`#a78bfa`, `#6c5ce7`). Includes styles for login, friends sidebar, room list, waiting room, game layouts, chat, and comprehensive mobile responsive rules.
+
+**Visual theme**: Dark navy background with Milky Way starfield effect (`.stars-layer` with `.milky-way`, `.stars-sm`, `.stars-md`, `.stars-lg`, `.stars-twinkle` layers). Stars concentrated along a diagonal center band with 300s drift animation. All 14 templates include the stars-layer markup.
+
+**Mobile responsive design** (`style.css` bottom section): 4 breakpoints:
+- `≤1024px` — Index layout stacks vertically, sidebar wraps horizontally
+- `≤768px` — Navbar scrollable, game canvases scale (`max-width: calc(100vw - 1rem); height: auto`), chess wrapper stacks vertically, tetris side panels compact, waiting room stacks
+- `≤480px` — Extra small: single-column game cards, further UI shrinking, yacht dice 52px
+- `≤360px` — Minimum viable: smallest navbar, tightest game layouts
+
+**SEO**: All 14 templates have Korean SEO meta tags (`<title>`, `<meta name="description">`, `<meta property="og:title">`, `<meta property="og:description">`). Sitemap at `static/sitemap.xml`.
+
+**Google Search Console**: TXT record `google-site-verification=m_J-KeyXsf09NtXsPWlIpDkSAa7IXtsvRRktxlUAwqk` managed in `terraform/route53.tf` (`aws_route53_record.google_site_verification`).
 
 ## Key Conventions
 
@@ -111,7 +143,7 @@ All games render to `<canvas>` elements. Each JS file is wrapped in an IIFE (`((
 
 ## Infrastructure (Terraform)
 
-All infrastructure is defined in `terraform/`. Resources: VPC (2 public subnets), ALB (HTTPS with ACM cert, HTTP→HTTPS redirect, sticky sessions, `/grafana/*` path routing to port 3000), EC2 (Amazon Linux 2023 + Docker + Grafana OSS), DynamoDB (4 tables: users, rooms, notices, dms), Route53 (A record → ALB), ACM (DNS-validated cert), IAM (EC2 instance profile with DynamoDB + Athena/Glue access), Glue catalog (7 tables for log categories). Grafana OSS is self-hosted on EC2 (installed via `user_data.sh`), accessible at `https://domain/grafana/`.
+All infrastructure is defined in `terraform/`. Resources: VPC (2 public subnets), ALB (HTTPS with ACM cert, HTTP→HTTPS redirect, sticky sessions, `/grafana/*` path routing to port 3000), EC2 (Amazon Linux 2023 + Docker + Grafana OSS), DynamoDB (4 tables: users, rooms, notices, dms), Route53 (A record → ALB, TXT record for Google site verification), ACM (DNS-validated cert), IAM (EC2 instance profile with DynamoDB + Athena/Glue access), Glue catalog (7 tables for log categories). Grafana OSS is self-hosted on EC2 (installed via `user_data.sh`), accessible at `https://domain/grafana/`.
 
 ```bash
 cd terraform
@@ -213,6 +245,17 @@ GitHub repo: `https://github.com/mini-game-water/web-resource.git`. Deploy via `
 - **All 9 game templates must load socket.io in BOTH modes**: Socket.io script is loaded inside `{% if room_id %}` for multiplayer AND inside `{% if not room_id %}` for solo mode (with `join_solo`). Never remove the solo-mode socket block.
 - **Solo-mode socket block pattern**: Each game template has a `{% if not room_id %}` block that loads socket.io, emits `join_solo`, listens for `invite_received` and `invite_accepted`, and includes the `#solo-invite-overlay` HTML. Changes to this pattern must be applied to ALL 9 templates.
 
+### Mobile Responsive (CSS)
+
+- **Canvas scaling**: Game canvases have fixed pixel sizes in HTML attributes (chess: 680x680, tetris board: 400x800, hold/next: 100x100). CSS `max-width + height: auto !important` scales them visually on mobile. The JS internal resolution stays the same — this is correct.
+- **Chess mobile**: `.chess-wrapper` stacks vertically (board above, move history below). Board scales to `calc(100vw - 2rem)` with `max-width: 400px`. Move history panel collapses to `max-height: 150px`.
+- **Tetris mobile**: `.tetris-wrapper` stays as a row (side panels + board). Board scales to `calc(100vw - 160px)`. Side panels shrink: `min-width: 65px`, hold/next canvases forced to `65px`. At 480px, further shrinks to 50px panels.
+- **Yacht mobile**: Dice are defined in `templates/yacht.html` inline `<style>` with 70px size. A `@media (max-width: 480px)` block inside the template shrinks to 52px with adjusted `translateZ(26px)` for 3D cube faces.
+- **Navbar overflow**: On mobile, `.nav-links` gets `overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none` so game links scroll horizontally instead of wrapping/truncating.
+- **Game-specific inline styles**: Yacht dice CSS is in `templates/yacht.html <style>` block (not `style.css`) because the 3D transform values are tightly coupled to the size. Mobile overrides must go in the same `<style>` block.
+- **Testing mobile layouts**: Use iframe-based preview — inject `<iframe src="url" width="390" height="700">` elements into a page to trigger real CSS media queries. Chrome's `resize_window` only resizes the OS window, not the CSS viewport (browser chrome eats ~200px). The iframe approach gives accurate results.
+- **Touch interaction caveat**: Canvas-based games (chess clicks, omok stone placement, poker card selection) use `mousedown`/`click` events which work on mobile touch. Tetris keyboard controls (arrow keys, space, shift) do NOT work on mobile — tetris is PC-only for gameplay, but the layout still renders correctly.
+
 ### Infrastructure (Terraform / AWS)
 
 - **Grafana OSS is self-hosted on EC2**, installed via `user_data.sh` (RPM + systemd). Accessible at `https://domain/grafana/` via ALB path-based routing. Default login: `admin` / password from `grafana_admin_password` tfvar.
@@ -259,6 +302,30 @@ These bugs were fixed and documented here to prevent regression:
 | Practicing status → offline | `visibilitychange`/`blur` on index page sends `chilling`, overwriting `practicing`; disconnect then sets `offline` | Guard in `on_user_status`: block `online`/`chilling` when current status is game-related | `app.py` |
 | Room force-close: users stuck | Waiting room had no `room_force_closed` handler; game players' status not restored | Add handler to `room.html`; restore all players + spectators to `online` in `force_close_room` | `app.py`, `room.html` |
 | Missing S3 logging for many actions | Account deletion, notices, friend removal, invite-accept join, DM read, tetris attack, etc. had no logging | Added 10+ `game_logger.log_*()` calls and 8 new convenience functions | `game_logger.py`, `app.py` |
+| `game_winner` missing from 3 games | chess.js, omok.js, yacht.js didn't handle `game_winner` socket event | Added `socket.on('game_winner', ...)` handler to each file | `chess.js`, `omok.js`, `yacht.js` |
+| Monolithic app.py (1267 lines) | All routes + sockets in single file, wasting tokens when reading | Refactored into `routes/` (7 blueprints) + `sockets/` (3 modules) + `state.py` | `app.py`, `routes/`, `sockets/`, `state.py` |
+| No mobile responsive design | CSS only targeted desktop viewports, game layouts overflowed on phones | Added 4-breakpoint responsive CSS + game-specific mobile rules | `style.css`, `yacht.html` |
+| No SEO meta tags | Templates had generic English titles, no descriptions | Added Korean titles + meta description + Open Graph to all 14 templates | All templates |
+| Google site verification TXT not in Terraform | Manually added Route53 TXT record would be lost on `terraform apply` | Added `aws_route53_record.google_site_verification` + imported state | `terraform/route53.tf` |
+
+## Custom Claude Code Skills
+
+Located in `.claude/commands/`. These are slash commands for automating repetitive tasks:
+
+| Skill | Command | Purpose |
+|-------|---------|---------|
+| `/color-audit` | Scans for old beige theme colors | Finds `#faf6f0`, `#a38b6d`, etc. and categorizes as FIX NEEDED vs OK (game piece) |
+| `/template-audit` | 8-point consistency check | Verifies all 9 templates have: stars-layer, milky-way, join_solo, isComposing, game_winner, X-CSRFToken, AdSense, socket.io in both modes |
+| `/deploy-check` | Pre-push verification | Python compile, import check, template render, color audit, Dockerfile syntax |
+| `/fix-colors` | Auto-correction reference | Color mapping table for dark theme migration |
+| `/verify-games` | Browser automation | Screenshots all 9 games via Chrome |
+| `/restart` | Server restart | Kill Python processes, restart Flask, verify routes |
+
+## Sitemap & SEO
+
+- **Sitemap**: `static/sitemap.xml` — served at `https://domain/static/sitemap.xml`. Contains all public-facing pages (login + 9 game pages). Submit to Google Search Console.
+- **Google site verification**: TXT record in Route53, managed by Terraform (`aws_route53_record.google_site_verification`). Value: `google-site-verification=m_J-KeyXsf09NtXsPWlIpDkSAa7IXtsvRRktxlUAwqk`.
+- **SEO titles**: Korean game-specific titles (e.g., `테트리스 온라인 - Game Hub | 무료 멀티플레이어 테트리스`). Each template has `og:title` and `og:description` for social sharing.
 
 ## Mandatory Completion Checklist
 
