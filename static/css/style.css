@@ -322,7 +322,7 @@ body {
     align-items: center;
     padding: 8px 14px;
     cursor: pointer;
-    background: #f0e8d8;
+    background: rgba(108,92,231,0.2);
     border-radius: 10px 10px 0 0;
     font-weight: 600;
     color: #e0dcd6;
@@ -2542,4 +2542,220 @@ body {
 .notice-view-meta {
     font-size: 1.1rem;
     color: #9a94b0;
+}
+
+/* ===== Mobile Responsive ===== */
+@media (max-width: 768px) {
+    /* Navbar */
+    .navbar {
+        padding: 0.5rem 1rem;
+        flex-wrap: wrap;
+    }
+    .navbar .logo {
+        font-size: 1.3rem;
+    }
+    .navbar .nav-links {
+        gap: 0.8rem;
+    }
+    .navbar .nav-links a {
+        font-size: 0.95rem;
+    }
+
+    /* Login */
+    .login-box {
+        padding: 2rem 1.5rem;
+        margin: 0 1rem;
+    }
+    .login-box h1 {
+        font-size: 1.7rem;
+    }
+
+    /* Index / Dashboard */
+    .index-layout {
+        padding: 0 0.5rem;
+        gap: 1rem;
+    }
+    .hero-section {
+        padding: 1.2rem;
+        border-radius: 12px;
+    }
+    .hero-section h1 {
+        font-size: 1.4rem;
+    }
+    .hero-section p {
+        font-size: 0.95rem;
+    }
+    .dashboard {
+        padding: 1rem 0;
+    }
+
+    /* Game cards */
+    .game-list {
+        gap: 0.8rem;
+    }
+    .game-card {
+        border-radius: 10px;
+    }
+
+    /* Room list */
+    .room-section {
+        padding: 0.8rem;
+        border-radius: 10px;
+    }
+    .room-list-table th,
+    .room-list-table td {
+        padding: 0.5rem 0.4rem;
+        font-size: 0.9rem;
+    }
+
+    /* Friends sidebar */
+    .friends-sidebar .sidebar-card {
+        padding: 0.8rem;
+    }
+
+    /* Waiting room */
+    .waiting-layout {
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    .room-friends {
+        width: 100%;
+    }
+
+    /* Game pages */
+    .game-container {
+        padding: 0.3rem 0.3rem 0.8rem;
+    }
+    .game-container h1 {
+        font-size: 1.2rem;
+    }
+    .game-info {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+    .game-info span {
+        padding: 0.3rem 0.8rem;
+    }
+
+    /* Tetris layout */
+    .tetris-main-layout {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.8rem;
+    }
+    .tetris-wrapper {
+        gap: 0.5rem;
+    }
+    .tetris-side {
+        gap: 0.3rem;
+    }
+
+    /* Game chat */
+    .game-chat {
+        width: 260px;
+        min-width: 180px;
+        bottom: 0.5rem;
+        right: 0.5rem;
+    }
+
+    /* Game help */
+    .game-help-panel {
+        max-width: 280px;
+        bottom: 8px;
+        left: 8px;
+    }
+    .game-help-panel.panel-second {
+        left: 8px;
+        bottom: 60px;
+    }
+
+    /* DM panel */
+    .dm-panel {
+        width: 280px !important;
+        right: 0.5rem !important;
+    }
+
+    /* Modals */
+    .modal-content {
+        width: 95%;
+        margin: 1rem auto;
+        padding: 1.5rem;
+    }
+
+    /* Notice */
+    .notice-view-overlay .notice-view-box {
+        width: 95%;
+        max-width: 95%;
+        padding: 1.2rem;
+    }
+
+    /* Overlays (game over, invite) */
+    .overlay h2 {
+        font-size: 1.5rem;
+    }
+
+    /* Sound toggle */
+    .sound-toggle-btn {
+        top: auto;
+        bottom: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Extra small screens */
+    .navbar {
+        padding: 0.4rem 0.6rem;
+    }
+    .navbar .logo {
+        font-size: 1.1rem;
+        padding: 0.15rem 0.6rem;
+    }
+    .navbar .nav-links {
+        gap: 0.5rem;
+    }
+    .navbar .nav-links a {
+        font-size: 0.85rem;
+    }
+
+    .login-box {
+        padding: 1.5rem 1rem;
+    }
+
+    .hero-section h1 {
+        font-size: 1.2rem;
+    }
+    .game-list {
+        grid-template-columns: 1fr;
+    }
+
+    /* Game container: scale canvases */
+    .game-container canvas,
+    .game-board {
+        max-width: 100%;
+        height: auto !important;
+    }
+
+    .game-chat {
+        width: 220px;
+        min-width: 160px;
+    }
+    .game-help-panel {
+        max-width: 240px;
+        font-size: 0.9rem;
+    }
+
+    .room-list-table th,
+    .room-list-table td {
+        padding: 0.4rem 0.3rem;
+        font-size: 0.8rem;
+    }
+
+    /* Waiting room participants */
+    .waiting-room {
+        padding: 1rem !important;
+    }
 }

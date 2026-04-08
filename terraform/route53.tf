@@ -9,3 +9,14 @@ resource "aws_route53_record" "app" {
     evaluate_target_health = true
   }
 }
+
+resource "aws_route53_record" "google_site_verification" {
+  zone_id = var.route53_zone_id
+  name    = var.domain_name
+  type    = "TXT"
+  ttl     = 300
+
+  records = [
+    "google-site-verification=m_J-KeyXsf09NtXsPWlIpDkSAa7IXtsvRRktxlUAwqk"
+  ]
+}
