@@ -254,6 +254,25 @@
         .scorecard th.active-col {
             background: rgba(108,92,231,0.18);
         }
+
+        /* Mobile: shrink dice and scorecard */
+        @media (max-width: 480px) {
+            .dice-row { gap: 0.6rem; }
+            .die-scene, .die-cube { width: 52px; height: 52px; }
+            .die-face { width: 52px; height: 52px; }
+            .die-face.front  { transform: rotateY(0deg) translateZ(26px); }
+            .die-face.back   { transform: rotateY(180deg) translateZ(26px); }
+            .die-face.right  { transform: rotateY(90deg) translateZ(26px); }
+            .die-face.left   { transform: rotateY(-90deg) translateZ(26px); }
+            .die-face.top    { transform: rotateX(90deg) translateZ(26px); }
+            .die-face.bottom { transform: rotateX(-90deg) translateZ(26px); }
+            .die-face .dot { width: 10px; height: 10px; }
+            .hold-btn { font-size: 0.7rem; padding: 0.2rem 0.4rem; }
+            .dice-area { gap: 0.8rem; }
+            .scorecard { font-size: 0.8rem; }
+            .scorecard th, .scorecard td { padding: 0.3rem 0.2rem; }
+            .roll-btn { font-size: 1rem; padding: 0.6rem 1.5rem; }
+        }
     </style>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3328839220107010"
          crossorigin="anonymous"></script>
