@@ -329,8 +329,24 @@
             .hg-table-wrap { height: calc(700px * 0.85 + 2rem); }
         }
         @media (max-width: 500px) {
-            .hg-table { transform: scale(0.6); transform-origin: top center; }
-            .hg-table-wrap { height: calc(700px * 0.6 + 2rem); }
+            .hg-table {
+                width: 340px;
+                height: 340px;
+                transform: none;
+                border-width: 6px;
+            }
+            .hg-table-wrap { height: auto; }
+            /* Smaller cards on mobile */
+            .hg-card { width: 72px; height: 100px; border-radius: 8px; }
+            .hg-card .card-emoji { font-size: 1.7rem; }
+            .hg-card .card-count { font-size: 1.1rem; margin-top: 3px; }
+            .hg-card.mini { width: 50px; height: 70px; }
+            .hg-card.mini .card-emoji { font-size: 1.3rem; }
+            .hg-card.mini .card-count { font-size: 0.9rem; }
+            .deck-stack { width: 48px; height: 66px; }
+            .hg-card.face-down .card-back-logo { width: 26px; height: 26px; font-size: 0.75rem; }
+            .bell-btn { width: 60px; height: 60px; font-size: 2rem; }
+            .fruit-counter { font-size: 1rem; }
         }
     </style>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3328839220107010"

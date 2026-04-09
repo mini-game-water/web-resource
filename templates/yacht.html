@@ -266,7 +266,11 @@
             .die-face.left   { transform: rotateY(-90deg) translateZ(26px); }
             .die-face.top    { transform: rotateX(90deg) translateZ(26px); }
             .die-face.bottom { transform: rotateX(-90deg) translateZ(26px); }
-            .die-face .dot { width: 10px; height: 10px; }
+            .pip { width: 10px; height: 10px; }
+            .die-face.val-2 .pip:nth-child(1) { margin-top: 6px; }
+            .die-face.val-2 .pip:nth-child(2) { margin-bottom: 6px; }
+            .die-face.val-3 .pip:nth-child(1) { margin: 5px 8px 0 0; }
+            .die-face.val-3 .pip:nth-child(3) { margin: 0 0 5px 8px; }
             .hold-btn { font-size: 0.7rem; padding: 0.2rem 0.4rem; }
             .dice-area { gap: 0.8rem; }
             .scorecard { font-size: 0.8rem; }

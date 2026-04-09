@@ -325,8 +325,28 @@
             .bang-table-wrap { height: calc(560px * 0.85 + 2rem); }
         }
         @media (max-width: 600px) {
-            .bang-table { transform: scale(0.55); transform-origin: top center; }
-            .bang-table-wrap { height: calc(560px * 0.55 + 2rem); }
+            .bang-table {
+                width: 340px;
+                height: 340px;
+                border-radius: 50%;
+                transform: none;
+                border-width: 6px;
+            }
+            .bang-table-wrap { height: auto; }
+            /* Smaller cards on mobile so they don't cover text */
+            .bang-card {
+                width: 52px;
+                height: 72px;
+                font-size: 0.7rem;
+                padding: 3px;
+                border-radius: 5px;
+            }
+            .bang-card .card-icon { font-size: 1.3rem; margin-bottom: 1px; }
+            .bang-card .card-title { font-size: 0.6rem; }
+            .bang-card .card-suit-rank { font-size: 0.6rem; bottom: 1px; right: 3px; }
+            .bang-card:hover { transform: translateY(-4px); }
+            .player-info { font-size: 0.75rem; }
+            .player-name { font-size: 0.78rem; }
         }
     </style>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3328839220107010"

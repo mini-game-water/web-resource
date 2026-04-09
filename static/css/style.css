@@ -2785,11 +2785,11 @@ body {
 /* -- Phone (≤480px) -- */
 @media (max-width: 480px) {
     .navbar {
-        padding: 0.4rem 0.5rem;
+        padding: 0.3rem 0.5rem;
     }
     .navbar .logo {
-        font-size: 1rem;
-        padding: 0.15rem 0.5rem;
+        font-size: 0.95rem;
+        padding: 0.1rem 0.4rem;
     }
     .navbar .nav-links {
         gap: 0.4rem;
@@ -2797,6 +2797,11 @@ body {
     }
     .navbar .nav-links a {
         font-size: 0.8rem;
+    }
+
+    /* Hide game-top ad on mobile to save vertical space */
+    .ad-game-top {
+        display: none !important;
     }
 
     /* Login: full-width */
@@ -2838,13 +2843,14 @@ body {
         font-size: 2rem;
     }
 
-    /* Game container: tight fit */
+    /* Game container: tight fit, no top whitespace */
     .game-container {
-        padding: 0.2rem 0.2rem 0.5rem;
+        padding: 0 0.2rem 0.3rem;
     }
     .game-container h1 {
-        font-size: 1rem;
-        margin-bottom: 0.2rem;
+        font-size: 0.85rem;
+        margin-bottom: 0.1rem;
+        margin-top: 0;
     }
 
     /* Tetris: shrink panels further */

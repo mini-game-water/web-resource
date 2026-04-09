@@ -331,8 +331,28 @@
             .poker-table-wrap { height: calc(520px * 0.85 + 2rem); }
         }
         @media (max-width: 600px) {
-            .poker-table { transform: scale(0.55); transform-origin: top center; }
-            .poker-table-wrap { height: calc(520px * 0.55 + 2rem); }
+            .poker-table {
+                width: 340px;
+                height: 340px;
+                border-radius: 50%;
+                transform: none;
+                border-width: 6px;
+            }
+            .poker-table-wrap { height: auto; }
+            .pot-display { font-size: 1.1rem; }
+            /* Smaller cards on mobile */
+            .card-3d { width: 46px; height: 65px; }
+            .card-3d.mini { width: 38px; height: 54px; }
+            .card-3d.community-card { width: 52px; height: 74px; }
+            .card-3d.my-card { width: 58px; height: 82px; }
+            .card-3d.mini .card-front .card-rank { font-size: 0.9rem; }
+            .card-3d.mini .card-front .card-suit { font-size: 1.1rem; }
+            .card-3d.my-card .card-front .card-rank { font-size: 1.2rem; }
+            .card-3d.my-card .card-front .card-suit { font-size: 1.5rem; }
+            .card-3d.community-card .card-front .card-rank { font-size: 1.1rem; }
+            .card-3d.community-card .card-front .card-suit { font-size: 1.3rem; }
+            .player-name { font-size: 0.7rem; }
+            .player-chips { font-size: 0.65rem; }
         }
     </style>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3328839220107010"
