@@ -333,20 +333,44 @@
                 border-width: 6px;
             }
             .bang-table-wrap { height: auto; }
-            /* Smaller cards on mobile so they don't cover text */
+            /* Compact player info on mobile */
+            .bang-player-info {
+                padding: 2px 6px;
+                border-radius: 6px;
+                min-width: auto;
+            }
+            .bang-player-info .bp-name { font-size: 0.7rem; }
+            .bang-player-info .bp-role-badge { font-size: 0.55rem; padding: 0 4px; }
+            .bang-player-info .bp-hp { font-size: 0.65rem; }
+            .bang-player-info .bp-cards-count { font-size: 0.6rem; }
+            .bang-player-info .bp-equipment { font-size: 0.55rem; }
+            .bang-seat.my-seat .bang-player-info { padding: 3px 8px; min-width: 80px; }
+            /* Reposition seats for 340px circle */
+            .bang-seat.seat-0 { bottom: -35px; }
+            .bang-seat.seat-1 { bottom: -5px; left: -5px; }
+            .bang-seat.seat-2 { top: 25%; left: -15px; }
+            .bang-seat.seat-3 { top: -30px; left: 15%; }
+            .bang-seat.seat-4 { top: -30px; right: 15%; }
+            .bang-seat.seat-5 { top: 25%; right: -15px; }
+            .bang-seat.seat-6 { bottom: -5px; right: -5px; }
+            /* Smaller deck/discard in center */
+            .deck-pile, .discard-pile { width: 48px; height: 66px; border-radius: 5px; min-height: 66px; }
+            .deck-pile .deck-count { font-size: 0.65rem; }
+            .discard-pile .discard-card-name { font-size: 0.6rem; }
+            .deck-discard { gap: 6px; }
+            .bang-center-info { font-size: 0.65rem; top: 28%; max-width: 200px; text-align: center; }
+            /* Smaller cards on mobile */
             .bang-card {
-                width: 52px;
-                height: 72px;
-                font-size: 0.7rem;
-                padding: 3px;
+                width: 48px;
+                height: 66px;
+                font-size: 0.65rem;
+                padding: 2px;
                 border-radius: 5px;
             }
-            .bang-card .card-icon { font-size: 1.3rem; margin-bottom: 1px; }
-            .bang-card .card-title { font-size: 0.6rem; }
-            .bang-card .card-suit-rank { font-size: 0.6rem; bottom: 1px; right: 3px; }
-            .bang-card:hover { transform: translateY(-4px); }
-            .player-info { font-size: 0.75rem; }
-            .player-name { font-size: 0.78rem; }
+            .bang-card .card-icon { font-size: 1.1rem; margin-bottom: 0; }
+            .bang-card .card-title { font-size: 0.55rem; }
+            .bang-card .card-suit-rank { font-size: 0.55rem; bottom: 1px; right: 2px; }
+            .bang-card:hover { transform: translateY(-3px); }
         }
     </style>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3328839220107010"
